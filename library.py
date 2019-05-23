@@ -89,7 +89,7 @@ def adjust_quantity(quantity, lot_size_params):
 def sell_limit(market, asset):
     cancel_current_orders(market)
     quantity = get_asset_quantity(asset)
-    sell_price = get_sell_price(market) + 5 * sat
+    sell_price = get_sell_price(market) 
     lot_size_params = get_lot_size_params(market)
     quantity = adjust_quantity(quantity, lot_size_params)
     if quantity:
