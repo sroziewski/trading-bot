@@ -3,25 +3,24 @@ from binance.client import Client
 import numpy as np
 import pickle
 from Binance import Binance
-import os
 
-dir = os.path.curdir
+ssh_dir = '/home/szymon/.ssh/'
 
 
-def save_to_file(filename, obj):
-    with open(dir + filename + '.pkl', 'wb') as handle:
+def save_to_file(_dir, filename, obj):
+    with open(_dir + filename + '.pkl', 'wb') as handle:
         pickle.dump(obj, handle, protocol=pickle.HIGHEST_PROTOCOL)
         handle.close()
 
 
-def get_pickled(filename):
-    with open(dir + filename + '.pkl', 'rb') as handle:
+def get_pickled(_dir, filename):
+    with open(_dir + filename + '.pkl', 'rb') as handle:
         data = pickle.load(handle)
         handle.close()
         return data
 
 
-keys = get_pickled("keys")
+keys = get_pickled(ssh_dir, ".keys")
 
 client = Client(keys[0], keys[1])
 

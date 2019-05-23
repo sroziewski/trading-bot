@@ -1,27 +1,22 @@
+import sys
+import time
+import traceback
+
 from binance.client import Client
-from binance.enums import KLINE_INTERVAL_30MINUTE, KLINE_INTERVAL_1DAY
-from binance.exceptions import BinanceAPIException
-import threading
-import talib
-import numpy as np
 
-from Binance import Binance
+from library import stop_signal, sat, sell_limit
 
-token1 = "I8HDSd7SuucmdsmwmTrsF8tI3UJcowFwY8iaLXhC7t1ZPbpPfD87VLIJJGkbSWL9"
-token2 = "glbvXdxiDZgcspm0AV4Yu2fw08p4yXEUZcLxkUpu3DIsjqtPG0oPxnyDbZ06sgi7"
+asset = "HOT"
+market = "{}BTC".format(asset)
 
+stop_price = 22 * sat
 
-client = Client(token1, token2)
-
-# get market depth
-market = 'WTCBTC'
-depth = client.get_order_book(symbol=market)
-
-prices = client.get_ticker(symbol=market)
-candles = client.get_klines(symbol=market, interval=KLINE_INTERVAL_1DAY)
-
-orders = client.get_open_orders()
-
-candles = client.get_klines(symbol=market, interval=KLINE_INTERVAL_30MINUTE)
-
-i = 1
+while 1:
+    try:
+        stop = stop_signal(market, Client.KLINE_INTERVAL_15MINUTE, "12 hours ago", stop_price)
+        if stop:
+            sell_limit(market, asset)
+            sys.exit(0)
+        time.sleep(10)
+    except Exception as err:
+        traceback.print_tb(err.__traceback__)

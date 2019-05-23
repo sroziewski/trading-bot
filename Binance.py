@@ -11,9 +11,6 @@ from scipy.ndimage import filters
 from scipy import signal
 import operator
 
-from Order import Order
-from PriceObserver import PriceObserver
-
 
 class Binance:
     def __init__(self, key_api, key_secret):
