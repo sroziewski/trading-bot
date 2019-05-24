@@ -100,7 +100,7 @@ def sell_limit(market, asset):
 
 
 def setup_logger(symbol):
-    LOGGER_FILE = "/var/log/trading/trader-{}.log".format(symbol)
+    LOGGER_FILE = "/var/log/szymon/trader-{}.log".format(symbol)
     formater_str = '%(asctime)s,%(msecs)d %(levelname)s %(name)s: %(message)s'
     formatter = logging.Formatter(formater_str)
     logging.config.fileConfig(fname='logging.conf')

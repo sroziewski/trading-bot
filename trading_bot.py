@@ -10,11 +10,13 @@ asset = "HOT"
 market = "{}BTC".format(asset)
 time_interval = Client.KLINE_INTERVAL_15MINUTE
 
-stop_price = 23 * sat
+price_in_satoshi = 23
+stop_price = price_in_satoshi * sat
 
 logger = setup_logger(asset)
 
 logger.info("Starting {} stop-loss maker".format(market))
+logger.info("Stop price is set up to : {:.8f} BTC".format(stop_price))
 
 while 1:
     try:
