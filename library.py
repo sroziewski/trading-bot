@@ -6,7 +6,7 @@ import logging
 import logging.config
 from Binance import Binance
 
-ssh_dir = '/home/szymon/.ssh/'
+ssh_dir = '/home/szymon/.config/'
 logger_global = []
 
 
