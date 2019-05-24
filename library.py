@@ -2,9 +2,12 @@ import binance
 from binance.client import Client
 import numpy as np
 import pickle
+import logging
+import logging.config
 from Binance import Binance
 
 ssh_dir = '/home/szymon/.ssh/'
+logger_global = []
 
 
 def save_to_file(_dir, filename, obj):
@@ -36,12 +39,6 @@ def stop_signal(market, time_interval, time0, stop_price):
         return True if _mean_close_price <= stop_price else False
 
 
-def sell_order(market, _sell_price, _quantity):
-    _sell_price_str = "{:.8f}".format(_sell_price)
-    _resp = client.order_limit_sell(symbol=market, quantity=_quantity, price=_sell_price_str)
-    print("{} Sell limit order placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
-
-
 def get_sell_price(market):
     _depth = client.get_order_book(symbol=market)
     _highest_bid = float(_depth['bids'][0][0])
@@ -53,7 +50,7 @@ def cancel_orders(open_orders, symbol):
     _resp = []
     for _order in open_orders:
         _resp.append(client.cancel_order(symbol=symbol, orderId=_order['orderId']))
-    return all(_c["status"]=="CANCELED" for _c in _resp)
+    return all(_c["status"] == "CANCELED" for _c in _resp)
 
 
 def cancel_current_orders(market):
@@ -86,6 +83,12 @@ def adjust_quantity(quantity, lot_size_params):
         return _adjusted_quantity
 
 
+def sell_order(market, _sell_price, _quantity):
+    _sell_price_str = "{:.8f}".format(_sell_price)
+    _resp = client.order_limit_sell(symbol=market, quantity=_quantity, price=_sell_price_str)
+    logger_global[0].info("{} Sell limit order placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
+
+
 def sell_limit(market, asset):
     cancel_current_orders(market)
     _quantity = get_asset_quantity(asset)
@@ -94,3 +97,19 @@ def sell_limit(market, asset):
     _quantity = adjust_quantity(_quantity, _lot_size_params)
     if _quantity:
         sell_order(market, _sell_price, _quantity)
+
+
+def setup_logger(symbol):
+    LOGGER_FILE = "/var/log/trading/trader-{}.log".format(symbol)
+    formater_str = '%(asctime)s,%(msecs)d %(levelname)s %(name)s: %(message)s'
+    formatter = logging.Formatter(formater_str)
+    logging.config.fileConfig(fname='logging.conf')
+    logger = logging.getLogger(symbol)
+    file_handler = logging.FileHandler(LOGGER_FILE)
+    file_handler.setLevel(logging.INFO)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    logger_global.append(logger)
+
+    return logger
+
