@@ -8,12 +8,12 @@ from library import stop_signal, sat, sell_limit, setup_logger
 
 
 asset = "HOT"
-price_in_satoshi = 23
+stop_price_in_satoshi = 23
 
 
 market = "{}BTC".format(asset)
 time_interval = Client.KLINE_INTERVAL_15MINUTE
-stop_price = price_in_satoshi * sat
+stop_price = stop_price_in_satoshi * sat
 
 logger = setup_logger(asset)
 logger.info("Starting {} stop-loss maker".format(market))
