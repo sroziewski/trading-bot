@@ -22,8 +22,8 @@ class Binance:
     def get_all_bnb_currencies(self):
         return list(filter(lambda x: "BNB" in x, self.get_all_currencies()))
 
-    def get_all_btc_currencies(self):
-        return list(filter(lambda x: "BTC" in x, self.get_all_currencies()))
+    def get_all_btc_currencies(self, _exclude_markets=[]):
+        return list(filter(lambda y: y not in _exclude_markets, filter(lambda x: "BTC" in x, self.get_all_currencies())))
 
     # def get_klines_currency2(self, currency, datetime):
     #     return self.client.get_historical_klines(currency, Client.KLINE_INTERVAL_15MINUTE, datetime)

@@ -8,6 +8,7 @@ from Binance import Binance
 
 ssh_dir = '/home/szymon/.config/'
 logger_global = []
+exclude_markets = ['TFUELBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC', 'SALTBTC', 'SUBBTC', 'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC', 'TUSDBTC', 'PAXBTC', 'USDCBTC', 'BCHSVBTC']
 
 
 def save_to_file(_dir, filename, obj):
@@ -74,12 +75,15 @@ def get_lot_size_params(market):
 
 
 def adjust_quantity(quantity, lot_size_params):
-    _diff = quantity - float(lot_size_params['minQty'])
+    _min_sell_amount = float(lot_size_params['minQty'])
+    _diff = quantity - _min_sell_amount
     if _diff < 0:
         return False
     else:
         _power = int(np.log10(float(lot_size_params['stepSize'])))
         _adjusted_quantity = round(quantity, _power)
+        if _adjusted_quantity > quantity:
+            _adjusted_quantity -= _min_sell_amount
         return _adjusted_quantity
 
 

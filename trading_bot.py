@@ -8,11 +8,12 @@ from library import stop_signal, sat, sell_limit, setup_logger
 
 
 asset = "HOT"
-stop_price_in_satoshi = 23
+stop_price_in_satoshi = 25
 
 
 market = "{}BTC".format(asset)
-time_interval = Client.KLINE_INTERVAL_15MINUTE
+ticker = Client.KLINE_INTERVAL_15MINUTE
+time_interval = "12 hours ago"
 stop_price = stop_price_in_satoshi * sat
 
 logger = setup_logger(asset)
@@ -21,7 +22,7 @@ logger.info("Stop price is set up to : {:.8f} BTC".format(stop_price))
 
 while 1:
     try:
-        stop = stop_signal(market, time_interval, "12 hours ago", stop_price)
+        stop = stop_signal(market, ticker, time_interval, stop_price)
         if stop:
             sell_limit(market, asset)
             logger.info("Stop-loss LIMIT order has been made, exiting")
