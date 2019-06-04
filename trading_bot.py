@@ -29,5 +29,8 @@ while 1:
             sys.exit(0)
         time.sleep(10)
     except Exception as err:
-        traceback.print_tb(err.__traceback__)
-        logger.exception(err.__traceback__)
+        if isinstance(err, ConnectionError):
+            logger.error("Connection problem...")
+        else:
+            traceback.print_tb(err.__traceback__)
+            logger.exception(err.__traceback__)
