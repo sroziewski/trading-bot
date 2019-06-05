@@ -1,6 +1,7 @@
 import sys
 import time
 import traceback
+import requests
 
 from binance.client import Client
 
@@ -29,7 +30,7 @@ while 1:
             sys.exit(0)
         time.sleep(10)
     except Exception as err:
-        if isinstance(err, ConnectionError):
+        if isinstance(err, requests.exceptions.ConnectionError):
             logger.error("Connection problem...")
         else:
             traceback.print_tb(err.__traceback__)
