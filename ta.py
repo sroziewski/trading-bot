@@ -177,8 +177,8 @@ def get_tradeable_assets(_markets, _ticker):
             _rsi = relative_strength_index(_closes)
             _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
             if is_tradeable(_closes, _rsi, _macd, _macdsignal):
-                _tradeable_assets.append(Asset(_asset, highest_bid(market)))
-    _tradeable_assets.sort()
+                _tradeable_assets.append(AssetTicker(_asset, ticker, highest_bid(_market)))
+    sort_assets(_tradeable_assets)
     return _tradeable_assets
 
 
@@ -210,8 +210,8 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
             _cond2 = is_tradeable(_closes, _rsi, _macd, _macdsignal)
 
             if _cond1 and _cond2:
-                _assets.append(Asset(_asset, highest_bid(market)))
-    _assets.sort()
+                _assets.append(AssetTicker(_asset, ticker, highest_bid(_market)))
+    sort_assets(_assets)
     return _assets
 
 
@@ -240,9 +240,13 @@ def get_bullish_assets(_markets, _ticker):
                                                                                                     _ma20, _ma7)
 
             if _cond1:
-                _bullish_assets.append(Asset(_asset, highest_bid(market)))
-    _bullish_assets.sort()
+                _bullish_assets.append(AssetTicker(_asset, ticker, highest_bid(_market)))
+    sort_assets(_bullish_assets)
     return _bullish_assets
+
+
+def sort_assets(_assets):
+    _assets.sort(key=lambda a: a.name)
 
 
 def get_avg_last(_values, _stop, _window=2):
@@ -327,10 +331,10 @@ def bullishness_3(_opens, _closes, _ma100, _ma50, _ma20, _ma7, _stop=-1):
 
 def aggregate_assets(_map, _assets, _ticker):
     for _asset in _assets:
-        if _asset in _map:
-            _map[_asset].add_ticker(_ticker)
+        if _asset.name in _map:
+            _map[_asset.name].add_ticker(_ticker)
         else:
-            _map[_asset] = AssetTicker(_asset, _ticker)
+            _map[_asset.name] = _asset
 
 
 def post_proc(_map):
@@ -342,7 +346,7 @@ def post_proc(_map):
 
 def print_assets(_assets):
     for _a in _assets:
-        print(_a.name + " : " + ' '.join(_a.tickers))
+        print(_a.name + " : " + ' '.join(_a.tickers)+" bid price : "+_a.bid_price)
 
 
 markets = binance.get_all_btc_currencies(exclude_markets)

@@ -26,9 +26,10 @@ class Asset(object):
 
 
 class AssetTicker(object):
-    def __init__(self, name, ticker):
+    def __init__(self, name, ticker, bid_price):
         self.name = name
         self.tickers = [ticker]
+        self.bid_price = bid_price
 
     def add_ticker(self, ticker):
         self.tickers.append(ticker)
