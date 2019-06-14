@@ -1,7 +1,6 @@
 from functools import reduce
 
 from binance.client import Client
-import pandas.stats.moments as pa
 import pandas as pd
 import numpy as np
 import threading

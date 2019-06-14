@@ -1,3 +1,5 @@
+import time
+
 import binance
 from binance.client import Client
 import numpy as np
@@ -8,7 +10,51 @@ from Binance import Binance
 
 ssh_dir = '/home/szymon/.config/'
 logger_global = []
-exclude_markets = ['TFUELBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC', 'SALTBTC', 'SUBBTC', 'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC', 'TUSDBTC', 'PAXBTC', 'USDCBTC', 'BCHSVBTC']
+exclude_markets = ['TFUELBTC', 'FTMBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC', 'SALTBTC',
+                   'SUBBTC',
+                   'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
+                   'TUSDBTC', 'PAXBTC', 'USDCBTC', 'BCHSVBTC']
+
+
+class Asset(object):
+    def __init__(self, name, price, ticker, barrier=False, ratio=False):
+        self.name = name
+        self.price = price
+        self.ticker = ticker
+        self.barrier = barrier
+        self.tolerance = ratio
+
+
+class AssetTicker(object):
+    def __init__(self, name, ticker):
+        self.name = name
+        self.tickers = [ticker]
+
+    def add_ticker(self, ticker):
+        self.tickers.append(ticker)
+
+
+class BuyAsset(Asset):
+    def __init__(self, name, price, tight, ratio=False):
+        super().__init__(name, price, ratio)
+        self.tight = tight  # if true, buy the market price, when an asset has a very low momentum...
+
+
+def observe_lower_price(_assets: Asset):
+    while 1:
+        for _asset in _assets:
+            if stop_signal(get_market(_asset), _asset.ticker, get_interval_unit(_asset.ticker), _asset.price, 1):
+                # stop-loss & sell maker
+                return True
+        time.sleep(10)
+
+
+def get_market(_asset):
+    return "{}BTC".format(_asset.name)
+
+
+class SellAsset(Asset):
+    pass
 
 
 def save_to_file(_dir, filename, obj):
@@ -33,10 +79,24 @@ binance = Binance(keys[0], keys[1])
 sat = 1e-8
 
 
-def stop_signal(market, time_interval, time0, stop_price):
+def get_interval_unit(_ticker):
+    return {
+        Client.KLINE_INTERVAL_15MINUTE: "150 hours ago",
+        Client.KLINE_INTERVAL_30MINUTE: "75 hours ago",
+        Client.KLINE_INTERVAL_1HOUR: "150 hours ago",
+        Client.KLINE_INTERVAL_2HOUR: "300 hours ago",
+        Client.KLINE_INTERVAL_4HOUR: "600 hours ago",
+        Client.KLINE_INTERVAL_6HOUR: "900 hours ago",
+        Client.KLINE_INTERVAL_8HOUR: "1200 hours ago",
+        Client.KLINE_INTERVAL_12HOUR: "75 days ago",
+        Client.KLINE_INTERVAL_1DAY: "150 days ago",
+    }[_ticker]
+
+
+def stop_signal(market, time_interval, time0, stop_price, _times=4):
     _klines = binance.get_klines_currency(market, time_interval, time0)
     if len(_klines) > 0:
-        _mean_close_price = np.mean(list(map(lambda x: float(x[4]), _klines[-4:])))
+        _mean_close_price = np.mean(list(map(lambda x: float(x[4]), _klines[-_times:])))
         return True if _mean_close_price <= stop_price else False
 
 
@@ -45,6 +105,11 @@ def get_sell_price(market):
     _highest_bid = float(_depth['bids'][0][0])
     _sell_price = _highest_bid + sat
     return _sell_price
+
+
+def highest_bid(market):
+    _depth = client.get_order_book(symbol=market)
+    return float(_depth['bids'][0][0])
 
 
 def cancel_orders(open_orders, symbol):
@@ -90,7 +155,8 @@ def adjust_quantity(quantity, lot_size_params):
 def sell_order(market, _sell_price, _quantity):
     _sell_price_str = "{:.8f}".format(_sell_price)
     _resp = client.order_limit_sell(symbol=market, quantity=_quantity, price=_sell_price_str)
-    logger_global[0].info("{} Sell limit order placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
+    logger_global[0].info(
+        "{} Sell limit order placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
 
 
 def sell_limit(market, asset):
@@ -116,4 +182,3 @@ def setup_logger(symbol):
     logger_global.append(logger)
 
     return logger
-
