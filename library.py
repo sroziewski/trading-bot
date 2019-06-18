@@ -1,6 +1,10 @@
+import sys
+import threading
 import time
+import traceback
 
 import binance
+import requests
 from binance.client import Client
 import numpy as np
 import pickle
@@ -33,14 +37,21 @@ exclude_markets = ['TFUELBTC', 'FTMBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC',
 
 
 class Asset(object):
-    def __init__(self, name, price, ratio, ticker, barrier=False):
+    def __init__(self, name, price, stop_loss_price, price_profit, ratio, ticker, barrier=False):
         self.name = name
         self.market = "{}BTC".format(name)
         self.price = price
+        self.stop_loss = stop_loss_price
+        self.price_profit = price_profit
         self.ratio = ratio  # buy for ratio [%] of all possessing BTC
         self.ticker = ticker
         self.barrier = barrier
         self.buy_price = None
+
+
+class BuyAsset(Asset):
+    def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, ticker=Client.KLINE_INTERVAL_1MINUTE, barrier=False):
+        super().__init__(name, price, stop_loss_price, price_profit, ratio, ticker, barrier)
 
 
 class AssetTicker(object):
@@ -71,11 +82,27 @@ class BuyStrategy(Strategy):
         _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
         if _quantity_to_buy:
             buy_order(self.asset, _quantity_to_buy)
+            self.set_stop_loss()
+            sell_limit(self.asset.market, self.asset.asset, self.asset.price_profit)
+
+    def set_stop_loss(self):
+        _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,), name='_stop_loss_maker')
+        _stop_loss_maker.start()
 
 
-class BuyAsset(Asset):
-    def __init__(self, name, price, ratio=50, ticker=Client.KLINE_INTERVAL_1MINUTE, barrier=False):
-        super().__init__(name, price, ratio, ticker, barrier)
+# class FuncThread(threading.Thread):
+#
+#     def __init__(self, group=None, target=None, name=None,
+#                  args=(), kwargs=None, verbose=None):
+#         threading.Thread.__init__(self, group=group, target=target, name=name)
+#         self.args = args
+#         self.kwargs = kwargs
+#         return
+#
+#     def run(self):
+#         logger_global[0].debug('running with %s and %s', self.args, self.kwargs)
+#         return
+
 
 
 def observe_lower_price(_assets: Asset):
@@ -92,12 +119,13 @@ def observe_lower_price(_assets: Asset):
                     return
                 if len(_assets) == 0:
                     return
-        time.sleep(40)
+        time.sleep(2)
 
 
 def is_buy_possible(_asset, _btc_value, _params):
     _min_amount = float(_params['minQty']) * _asset.price
-    return 0.01 < _btc_value > _min_amount
+    # return 0.01 < _btc_value > _min_amount
+    return True
 
 
 def get_remaining_btc():
@@ -134,6 +162,8 @@ binance = Binance(keys[0], keys[1])
 sat = 1e-8
 
 general_fee = 0.001
+
+bought_assets = []
 
 
 def get_interval_unit(_ticker):
@@ -223,7 +253,8 @@ def adjust_quantity(quantity, lot_size_params):
 
 def buy_order(_asset, _quantity):
     _sell_price_str = price_to_string(_asset.price)
-    _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_sell_price_str)
+    # _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_sell_price_str)
+    bought_assets.append(_asset)
     logger_global[0].info(
         "{} Buy limit order placed: price={} BTC, quantity={} ".format(_asset.market, _sell_price_str, _quantity))
 
@@ -233,13 +264,22 @@ def price_to_string(_price):
 
 
 def sell_order(market, _sell_price, _quantity):
-    _sell_price_str = "{:.8f}".format(_sell_price)
+    _sell_price_str = price_to_string(_sell_price)
     _resp = client.order_limit_sell(symbol=market, quantity=_quantity, price=_sell_price_str)
     logger_global[0].info(
         "{} Sell limit order placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
 
 
-def sell_limit(market, asset):
+def sell_limit(market, asset, price):
+    cancel_current_orders(market)
+    _quantity = get_asset_quantity(asset)
+    _lot_size_params = get_lot_size_params(market)
+    _quantity = adjust_quantity(_quantity, _lot_size_params)
+    if _quantity:
+        sell_order(market, price, _quantity)
+
+
+def sell_limit_stop_loss(market, asset):
     cancel_current_orders(market)
     _quantity = get_asset_quantity(asset)
     _sell_price = get_sell_price(market)
@@ -262,3 +302,29 @@ def setup_logger(symbol):
     logger_global.append(logger)
 
     return logger
+
+
+def stop_loss(_asset):
+    ticker = Client.KLINE_INTERVAL_1MINUTE
+    time_interval = "6 hours ago"
+    stop_price = _asset.stop_loss
+
+    logger_global[0].info("Starting {} stop-loss maker".format(_asset.market))
+    logger_global[0].info("Stop price {} is set up to : {:.8f} BTC".format(_asset.market, stop_price))
+
+    while 1:
+        try:
+            logger_global[0].info("ITERATING")
+            stop = stop_signal(_asset.market, ticker, time_interval, stop_price, 1)
+            # stop = True
+            if stop:
+                sell_limit_stop_loss(_asset.market, _asset.name)
+                logger_global[0].info("Stop-loss LIMIT {} order has been made, exiting".format(_asset.market))
+                sys.exit(0)
+            time.sleep(50)
+        except Exception as err:
+            if isinstance(err, requests.exceptions.ConnectionError):
+                logger_global[0].error("Connection problem...")
+            else:
+                traceback.print_tb(err.__traceback__)
+                logger_global[0].exception(err.__traceback__)

@@ -5,7 +5,7 @@ import requests
 
 from binance.client import Client
 
-from library import stop_signal, sat, sell_limit, setup_logger
+from library import stop_signal, sat, sell_limit_stop_loss, setup_logger
 
 
 asset = "HOT"
@@ -25,7 +25,7 @@ while 1:
     try:
         stop = stop_signal(market, ticker, time_interval, stop_price, 1)
         if stop:
-            sell_limit(market, asset)
+            sell_limit_stop_loss(market, asset)
             logger.info("Stop-loss LIMIT order has been made, exiting")
             sys.exit(0)
         time.sleep(40)
