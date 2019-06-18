@@ -5,26 +5,17 @@ import requests
 
 from binance.client import Client
 
-from library import stop_signal, sat, sell_limit, setup_logger, BuyAsset
+from library import stop_signal, sat, sell_limit, setup_logger, BuyAsset, observe_lower_price, price_to_string
 
-asset = "HOT"
-stop_price_in_satoshi = 25
+logger = setup_logger("WATCH TO BUY")
 
+buy_assets = [BuyAsset('HOT', 0.00000020, 100), BuyAsset('WTC', 0.0001923), BuyAsset('NANO', 0.0001670)]
 
-market = "{}BTC".format(asset)
-ticker = Client.KLINE_INTERVAL_1MINUTE
-time_interval = "3 hours ago"
-stop_price = stop_price_in_satoshi * sat
+logger.info("Starting observing assets:\n{}".format('\n'.join(map(lambda _a: "{} :\t{}".format(_a.name, price_to_string(_a.price)), buy_assets))))
 
-
-buy_asset = BuyAsset(asset, stop_price)
-
-observed = buy_asset.observe_lower_price(market, ticker, time_interval, stop_price)
+observed = observe_lower_price(buy_assets)
 
 
-logger = setup_logger(asset)
-logger.info("Starting {} stop-loss maker".format(market))
-logger.info("Stop price is set up to : {:.8f} BTC".format(stop_price))
 
 while 1:
     try:

@@ -33,12 +33,14 @@ exclude_markets = ['TFUELBTC', 'FTMBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC',
 
 
 class Asset(object):
-    def __init__(self, name, price, ticker, barrier=False, ratio=False):
+    def __init__(self, name, price, ratio, ticker, barrier=False):
         self.name = name
+        self.market = "{}BTC".format(name)
         self.price = price
+        self.ratio = ratio  # buy for ratio [%] of all possessing BTC
         self.ticker = ticker
         self.barrier = barrier
-        self.tolerance = ratio
+        self.buy_price = None
 
 
 class AssetTicker(object):
@@ -51,19 +53,55 @@ class AssetTicker(object):
         self.tickers.append(ticker)
 
 
+class Strategy(object):
+    def __init__(self, asset, btc_value, params):
+        self.asset = asset
+        self.btc_value = btc_value
+        self.params = params
+
+
+class BuyStrategy(Strategy):
+    def __init__(self, asset, btc_value, params):
+        super().__init__(asset, btc_value, params)
+
+    def run(self):
+        _la = lowest_ask(self.asset.market)
+        self.asset.buy_price = _la
+        _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
+        _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
+        if _quantity_to_buy:
+            buy_order(self.asset, _quantity_to_buy)
+
+
 class BuyAsset(Asset):
-    def __init__(self, name, price, tight, ratio=False):
-        super().__init__(name, price, ratio)
-        self.tight = tight  # if true, buy the market price, when an asset has a very low momentum...
+    def __init__(self, name, price, ratio=50, ticker=Client.KLINE_INTERVAL_1MINUTE, barrier=False):
+        super().__init__(name, price, ratio, ticker, barrier)
 
 
 def observe_lower_price(_assets: Asset):
     while 1:
         for _asset in _assets:
             if stop_signal(get_market(_asset), _asset.ticker, get_interval_unit(_asset.ticker), _asset.price, 1):
-                # stop-loss & sell maker
-                return True
-        time.sleep(10)
+                _assets = list(
+                    filter(lambda _a: _a.name != _asset.name, _assets))  # remove an observed asset from the list
+                _btc_value = get_remaining_btc()
+                _params = get_lot_size_params(_asset.market)
+                if is_buy_possible(_asset, _btc_value, _params):
+                    BuyStrategy(_asset, _btc_value, _params).run()
+                else:
+                    return
+                if len(_assets) == 0:
+                    return
+        time.sleep(40)
+
+
+def is_buy_possible(_asset, _btc_value, _params):
+    _min_amount = float(_params['minQty']) * _asset.price
+    return 0.01 < _btc_value > _min_amount
+
+
+def get_remaining_btc():
+    return get_asset_quantity("BTC")
 
 
 def get_market(_asset):
@@ -95,9 +133,12 @@ binance = Binance(keys[0], keys[1])
 
 sat = 1e-8
 
+general_fee = 0.001
+
 
 def get_interval_unit(_ticker):
     return {
+        Client.KLINE_INTERVAL_1MINUTE: "6 hours ago",
         Client.KLINE_INTERVAL_15MINUTE: "40 hours ago",
         Client.KLINE_INTERVAL_30MINUTE: "75 hours ago",
         Client.KLINE_INTERVAL_1HOUR: "150 hours ago",
@@ -130,6 +171,11 @@ def highest_bid(market):
     return float(_depth['bids'][0][0])
 
 
+def lowest_ask(market):
+    _depth = client.get_order_book(symbol=market)
+    return float(_depth['asks'][0][0])
+
+
 def cancel_orders(open_orders, symbol):
     _resp = []
     for _order in open_orders:
@@ -157,6 +203,11 @@ def get_lot_size_params(market):
     return _info[0] if len(_info) > 0 else False
 
 
+def get_buying_asset_quantity(asset, total_btc):
+    _useable_btc = (1 - general_fee) * asset.ratio / 100 * total_btc
+    return _useable_btc / asset.buy_price
+
+
 def adjust_quantity(quantity, lot_size_params):
     _min_sell_amount = float(lot_size_params['minQty'])
     _diff = quantity - _min_sell_amount
@@ -168,6 +219,17 @@ def adjust_quantity(quantity, lot_size_params):
         if _adjusted_quantity > quantity:
             _adjusted_quantity -= _min_sell_amount
         return _adjusted_quantity
+
+
+def buy_order(_asset, _quantity):
+    _sell_price_str = price_to_string(_asset.price)
+    _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_sell_price_str)
+    logger_global[0].info(
+        "{} Buy limit order placed: price={} BTC, quantity={} ".format(_asset.market, _sell_price_str, _quantity))
+
+
+def price_to_string(_price):
+    return "{:.8f}".format(_price)
 
 
 def sell_order(market, _sell_price, _quantity):
