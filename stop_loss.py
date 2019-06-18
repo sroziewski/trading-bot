@@ -13,8 +13,8 @@ stop_price_in_satoshi = 25
 
 
 market = "{}BTC".format(asset)
-ticker = Client.KLINE_INTERVAL_15MINUTE
-time_interval = "12 hours ago"
+ticker = Client.KLINE_INTERVAL_1MINUTE
+time_interval = "6 hours ago"
 stop_price = stop_price_in_satoshi * sat
 
 logger = setup_logger(asset)
@@ -23,12 +23,12 @@ logger.info("Stop price is set up to : {:.8f} BTC".format(stop_price))
 
 while 1:
     try:
-        stop = stop_signal(market, ticker, time_interval, stop_price)
+        stop = stop_signal(market, ticker, time_interval, stop_price, 1)
         if stop:
             sell_limit(market, asset)
             logger.info("Stop-loss LIMIT order has been made, exiting")
             sys.exit(0)
-        time.sleep(10)
+        time.sleep(40)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError):
             logger.error("Connection problem...")
