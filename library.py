@@ -4,11 +4,27 @@ import binance
 from binance.client import Client
 import numpy as np
 import pickle
+import configparser
 import logging
 import logging.config
 from Binance import Binance
 
-ssh_dir = '/home/szymon/.config/'
+
+class Config(object):
+    def __init__(self, section='local', name='resource/config.properties'):
+        config = configparser.RawConfigParser()
+        config.read(name)
+        self.config = dict(config.items(section))
+
+    def get_parameter(self, parameter):
+        if parameter in self.config:
+            return self.config[parameter]
+        raise Exception("There is no such a key in config!")
+
+
+config = Config()
+
+key_dir = config.get_parameter('key_dir')
 logger_global = []
 exclude_markets = ['TFUELBTC', 'FTMBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC', 'SALTBTC',
                    'SUBBTC',
@@ -71,7 +87,7 @@ def get_pickled(_dir, filename):
         return data
 
 
-keys = get_pickled(ssh_dir, ".keys")
+keys = get_pickled(key_dir, ".keys")
 
 client = Client(keys[0], keys[1])
 
@@ -82,7 +98,7 @@ sat = 1e-8
 
 def get_interval_unit(_ticker):
     return {
-        Client.KLINE_INTERVAL_15MINUTE: "150 hours ago",
+        Client.KLINE_INTERVAL_15MINUTE: "40 hours ago",
         Client.KLINE_INTERVAL_30MINUTE: "75 hours ago",
         Client.KLINE_INTERVAL_1HOUR: "150 hours ago",
         Client.KLINE_INTERVAL_2HOUR: "300 hours ago",
@@ -91,6 +107,7 @@ def get_interval_unit(_ticker):
         Client.KLINE_INTERVAL_8HOUR: "1200 hours ago",
         Client.KLINE_INTERVAL_12HOUR: "75 days ago",
         Client.KLINE_INTERVAL_1DAY: "150 days ago",
+        Client.KLINE_INTERVAL_3DAY: "360 days ago",
     }[_ticker]
 
 
@@ -171,7 +188,7 @@ def sell_limit(market, asset):
 
 
 def setup_logger(symbol):
-    LOGGER_FILE = "/var/log/szymon/trader-{}.log".format(symbol)
+    LOGGER_FILE = config.get_parameter('logger_file').format(symbol)
     formater_str = '%(asctime)s,%(msecs)d %(levelname)s %(name)s: %(message)s'
     formatter = logging.Formatter(formater_str)
     logging.config.fileConfig(fname='logging.conf')

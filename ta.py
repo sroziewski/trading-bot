@@ -346,7 +346,7 @@ def post_proc(_map):
 
 def print_assets(_assets):
     for _a in _assets:
-        print(_a.name + " : " + ' '.join(_a.tickers)+" bid price : "+_a.bid_price)
+        print(_a.name + " : " + ' '.join(_a.tickers)+" bid price : "+"{:.8f}".format(_a.bid_price))
 
 
 markets = binance.get_all_btc_currencies(exclude_markets)
