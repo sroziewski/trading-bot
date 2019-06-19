@@ -83,7 +83,7 @@ class BuyStrategy(Strategy):
         if _quantity_to_buy:
             buy_order(self.asset, _quantity_to_buy)
             self.set_stop_loss()
-            sell_limit(self.asset.market, self.asset.asset, self.asset.price_profit)
+            sell_limit(self.asset.market, self.asset)
 
     def set_stop_loss(self):
         _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,), name='_stop_loss_maker')
@@ -119,13 +119,13 @@ def observe_lower_price(_assets: Asset):
                     return
                 if len(_assets) == 0:
                     return
-        time.sleep(2)
+        time.sleep(40)
 
 
 def is_buy_possible(_asset, _btc_value, _params):
     _min_amount = float(_params['minQty']) * _asset.price
-    # return 0.01 < _btc_value > _min_amount
-    return True
+    return 0.01 < _btc_value > _min_amount
+    # return True
 
 
 def get_remaining_btc():
@@ -270,13 +270,13 @@ def sell_order(market, _sell_price, _quantity):
         "{} Sell limit order placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
 
 
-def sell_limit(market, asset, price):
+def sell_limit(market, asset):
     cancel_current_orders(market)
-    _quantity = get_asset_quantity(asset)
+    _quantity = get_asset_quantity(asset.name)
     _lot_size_params = get_lot_size_params(market)
     _quantity = adjust_quantity(_quantity, _lot_size_params)
     if _quantity:
-        sell_order(market, price, _quantity)
+        sell_order(market, asset.price_profit,  _quantity)
 
 
 def sell_limit_stop_loss(market, asset):
@@ -314,7 +314,7 @@ def stop_loss(_asset):
 
     while 1:
         try:
-            logger_global[0].info("ITERATING")
+            # logger_global[0].info("ITERATING")
             stop = stop_signal(_asset.market, ticker, time_interval, stop_price, 1)
             # stop = True
             if stop:
