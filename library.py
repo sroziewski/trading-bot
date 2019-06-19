@@ -347,7 +347,7 @@ def take_profit(asset):
             _last_candle = _klines[-1]
 
             _rsi = relative_strength_index(_closes)
-            _rsi_max = np.max(get_last(_rsi, _stop, 4))
+            _rsi_max = np.max(get_last(_rsi, _stop, 5))
             _index_rsi_peak = np.where(_rsi == _rsi_max)[0][0]
             _curr_rsi = get_last(_rsi, _stop)
 
