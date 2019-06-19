@@ -252,11 +252,11 @@ def adjust_quantity(quantity, lot_size_params):
 
 
 def buy_order(_asset, _quantity):
-    _sell_price_str = price_to_string(_asset.price)
-    # _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_sell_price_str)
+    _price_str = price_to_string(_asset.price)
+    _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
     bought_assets.append(_asset)
     logger_global[0].info(
-        "{} Buy limit order placed: price={} BTC, quantity={} ".format(_asset.market, _sell_price_str, _quantity))
+        "{} Buy limit order placed: price={} BTC, quantity={} ".format(_asset.market, _price_str, _quantity))
 
 
 def price_to_string(_price):
@@ -314,7 +314,6 @@ def stop_loss(_asset):
 
     while 1:
         try:
-            # logger_global[0].info("ITERATING")
             stop = stop_signal(_asset.market, ticker, time_interval, stop_price, 1)
             # stop = True
             if stop:
