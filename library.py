@@ -90,21 +90,6 @@ class BuyStrategy(Strategy):
         _stop_loss_maker.start()
 
 
-# class FuncThread(threading.Thread):
-#
-#     def __init__(self, group=None, target=None, name=None,
-#                  args=(), kwargs=None, verbose=None):
-#         threading.Thread.__init__(self, group=group, target=target, name=name)
-#         self.args = args
-#         self.kwargs = kwargs
-#         return
-#
-#     def run(self):
-#         logger_global[0].debug('running with %s and %s', self.args, self.kwargs)
-#         return
-
-
-
 def observe_lower_price(_assets: Asset):
     while 1:
         for _asset in _assets:
