@@ -1,4 +1,5 @@
 import sys
+import talib
 import threading
 import time
 import traceback
@@ -50,7 +51,8 @@ class Asset(object):
 
 
 class BuyAsset(Asset):
-    def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, ticker=Client.KLINE_INTERVAL_1MINUTE, barrier=False):
+    def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, ticker=Client.KLINE_INTERVAL_1MINUTE,
+                 barrier=False):
         super().__init__(name, price, stop_loss_price, price_profit, ratio, ticker, barrier)
 
 
@@ -83,11 +85,16 @@ class BuyStrategy(Strategy):
         if _quantity_to_buy:
             buy_order(self.asset, _quantity_to_buy)
             self.set_stop_loss()
-            sell_limit(self.asset.market, self.asset)
+            sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
+            self.set_take_profit()
 
     def set_stop_loss(self):
         _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,), name='_stop_loss_maker')
         _stop_loss_maker.start()
+
+    def set_take_profit(self):
+        _take_profit_maker = threading.Thread(target=take_profit, args=(self.asset,), name='_take_profit_maker')
+        _take_profit_maker.start()
 
 
 def observe_lower_price(_assets: Asset):
@@ -101,16 +108,18 @@ def observe_lower_price(_assets: Asset):
                 if is_buy_possible(_asset, _btc_value, _params):
                     BuyStrategy(_asset, _btc_value, _params).run()
                 else:
+                    logger_global[0].warning("{} buying not POSSIBLE, only {} BTC left".format(_asset.market, price_to_string(_btc_value)))
                     return
                 if len(_assets) == 0:
+                    logger_global[0].info("All assets OBSERVED, exiting")
                     return
         time.sleep(40)
 
 
 def is_buy_possible(_asset, _btc_value, _params):
     _min_amount = float(_params['minQty']) * _asset.price
-    return 0.01 < _btc_value > _min_amount
-    # return True
+    # return 0.01 < _btc_value > _min_amount
+    return True
 
 
 def get_remaining_btc():
@@ -148,12 +157,10 @@ sat = 1e-8
 
 general_fee = 0.001
 
-bought_assets = []
-
 
 def get_interval_unit(_ticker):
     return {
-        Client.KLINE_INTERVAL_1MINUTE: "6 hours ago",
+        Client.KLINE_INTERVAL_1MINUTE: "15 hours ago",
         Client.KLINE_INTERVAL_15MINUTE: "40 hours ago",
         Client.KLINE_INTERVAL_30MINUTE: "75 hours ago",
         Client.KLINE_INTERVAL_1HOUR: "150 hours ago",
@@ -200,12 +207,18 @@ def cancel_orders(open_orders, symbol):
 
 def cancel_current_orders(market):
     _open_orders = client.get_open_orders(symbol=market)
+    logger_global[0].info("{} orders to cancel : {}".format(market, len(_open_orders)))
     _cancelled_ok = True
-    if len(_open_orders):
+    if len(_open_orders) > 0:
         _cancelled_ok = False
         _cancelled_ok = cancel_orders(_open_orders, market)
+    else:
+        logger_global[0].warning("{} No orders to CANCEL".format(market))
+        return
     if _cancelled_ok:
-        print("{} Orders cancelled correctly".format(market))
+        logger_global[0].info("{} Orders cancelled correctly".format(market))
+    else:
+        logger_global[0].error("{} Orders not cancelled properly".format(market))
 
 
 def get_asset_quantity(asset):
@@ -238,8 +251,7 @@ def adjust_quantity(quantity, lot_size_params):
 
 def buy_order(_asset, _quantity):
     _price_str = price_to_string(_asset.price)
-    _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
-    bought_assets.append(_asset)
+    # _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
     logger_global[0].info(
         "{} Buy limit order placed: price={} BTC, quantity={} ".format(_asset.market, _price_str, _quantity))
 
@@ -248,20 +260,24 @@ def price_to_string(_price):
     return "{:.8f}".format(_price)
 
 
-def sell_order(market, _sell_price, _quantity):
+def _sell_order(market, _sell_price, _quantity):
     _sell_price_str = price_to_string(_sell_price)
     _resp = client.order_limit_sell(symbol=market, quantity=_quantity, price=_sell_price_str)
     logger_global[0].info(
         "{} Sell limit order placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
 
 
-def sell_limit(market, asset):
+def sell_limit(market, asset_name, price):
     cancel_current_orders(market)
-    _quantity = get_asset_quantity(asset.name)
+    _quantity = get_asset_quantity(asset_name)
     _lot_size_params = get_lot_size_params(market)
     _quantity = adjust_quantity(_quantity, _lot_size_params)
     if _quantity:
-        sell_order(market, asset.price_profit,  _quantity)
+        _sell_order(market, price, _quantity)
+        return True
+    else:
+        logger_global[0].error("{} No quantity to SELL".format(market))
+        return False
 
 
 def sell_limit_stop_loss(market, asset):
@@ -271,7 +287,7 @@ def sell_limit_stop_loss(market, asset):
     _lot_size_params = get_lot_size_params(market)
     _quantity = adjust_quantity(_quantity, _lot_size_params)
     if _quantity:
-        sell_order(market, _sell_price, _quantity)
+        _sell_order(market, _sell_price, _quantity)
 
 
 def setup_logger(symbol):
@@ -312,3 +328,122 @@ def stop_loss(_asset):
             else:
                 traceback.print_tb(err.__traceback__)
                 logger_global[0].exception(err.__traceback__)
+                time.sleep(50)
+
+
+def take_profit(asset):
+    _ticker = Client.KLINE_INTERVAL_1MINUTE
+    _time_interval = get_interval_unit(_ticker)
+    while 1:
+        try:
+            _klines = binance.get_klines_currency(asset.market, _ticker, _time_interval)
+            # _klines = get_pickled('/juno/', "klines")
+            _closes = get_closes(_klines)
+            _ma50 = talib.MA(_closes, timeperiod=50)
+            _ma20 = talib.MA(_closes, timeperiod=20)
+            _ma7 = talib.MA(_closes, timeperiod=7)
+
+            _stop = -1
+            _last_candle = _klines[-1]
+
+            _rsi = relative_strength_index(_closes)
+            _rsi_max = np.max(get_last(_rsi, _stop, 4))
+            _index_rsi_peak = np.where(_rsi == _rsi_max)[0][0]
+            _curr_rsi = get_last(_rsi, _stop)
+
+            _curr_ma_50 = get_last(_ma50, _stop)
+            _curr_ma_20 = get_last(_ma20, _stop)
+            _curr_ma_7 = get_last(_ma7, _stop)
+
+            _c1 = rsi_falling_condition(_rsi_max, _curr_rsi)
+            _c2 = volume_condition(_klines, _index_rsi_peak)
+            _c3 = candle_condition(_last_candle, _curr_ma_7, _curr_ma_50)
+            _c4 = mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50)
+
+            if _c1 and _c2 and _c3 and _c4:
+                logger_global[0].info("Taking profits {} conditions satisfied...".format(asset.market))
+                _curr_open = float(_last_candle[1])
+                _sold = sell_limit(asset.market, asset.name, _curr_open)
+                if _sold:
+                    logger_global[0].info("Took profits {}: LIMIT order has been made, exiting".format(asset.market))
+                else:
+                    logger_global[0].error("Took profits {}: selling not POSSIBLE, exiting".format(asset.market))
+                sys.exit(0)
+            time.sleep(40)
+        except Exception as err:
+            if isinstance(err, requests.exceptions.ConnectionError):
+                logger_global[0].error("{} Connection problem...".format(asset.market))
+            else:
+                traceback.print_tb(err.__traceback__)
+                logger_global[0].exception(err.__traceback__)
+                time.sleep(40)
+
+
+def mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50):
+    return _curr_ma_7 > _curr_ma_20 > _curr_ma_50
+
+
+def candle_condition(_kline, _curr_ma_7, _curr_ma_50):
+    _close = float(_kline[4])
+    _low = float(_kline[3])
+    return _close < _curr_ma_7 or _low < _curr_ma_50
+
+
+def volume_condition(_klines, _index_max):
+    _vol_rsi_peak = float(_klines[_index_max][7])
+    _vol_curr = float(_klines[-1][7])
+    return 10.0 > _vol_curr / _vol_rsi_peak > 0.6
+
+
+def rsi_falling_condition(_rsi_max, _curr_rsi):
+    return _rsi_max > 76.0 and _curr_rsi < 65.0 and (_rsi_max - _curr_rsi) / _rsi_max > 0.2
+
+
+def get_closes(_klines):
+    return np.array(list(map(lambda _x: float(_x[4]), _klines)))
+
+
+def relative_strength_index(_closes, n=14):
+    _prices = np.array(_closes, dtype=np.float32)
+
+    _deltas = np.diff(_prices)
+    _seed = _deltas[:n + 1]
+    _up = _seed[_seed >= 0].sum() / n
+    _down = -_seed[_seed < 0].sum() / n
+    _rs = _up / _down
+    _rsi = np.zeros_like(_prices)
+    _rsi[:n] = 100. - 100. / (1. + _rs)
+
+    for _i in range(n, len(_prices)):
+        _delta = _deltas[_i - 1]  # cause the diff is 1 shorter
+
+        if _delta > 0:
+            _upval = _delta
+            _downval = 0.
+        else:
+            _upval = 0.
+            _downval = -_delta
+
+        _up = (_up * (n - 1) + _upval) / n
+        _down = (_down * (n - 1) + _downval) / n
+
+        _rs = _up / _down
+        _rsi[_i] = 100. - 100. / (1. + _rs)
+
+    return _rsi
+
+
+def get_avg_last(_values, _stop, _window=1):
+    return np.mean(_values[_stop - _window:])
+
+
+def get_last(_values, _stop, _window=1):
+    return _values[_stop - _window+1:]
+
+
+def get_avg_last_2(_values, _stop, _window=2):
+    return np.mean(_values[_stop - _window+1:_stop])
+
+
+def get_last_2(_values, _stop, _window=2):
+    return _values[_stop - _window:_stop]

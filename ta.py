@@ -7,7 +7,7 @@ import matplotlib.font_manager as font_manager
 from binance.client import Client
 from matplotlib import collections  as mc
 
-from library import binance, exclude_markets, get_interval_unit, AssetTicker, Asset, highest_bid
+from library import binance, get_interval_unit, AssetTicker, Asset, highest_bid, save_to_file, get_pickled
 
 
 def relative_strength_index(_closes, n=14):
@@ -177,7 +177,7 @@ def get_tradeable_assets(_markets, _ticker):
             _rsi = relative_strength_index(_closes)
             _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
             if is_tradeable(_closes, _rsi, _macd, _macdsignal):
-                _tradeable_assets.append(AssetTicker(_asset, ticker, highest_bid(_market)))
+                _tradeable_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
     sort_assets(_tradeable_assets)
     return _tradeable_assets
 
@@ -210,7 +210,7 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
             _cond2 = is_tradeable(_closes, _rsi, _macd, _macdsignal)
 
             if _cond1 and _cond2:
-                _assets.append(AssetTicker(_asset, ticker, highest_bid(_market)))
+                _assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
     sort_assets(_assets)
     return _assets
 
@@ -240,7 +240,7 @@ def get_bullish_assets(_markets, _ticker):
                                                                                                     _ma20, _ma7)
 
             if _cond1:
-                _bullish_assets.append(AssetTicker(_asset, ticker, highest_bid(_market)))
+                _bullish_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
     sort_assets(_bullish_assets)
     return _bullish_assets
 
@@ -249,8 +249,23 @@ def sort_assets(_assets):
     _assets.sort(key=lambda a: a.name)
 
 
-def get_avg_last(_values, _stop, _window=2):
-    return np.mean(_values[_stop - _window + 1:])
+def get_avg_last(_values, _stop, _window=1):
+    return np.mean(_values[_stop - _window:])
+
+
+def get_last(_values, _stop, _window=1):
+    return _values[_stop - _window+1:]
+
+
+def get_avg_last_2(_values, _stop, _window=2):
+    return np.mean(_values[_stop - _window+1:_stop])
+
+
+def get_last_2(_values, _stop, _window=2):
+    return _values[_stop - _window+1:_stop]
+
+
+
 
 
 def bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7, _stop=-1):
@@ -349,39 +364,39 @@ def print_assets(_assets):
         print(_a.name + " : " + ' '.join(_a.tickers)+" bid price : "+"{:.8f}".format(_a.bid_price))
 
 
-markets = binance.get_all_btc_currencies(exclude_markets)
-# ticker = Client.KLINE_INTERVAL_30MINUTE
-# tradeable_assets_30min = get_tradeable_and_bullish_assets(markets, ticker)
-
-tickers = [Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
-           Client.KLINE_INTERVAL_2HOUR,
-           Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
-           Client.KLINE_INTERVAL_12HOUR,
-           Client.KLINE_INTERVAL_1DAY]
-
-print("bullish & tradeable assets")
-bullish_tradeable_map = {}
-for ticker in tickers:
-    aggregate_assets(bullish_tradeable_map, get_tradeable_and_bullish_assets(markets, ticker), ticker)
-
-bullish_tradeable_list = post_proc(bullish_tradeable_map)
-print_assets(bullish_tradeable_list)
-
-print("bullish assets")
-bullish_map = {}
-for ticker in tickers:
-    aggregate_assets(bullish_map, get_bullish_assets(markets, ticker), ticker)
-
-bullish_list = post_proc(bullish_map)
-print_assets(bullish_list)
-
-print("tradeable assets")
-tradeable_map = {}
-for ticker in tickers:
-    aggregate_assets(tradeable_map, get_tradeable_assets(markets, ticker), ticker)
-
-tradeable_list = post_proc(tradeable_map)
-print_assets(tradeable_list)
+# markets = binance.get_all_btc_currencies(exclude_markets)
+# # ticker = Client.KLINE_INTERVAL_30MINUTE
+# # tradeable_assets_30min = get_tradeable_and_bullish_assets(markets, ticker)
+#
+# tickers = [Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
+#            Client.KLINE_INTERVAL_2HOUR,
+#            Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
+#            Client.KLINE_INTERVAL_12HOUR,
+#            Client.KLINE_INTERVAL_1DAY]
+#
+# print("bullish & tradeable assets")
+# bullish_tradeable_map = {}
+# for ticker in tickers:
+#     aggregate_assets(bullish_tradeable_map, get_tradeable_and_bullish_assets(markets, ticker), ticker)
+#
+# bullish_tradeable_list = post_proc(bullish_tradeable_map)
+# print_assets(bullish_tradeable_list)
+#
+# print("bullish assets")
+# bullish_map = {}
+# for ticker in tickers:
+#     aggregate_assets(bullish_map, get_bullish_assets(markets, ticker), ticker)
+#
+# bullish_list = post_proc(bullish_map)
+# print_assets(bullish_list)
+#
+# print("tradeable assets")
+# tradeable_map = {}
+# for ticker in tickers:
+#     aggregate_assets(tradeable_map, get_tradeable_assets(markets, ticker), ticker)
+#
+# tradeable_list = post_proc(tradeable_map)
+# print_assets(tradeable_list)
 
 #
 # markets = binance.get_all_btc_currencies(exclude_markets)
@@ -400,62 +415,81 @@ print_assets(tradeable_list)
 # ticker = Client.KLINE_INTERVAL_12HOUR
 # tradeable_assets_12h = get_tradeable_assets(markets, ticker)
 
-asset = "OST"
-market = "{}BTC".format(asset)
-ticker = Client.KLINE_INTERVAL_1HOUR
-time_interval = get_interval_unit(ticker)
+def main():
+    asset = "NULS"
+    market = "{}BTC".format(asset)
+    ticker = Client.KLINE_INTERVAL_5MINUTE
+    time_interval = "40 hours ago"
 
-_klines = binance.get_klines_currency(market, ticker, time_interval)
+    _klines = binance.get_klines_currency(market, ticker, time_interval)
 
-r = relative_strength_index(get_closes(_klines))
+    save_to_file("/juno/", "klines", _klines)
+    _klines = get_pickled('/juno/', "klines")
 
-_closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
-_opens = np.array(list(map(lambda _x: float(_x[1]), _klines)))
-_high = list(map(lambda _x: float(_x[2]), _klines))
-_low = list(map(lambda _x: float(_x[3]), _klines))
+    r = relative_strength_index(get_closes(_klines))
 
-## MACD
+    _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
+    _opens = np.array(list(map(lambda _x: float(_x[1]), _klines)))
+    _high = list(map(lambda _x: float(_x[2]), _klines))
+    _low = list(map(lambda _x: float(_x[3]), _klines))
 
-macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+    ## MACD
 
-#
-start = 33
-# stop = -35
-stop = -1
+    macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
 
-t = is_tradeable(_closes, r, macd, macdsignal)
+    #
+    start = 33
+    # stop = -2175
+    stop = -1
 
-rsi_normal_cond = is_rsi_slope_condition(r, 45, 30, start, stop)
-rsi_normal_tight = is_rsi_slope_condition(r, 30, 20, start, stop)
-macd_normal_cond = is_macd_condition(macd, 45, start, stop)
-divergence_ratio = is_signal_divergence_ratio(macd, macdsignal, 0.1, start, stop)
-is_hl = is_higher_low(r, 45, start, stop)
+    t = is_tradeable(_closes, r, macd, macdsignal)
 
-plt.subplot2grid((3, 1), (0, 0))
-plt.plot(macd[start:stop:1], 'blue', lw=1)
-plt.plot(macdsignal[start:stop:1], 'red', lw=1)
-# plt.plot(ema9[-wins:], 'red', lw=1)
-# plt.plot(macd[-wins:], 'blue', lw=1)
+    rsi_normal_cond = is_rsi_slope_condition(r, 45, 30, start, stop)
+    rsi_normal_tight = is_rsi_slope_condition(r, 30, 20, start, stop)
+    macd_normal_cond = is_macd_condition(macd, 45, start, stop)
+    divergence_ratio = is_signal_divergence_ratio(macd, macdsignal, 0.1, start, stop)
+    is_hl = is_higher_low(r, 45, start, stop)
 
-# plt.subplot2grid((2, 1), (7, 0))
-#
-plt.plot(macd[start:stop:1] - macdsignal[start:stop:1], 'k', lw=2)
-plt.plot(np.zeros(len(macd[start:stop:1])), 'y', lw=2)
-# plt.axhline(y=0, color='b', linestyle='-')
-plt.subplot2grid((3, 1), (1, 0))
-plt.plot(r[start:stop:1], 'red', lw=1)
+    plt.subplot2grid((3, 1), (0, 0))
+    plt.plot(macd[start:stop:1], 'blue', lw=1)
+    plt.plot(macdsignal[start:stop:1], 'red', lw=1)
+    # plt.plot(ema9[-wins:], 'red', lw=1)
+    # plt.plot(macd[-wins:], 'blue', lw=1)
 
-# ma200 = talib.MA(_closes, timeperiod=200)
-ma100 = talib.MA(_closes, timeperiod=100)
-ma50 = talib.MA(_closes, timeperiod=50)
-ma20 = talib.MA(_closes, timeperiod=20)
+    # plt.subplot2grid((2, 1), (7, 0))
+    #
+    plt.plot(macd[start:stop:1] - macdsignal[start:stop:1], 'k', lw=2)
+    plt.plot(np.zeros(len(macd[start:stop:1])), 'y', lw=2)
+    # plt.axhline(y=0, color='b', linestyle='-')
+    plt.subplot2grid((3, 1), (1, 0))
+    plt.plot(r[start:stop:1], 'red', lw=1)
 
-b = bullishness_2(_opens, _closes, ma100, ma50, ma20, stop)
+    # ma200 = talib.MA(_closes, timeperiod=200)
+    ma100 = talib.MA(_closes, timeperiod=100)
+    ma50 = talib.MA(_closes, timeperiod=50)
+    ma20 = talib.MA(_closes, timeperiod=20)
+    ma7 = talib.MA(_closes, timeperiod=7)
 
-plt.subplot2grid((3, 1), (2, 0))
-plt.plot(ma100[start:stop:1], 'green', lw=1)
-plt.plot(ma50[start:stop:1], 'red', lw=1)
-plt.plot(ma20[start:stop:1], 'blue', lw=1)
-plt.show()
+    _curr_rsi = get_avg_last_2(r, stop)
 
-i = 1
+    _curr_ma_50 = get_avg_last(ma50, stop)
+    _curr_ma_20 = get_avg_last(ma20, stop)
+    _curr_ma_7 = get_avg_last(ma7, stop)
+    _curr_ma_7_2 = get_avg_last_2(ma7, stop)
+
+    l1 = get_last(ma7, stop)
+    l2 = get_last_2(ma7, stop)
+
+    b = bullishness_2(_opens, _closes, ma100, ma50, ma20, stop)
+
+    plt.subplot2grid((3, 1), (2, 0))
+    plt.plot(ma100[start:stop:1], 'green', lw=1)
+    plt.plot(ma50[start:stop:1], 'red', lw=1)
+    plt.plot(ma20[start:stop:1], 'blue', lw=1)
+    plt.show()
+
+    i = 1
+
+
+if __name__== "__main__":
+  main()
