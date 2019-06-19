@@ -347,7 +347,7 @@ def take_profit(asset):
             _last_candle = _klines[-1]
 
             _rsi = relative_strength_index(_closes)
-            _rsi_max = np.max(get_last(_rsi, _stop, 5))
+            _rsi_max = np.max(get_last(_rsi, _stop, 10))
             _index_rsi_peak = np.where(_rsi == _rsi_max)[0][0]
             _curr_rsi = get_last(_rsi, _stop)
 
@@ -355,8 +355,10 @@ def take_profit(asset):
             _curr_ma_20 = get_last(_ma20, _stop)
             _curr_ma_7 = get_last(_ma7, _stop)
 
+            _max_volume = get_max_volume(_klines)
+
             _c1 = rsi_falling_condition(_rsi_max, _curr_rsi)
-            _c2 = volume_condition(_klines, _index_rsi_peak)
+            _c2 = volume_condition(_klines, _max_volume)
             _c3 = candle_condition(_last_candle, _curr_ma_7, _curr_ma_50)
             _c4 = mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50)
 
@@ -379,6 +381,10 @@ def take_profit(asset):
                 time.sleep(40)
 
 
+def get_max_volume(_klines):
+    return np.max(list(map(lambda x: float(x[7]), _klines[-30:])))  # get max volume within last 30 minutes
+
+
 def mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50):
     return _curr_ma_7 > _curr_ma_20 > _curr_ma_50
 
@@ -389,14 +395,13 @@ def candle_condition(_kline, _curr_ma_7, _curr_ma_50):
     return _close < _curr_ma_7 or _low < _curr_ma_50
 
 
-def volume_condition(_klines, _index_max):
-    _vol_rsi_peak = float(_klines[_index_max][7])
+def volume_condition(_klines, _max_volume):
     _vol_curr = float(_klines[-1][7])
-    return 10.0 > _vol_curr / _vol_rsi_peak > 0.6
+    return 10.0 > _vol_curr / _max_volume > 0.6
 
 
 def rsi_falling_condition(_rsi_max, _curr_rsi):
-    return _rsi_max > 76.0 and _curr_rsi < 65.0 and (_rsi_max - _curr_rsi) / _rsi_max > 0.2
+    return _rsi_max - _curr_rsi > 0 and _rsi_max > 76.0 and _curr_rsi < 65.0 and (_rsi_max - _curr_rsi) / _rsi_max > 0.2
 
 
 def get_closes(_klines):
