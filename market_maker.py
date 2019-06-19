@@ -1,12 +1,4 @@
-import sys
-
-import numpy as np
-import talib
-
-from binance.client import Client
-
-from library import setup_logger, BuyAsset, observe_lower_price, price_to_string, get_interval_unit, binance, \
-    get_pickled, sell_limit, cancel_current_orders, take_profit
+from library import setup_logger, BuyAsset, observe_lower_price, price_to_string, take_profit
 
 
 logger = setup_logger("price-observer")
