@@ -10,7 +10,7 @@ from library import setup_logger, BuyAsset, observe_lower_price, price_to_string
 
 
 logger = setup_logger("price-observer")
-ba = BuyAsset("NULS", 0.00000020, 0.00000014, 0.00000030, 100)
+ba = BuyAsset("XRP", 0.00004739, 0.00004639, 0.00009439, 100)
 # take_profit(ba)
 
 
