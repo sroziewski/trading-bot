@@ -467,7 +467,7 @@ def check_buy_assets(assets):
     if not all(x.price_profit > x.price > x.stop_loss_price for x in assets):
         logger_global[0].error("BuyAsset prices not coherent, stopped")
         raise Exception("BuyAsset prices not coherent, stopped")
-    logger_global[0].info("Buy Asset ratios OK")
+    logger_global[0].info("Buy Asset prices : OK")
 
 
 def adjust_buy_asset_btc_volume(_buy_assets, _btc_value):

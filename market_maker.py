@@ -20,4 +20,7 @@ logger.info("Starting observing assets:\n{}".format(
 
 check_buy_assets(buy_assets)
 
-observed = observe_lower_price(buy_assets)
+observe_lower_price(buy_assets)
+
+logger.info("Stop loss and taking profits in progress only...")
+
