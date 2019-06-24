@@ -7,7 +7,8 @@ import matplotlib.font_manager as font_manager
 from binance.client import Client
 from matplotlib import collections  as mc
 
-from library import binance, get_interval_unit, AssetTicker, Asset, highest_bid, save_to_file, get_pickled
+from library import binance_obj, get_interval_unit, AssetTicker, Asset, highest_bid, save_to_file, get_pickled, \
+    exclude_markets
 
 
 def relative_strength_index(_closes, n=14):
@@ -173,7 +174,7 @@ def get_tradeable_assets(_markets, _ticker):
         _asset = _market.split("BTC")[0]
         if _asset:
             # print(_asset)
-            _closes = get_closes(binance.get_klines_currency(_market, _ticker, _time_interval))
+            _closes = get_closes(binance_obj.get_klines_currency(_market, _ticker, _time_interval))
             _rsi = relative_strength_index(_closes)
             _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
             if is_tradeable(_closes, _rsi, _macd, _macdsignal):
@@ -189,7 +190,7 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
         _asset = _market.split("BTC")[0]
         if _asset:
             # print(_asset)
-            _klines = binance.get_klines_currency(_market, _ticker, _time_interval)
+            _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
             _closes = get_closes(_klines)
             _opens = get_opens(_klines)
             _ma100 = talib.MA(_closes, timeperiod=100)
@@ -222,7 +223,7 @@ def get_bullish_assets(_markets, _ticker):
         _asset = _market.split("BTC")[0]
         if _asset:
             # print(_asset)
-            _klines = binance.get_klines_currency(_market, _ticker, _time_interval)
+            _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
             _closes = get_closes(_klines)
             _opens = get_opens(_klines)
             _ma100 = talib.MA(_closes, timeperiod=100)
@@ -263,9 +264,6 @@ def get_avg_last_2(_values, _stop, _window=2):
 
 def get_last_2(_values, _stop, _window=2):
     return _values[_stop - _window+1:_stop]
-
-
-
 
 
 def bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7, _stop=-1):
@@ -372,7 +370,7 @@ def print_assets(_assets):
 #            Client.KLINE_INTERVAL_2HOUR,
 #            Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
 #            Client.KLINE_INTERVAL_12HOUR,
-#            Client.KLINE_INTERVAL_1DAY]
+#            Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
 #
 # print("bullish & tradeable assets")
 # bullish_tradeable_map = {}
@@ -421,7 +419,7 @@ def main():
     ticker = Client.KLINE_INTERVAL_5MINUTE
     time_interval = "40 hours ago"
 
-    _klines = binance.get_klines_currency(market, ticker, time_interval)
+    _klines = binance_obj.get_klines_currency(market, ticker, time_interval)
 
     save_to_file("/juno/", "klines", _klines)
     _klines = get_pickled('/juno/', "klines")

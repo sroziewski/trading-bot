@@ -22,7 +22,8 @@ class Binance:
         return list(filter(lambda x: "BNB" in x, self.get_all_currencies()))
 
     def get_all_btc_currencies(self, _exclude_markets=[]):
-        return list(filter(lambda y: y not in _exclude_markets, filter(lambda x: "BTC" in x, self.get_all_currencies())))
+        return list(
+            filter(lambda y: y not in _exclude_markets, filter(lambda x: "BTC" in x, self.get_all_currencies())))
 
     # def get_klines_currency2(self, currency, datetime):
     #     return self.client.get_historical_klines(currency, Client.KLINE_INTERVAL_15MINUTE, datetime)
@@ -37,8 +38,8 @@ class Binance:
         return self.get_margin_currencies_2(self.get_all_btc_currencies(), datetime, level)
 
     def currency_efficiency_measure(self, mean_rsi, mean_candle_height, level):
-        relative_rsi = (-mean_rsi+level)/100.0
-        return 2/(1/relative_rsi + 1/mean_candle_height)
+        relative_rsi = (-mean_rsi + level) / 100.0
+        return 2 / (1 / relative_rsi + 1 / mean_candle_height)
 
     def get_margin_currencies_2(self, currencies, datetime, level=35.0):
         r = []
@@ -46,19 +47,21 @@ class Binance:
             lower, upper, closes, diff_high_low, highs, lows = self.bollinger_bands_currency(currency, datetime)
 
             last_lower_band = lower['col'].loc[len(lower.index) - 2]
-            last_lows = list(map(lambda x: x < last_lower_band, [float(lows[-2]), float(lows[-1]), float(lows[-3]), float(lows[-4])]))
+            last_lows = list(map(lambda x: x < last_lower_band,
+                                 [float(lows[-2]), float(lows[-1]), float(lows[-3]), float(lows[-4])]))
 
             if reduce(operator.or_, last_lows):
-                mean_candle_height = np.mean(np.divide(diff_high_low[len(closes) - 25:-1], np.array(list(map(lambda x: float(x), highs[len(closes) - 25:-1])))))
+                mean_candle_height = np.mean(np.divide(diff_high_low[len(closes) - 25:-1], np.array(
+                    list(map(lambda x: float(x), highs[len(closes) - 25:-1])))))
                 rsi = self.rsi(currency, datetime)
-                mean_rsi = np.mean(rsi[len(rsi)-25:])
+                mean_rsi = np.mean(rsi[len(rsi) - 25:])
                 r.append((currency, mean_rsi, self.currency_efficiency_measure(mean_rsi, mean_candle_height, level)))
 
         top_currencies = map(lambda x: (x[0], x[1], x[2]), sorted(r, key=lambda tup: tup[2], reverse=True))
         top_currencies = list(filter(lambda x: x[1] < level, top_currencies))[:10]
         print(top_currencies)
 
-        return list(map(lambda x: x[0],  top_currencies))
+        return list(map(lambda x: x[0], top_currencies))
 
     def get_margin_currencies(self, currencies, datetime, level=35.0):
         r = []
@@ -76,8 +79,8 @@ class Binance:
                     # mean_price = np.mean(closes[len(closes)-12:-2])
                     # subs = upper['col'][len(lower.index)-12:-2] - lower['col'][len(lower.index)-12:-2]
                     # smp = np.mean(subs / mean_price)
-                    if last_relative_change > 0.02: # change must be greater than 2%
-                        mean_candle_height = np.mean(diff_high_low[len(closes)-22:-2] / float(highs[-2]))
+                    if last_relative_change > 0.02:  # change must be greater than 2%
+                        mean_candle_height = np.mean(diff_high_low[len(closes) - 22:-2] / float(highs[-2]))
                         # we want to now the mean variability during 10 hrs
                         # print(currency, np.mean((closes[10:-4]-closes[-4])/closes[-4]))
                         # print(currency, mean_candle_height/mean_price)
@@ -139,28 +142,26 @@ class Binance:
         maxs = []
         for i in range(len(s)):
             if s[i] in d_min:
-                if i==0:
+                if i == 0:
                     mins.append(s[i])
-                elif s[i-1] not in d_min:
+                elif s[i - 1] not in d_min:
                     mins.append(s[i])
             if s[i] in d_max:
-                if i==0:
+                if i == 0:
                     maxs.append(s[i])
-                elif s[i-1] not in d_max:
+                elif s[i - 1] not in d_max:
                     maxs.append(s[i])
         return mins, maxs
 
     def filter_signal(self, min, max, rsi):
         i = 0
 
-
     def bollinger_bands_currency(self, currency, datetime):
         klines = self.get_klines_currency(currency, datetime)
-        diff_high_low = np.array(list(map(lambda x: float(x[2])-float(x[3]), klines)), dtype=np.float32)
+        diff_high_low = np.array(list(map(lambda x: float(x[2]) - float(x[3]), klines)), dtype=np.float32)
         highs = list(map(lambda x: x[2], klines))
         lows = list(map(lambda x: x[3], klines))
         closes = np.array(list(map(lambda x: x[4], klines)), dtype=np.float32)
-
 
         lows_pd = pd.DataFrame(lows, columns=['col'])
         closes_pd = pd.DataFrame(closes, columns=['col'])
@@ -175,11 +176,10 @@ class Binance:
 
     def bollinger_bands_currency2(self, currency, datetime):
         klines = self.get_klines_currency(currency, datetime)
-        diff_high_low = np.array(list(map(lambda x: float(x[2])-float(x[3]), klines)), dtype=np.float32)
+        diff_high_low = np.array(list(map(lambda x: float(x[2]) - float(x[3]), klines)), dtype=np.float32)
         highs = list(map(lambda x: x[2], klines))
         lows = list(map(lambda x: x[3], klines))
         closes = np.array(list(map(lambda x: x[4], klines)), dtype=np.float32)
-
 
         lows_pd = pd.DataFrame(lows, columns=['col'])
         closes_pd = pd.DataFrame(closes, columns=['col'])

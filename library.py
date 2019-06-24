@@ -1,4 +1,6 @@
 import sys
+from functools import reduce
+
 import talib
 import threading
 import time
@@ -31,7 +33,8 @@ config = Config()
 
 key_dir = config.get_parameter('key_dir')
 logger_global = []
-exclude_markets = ['TFUELBTC', 'FTMBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC', 'SALTBTC',
+exclude_markets = ['TFUELBTC', 'ALGOBTC', 'FTMBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
+                   'SALTBTC',
                    'SUBBTC',
                    'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
                    'TUSDBTC', 'PAXBTC', 'USDCBTC', 'BCHSVBTC']
@@ -44,7 +47,7 @@ class Asset(object):
         self.price = price
         self.stop_loss = stop_loss_price
         self.price_profit = price_profit
-        self.ratio = ratio  # buy for ratio [%] of all possessing BTC
+        self.ratio = ratio  # buying ratio [%] of all possessed BTC
         self.ticker = ticker
         self.barrier = barrier
         self.buy_price = None
@@ -54,6 +57,9 @@ class BuyAsset(Asset):
     def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, ticker=Client.KLINE_INTERVAL_1MINUTE,
                  barrier=False):
         super().__init__(name, price, stop_loss_price, price_profit, ratio, ticker, barrier)
+
+    def set_btc_asset_buy_value(self, _total_btc):
+        self.btc_asset_buy_value = self.ratio / 100 * _total_btc
 
 
 class AssetTicker(object):
@@ -108,7 +114,8 @@ def observe_lower_price(_assets: Asset):
                 if is_buy_possible(_asset, _btc_value, _params):
                     BuyStrategy(_asset, _btc_value, _params).run()
                 else:
-                    logger_global[0].warning("{} buying not POSSIBLE, only {} BTC left".format(_asset.market, price_to_string(_btc_value)))
+                    logger_global[0].warning(
+                        "{} buying not POSSIBLE, only {} BTC left".format(_asset.market, price_to_string(_btc_value)))
                     return
                 if len(_assets) == 0:
                     logger_global[0].info("All assets OBSERVED, exiting")
@@ -118,8 +125,8 @@ def observe_lower_price(_assets: Asset):
 
 def is_buy_possible(_asset, _btc_value, _params):
     _min_amount = float(_params['minQty']) * _asset.price
-    # return 0.01 < _btc_value > _min_amount
-    return True
+    return 0.01 < _btc_value > _min_amount
+    # return True
 
 
 def get_remaining_btc():
@@ -151,7 +158,7 @@ keys = get_pickled(key_dir, ".keys")
 
 client = Client(keys[0], keys[1])
 
-binance = Binance(keys[0], keys[1])
+binance_obj = Binance(keys[0], keys[1])
 
 sat = 1e-8
 
@@ -175,7 +182,7 @@ def get_interval_unit(_ticker):
 
 
 def stop_signal(market, time_interval, time0, stop_price, _times=4):
-    _klines = binance.get_klines_currency(market, time_interval, time0)
+    _klines = binance_obj.get_klines_currency(market, time_interval, time0)
     if len(_klines) > 0:
         _mean_close_price = np.mean(list(map(lambda x: float(x[4]), _klines[-_times:])))
         return True if _mean_close_price <= stop_price else False
@@ -232,7 +239,8 @@ def get_lot_size_params(market):
 
 
 def get_buying_asset_quantity(asset, total_btc):
-    _useable_btc = (1 - general_fee) * asset.ratio / 100 * total_btc
+    # _useable_btc = (1 - general_fee) * asset.ratio / 100 * total_btc
+    _useable_btc = (1 - general_fee) * asset.btc_asset_buy_value
     return _useable_btc / asset.buy_price
 
 
@@ -251,7 +259,7 @@ def adjust_quantity(quantity, lot_size_params):
 
 def buy_order(_asset, _quantity):
     _price_str = price_to_string(_asset.price)
-    # _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
+    _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
     logger_global[0].info(
         "{} Buy limit order placed: price={} BTC, quantity={} ".format(_asset.market, _price_str, _quantity))
 
@@ -336,7 +344,7 @@ def take_profit(asset):
     _time_interval = get_interval_unit(_ticker)
     while 1:
         try:
-            _klines = binance.get_klines_currency(asset.market, _ticker, _time_interval)
+            _klines = binance_obj.get_klines_currency(asset.market, _ticker, _time_interval)
             # _klines = get_pickled('/juno/', "klines")
             _closes = get_closes(_klines)
             _ma50 = talib.MA(_closes, timeperiod=50)
@@ -443,12 +451,21 @@ def get_avg_last(_values, _stop, _window=1):
 
 
 def get_last(_values, _stop, _window=1):
-    return _values[_stop - _window+1:]
+    return _values[_stop - _window + 1:]
 
 
 def get_avg_last_2(_values, _stop, _window=2):
-    return np.mean(_values[_stop - _window+1:_stop])
+    return np.mean(_values[_stop - _window + 1:_stop])
 
 
 def get_last_2(_values, _stop, _window=2):
     return _values[_stop - _window:_stop]
+
+
+def check_buy_assets(assets):
+    if reduce(lambda x, y: x + y, map(lambda z: z.ratio, assets)) > 100:
+        raise Exception("BuyAsset ratios greater than 100 percent, stopped")
+
+
+def adjust_buy_asset_btc_volume(_buy_assets, _btc_value):
+    list(map(lambda x: x.set_btc_asset_buy_value(_btc_value), _buy_assets))
