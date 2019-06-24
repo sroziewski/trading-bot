@@ -108,7 +108,7 @@ def observe_lower_price(_assets: Asset):
         for _asset in _assets:
             if stop_signal(get_market(_asset), _asset.ticker, get_interval_unit(_asset.ticker), _asset.price, 1):
                 _assets = list(
-                    filter(lambda _a: _a.name != _asset.name, _assets))  # remove an observed asset from the list
+                    filter(lambda _a: _a.name != _asset.name, _assets))  # remove the observed asset from the list
                 _btc_value = get_remaining_btc()
                 _params = get_lot_size_params(_asset.market)
                 if is_buy_possible(_asset, _btc_value, _params):
