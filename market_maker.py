@@ -18,8 +18,6 @@ adjust_buy_asset_btc_volume(buy_assets, btc_value)
 logger.info("Starting observing assets:\n{}".format(
     '\n'.join(map(lambda _a: "{} :\t{}".format(_a.name, price_to_string(_a.price)), buy_assets))))
 
-# logger.info("Checking BuyAsset ratios...")
-# check_buy_assets(buy_assets)
-# logger.info("Buy Asset ratios OK")
+check_buy_assets(buy_assets)
 
 observed = observe_lower_price(buy_assets)

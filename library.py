@@ -45,7 +45,7 @@ class Asset(object):
         self.name = name
         self.market = "{}BTC".format(name)
         self.price = price
-        self.stop_loss = stop_loss_price
+        self.stop_loss_price = stop_loss_price
         self.price_profit = price_profit
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
         self.ticker = ticker
@@ -314,18 +314,18 @@ def setup_logger(symbol):
 
 
 def stop_loss(_asset):
-    ticker = Client.KLINE_INTERVAL_1MINUTE
-    time_interval = "6 hours ago"
-    stop_price = _asset.stop_loss
+    _ticker = Client.KLINE_INTERVAL_1MINUTE
+    _time_interval = "6 hours ago"
+    _stop_price = _asset.stop_loss_price
 
     logger_global[0].info("Starting {} stop-loss maker".format(_asset.market))
-    logger_global[0].info("Stop price {} is set up to : {:.8f} BTC".format(_asset.market, stop_price))
+    logger_global[0].info("Stop price {} is set up to : {:.8f} BTC".format(_asset.market, _stop_price))
 
     while 1:
         try:
-            stop = stop_signal(_asset.market, ticker, time_interval, stop_price, 1)
+            _stop_sl = stop_signal(_asset.market, _ticker, _time_interval, _stop_price, 1)
             # stop = True
-            if stop:
+            if _stop_sl:
                 sell_limit_stop_loss(_asset.market, _asset.name)
                 logger_global[0].info("Stop-loss LIMIT {} order has been made, exiting".format(_asset.market))
                 sys.exit(0)
@@ -463,8 +463,11 @@ def get_last_2(_values, _stop, _window=2):
 
 
 def check_buy_assets(assets):
-    if reduce(lambda x, y: x + y, map(lambda z: z.ratio, assets)) > 100:
-        raise Exception("BuyAsset ratios greater than 100 percent, stopped")
+    logger_global[0].info("Checking BuyAsset prices...")
+    if not all(x.price_profit > x.price > x.stop_loss_price for x in assets):
+        logger_global[0].error("BuyAsset prices not coherent, stopped")
+        raise Exception("BuyAsset prices not coherent, stopped")
+    logger_global[0].info("Buy Asset ratios OK")
 
 
 def adjust_buy_asset_btc_volume(_buy_assets, _btc_value):
