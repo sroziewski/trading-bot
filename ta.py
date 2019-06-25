@@ -179,7 +179,7 @@ def get_tradeable_assets(_markets, _ticker):
                 _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
                 if is_tradeable(_closes, _rsi, _macd, _macdsignal):
                     _tradeable_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
-        except ValueError:
+        except Exception:
             print('Value Error for {} in {}'.format(_ticker, _market))
     sort_assets(_tradeable_assets)
     return _tradeable_assets
@@ -215,7 +215,7 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
 
                 if _cond1 and _cond2:
                     _assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
-        except ValueError:
+        except Exception:
             print('Value Error for {} in {}'.format(_ticker, _market))
     sort_assets(_assets)
     return _assets
@@ -248,7 +248,7 @@ def get_bullish_assets(_markets, _ticker):
 
                 if _cond1:
                     _bullish_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
-        except ValueError:
+        except Exception:
             print('Value Error for {} in {}'.format(_ticker, _market))
     sort_assets(_bullish_assets)
     return _bullish_assets
@@ -370,16 +370,16 @@ def print_assets(_assets):
         print(_a.name + " : " + ' '.join(_a.tickers)+" bid price : "+"{:.8f}".format(_a.bid_price))
 
 
-markets = binance_obj.get_all_btc_currencies(exclude_markets)
-# ticker = Client.KLINE_INTERVAL_30MINUTE
-# tradeable_assets_30min = get_tradeable_and_bullish_assets(markets, ticker)
-
-tickers = [Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
-           Client.KLINE_INTERVAL_2HOUR,
-           Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
-           Client.KLINE_INTERVAL_12HOUR,
-           Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
-
+# markets = binance_obj.get_all_btc_currencies(exclude_markets)
+# # ticker = Client.KLINE_INTERVAL_30MINUTE
+# # tradeable_assets_30min = get_tradeable_and_bullish_assets(markets, ticker)
+#
+# tickers = [Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
+#            Client.KLINE_INTERVAL_2HOUR,
+#            Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
+#            Client.KLINE_INTERVAL_12HOUR,
+#            Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
+#
 # print("bullish & tradeable assets")
 # bullish_tradeable_map = {}
 # for ticker in tickers:

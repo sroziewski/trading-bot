@@ -33,7 +33,7 @@ config = Config()
 
 key_dir = config.get_parameter('key_dir')
 logger_global = []
-exclude_markets = ['TFUELBTC', 'ALGOBTC', 'FTMBTC', 'PHBBTC', 'ONEBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
+exclude_markets = ['BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
                    'SALTBTC',
                    'SUBBTC',
                    'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
