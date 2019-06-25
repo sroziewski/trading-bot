@@ -177,7 +177,7 @@ def get_interval_unit(_ticker):
         Client.KLINE_INTERVAL_8HOUR: "1200 hours ago",
         Client.KLINE_INTERVAL_12HOUR: "75 days ago",
         Client.KLINE_INTERVAL_1DAY: "150 days ago",
-        Client.KLINE_INTERVAL_3DAY: "360 days ago",
+        Client.KLINE_INTERVAL_3DAY: "350 days ago",
     }[_ticker]
 
 

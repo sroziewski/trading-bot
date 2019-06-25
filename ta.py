@@ -1,9 +1,8 @@
+import binance
 import numpy as np
-from math import atan
 
 import matplotlib.pyplot as plt
 import talib
-import matplotlib.font_manager as font_manager
 from binance.client import Client
 from matplotlib import collections  as mc
 
@@ -172,13 +171,16 @@ def get_tradeable_assets(_markets, _ticker):
     _tradeable_assets = []
     for _market in _markets:
         _asset = _market.split("BTC")[0]
-        if _asset:
-            # print(_asset)
-            _closes = get_closes(binance_obj.get_klines_currency(_market, _ticker, _time_interval))
-            _rsi = relative_strength_index(_closes)
-            _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
-            if is_tradeable(_closes, _rsi, _macd, _macdsignal):
-                _tradeable_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+        try:
+            if _asset:
+                # print(_asset)
+                _closes = get_closes(binance_obj.get_klines_currency(_market, _ticker, _time_interval))
+                _rsi = relative_strength_index(_closes)
+                _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+                if is_tradeable(_closes, _rsi, _macd, _macdsignal):
+                    _tradeable_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+        except ValueError:
+            print('Value Error for {} in {}'.format(_ticker, _market))
     sort_assets(_tradeable_assets)
     return _tradeable_assets
 
@@ -188,30 +190,33 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
     _assets = []
     for _market in _markets:
         _asset = _market.split("BTC")[0]
-        if _asset:
-            # print(_asset)
-            _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
-            _closes = get_closes(_klines)
-            _opens = get_opens(_klines)
-            _ma100 = talib.MA(_closes, timeperiod=100)
-            _ma50 = talib.MA(_closes, timeperiod=50)
-            _ma20 = talib.MA(_closes, timeperiod=20)
-            _ma7 = talib.MA(_closes, timeperiod=7)
+        try:
+            if _asset:
+                # print(_asset)
+                _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
+                _closes = get_closes(_klines)
+                _opens = get_opens(_klines)
+                _ma100 = talib.MA(_closes, timeperiod=100)
+                _ma50 = talib.MA(_closes, timeperiod=50)
+                _ma20 = talib.MA(_closes, timeperiod=20)
+                _ma7 = talib.MA(_closes, timeperiod=7)
 
-            _cond1 = bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7) \
-                     or bullishness_01(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_1(_opens, _closes,
-                                                                                                     _ma100, _ma50,
-                                                                                                     _ma20,
-                                                                                                     _ma7) \
-                     or bullishness_2(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_3(_opens, _closes,
-                                                                                                    _ma100, _ma50,
-                                                                                                    _ma20, _ma7)
-            _rsi = relative_strength_index(_closes)
-            _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
-            _cond2 = is_tradeable(_closes, _rsi, _macd, _macdsignal)
+                _cond1 = bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7) \
+                         or bullishness_01(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_1(_opens, _closes,
+                                                                                                         _ma100, _ma50,
+                                                                                                         _ma20,
+                                                                                                         _ma7) \
+                         or bullishness_2(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_3(_opens, _closes,
+                                                                                                        _ma100, _ma50,
+                                                                                                        _ma20, _ma7)
+                _rsi = relative_strength_index(_closes)
+                _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+                _cond2 = is_tradeable(_closes, _rsi, _macd, _macdsignal)
 
-            if _cond1 and _cond2:
-                _assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+                if _cond1 and _cond2:
+                    _assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+        except ValueError:
+            print('Value Error for {} in {}'.format(_ticker, _market))
     sort_assets(_assets)
     return _assets
 
@@ -220,28 +225,31 @@ def get_bullish_assets(_markets, _ticker):
     _time_interval = get_interval_unit(_ticker)
     _bullish_assets = []
     for _market in _markets:
-        _asset = _market.split("BTC")[0]
-        if _asset:
-            # print(_asset)
-            _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
-            _closes = get_closes(_klines)
-            _opens = get_opens(_klines)
-            _ma100 = talib.MA(_closes, timeperiod=100)
-            _ma50 = talib.MA(_closes, timeperiod=50)
-            _ma20 = talib.MA(_closes, timeperiod=20)
-            _ma7 = talib.MA(_closes, timeperiod=7)
+        try:
+            _asset = _market.split("BTC")[0]
+            if _asset:
+                # print(_asset)
+                _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
+                _closes = get_closes(_klines)
+                _opens = get_opens(_klines)
+                _ma100 = talib.MA(_closes, timeperiod=100)
+                _ma50 = talib.MA(_closes, timeperiod=50)
+                _ma20 = talib.MA(_closes, timeperiod=20)
+                _ma7 = talib.MA(_closes, timeperiod=7)
 
-            _cond1 = bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7) \
-                     or bullishness_01(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_1(_opens, _closes,
-                                                                                                     _ma100, _ma50,
-                                                                                                     _ma20,
-                                                                                                     _ma7) \
-                     or bullishness_2(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_3(_opens, _closes,
-                                                                                                    _ma100, _ma50,
-                                                                                                    _ma20, _ma7)
+                _cond1 = bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7) \
+                         or bullishness_01(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_1(_opens, _closes,
+                                                                                                         _ma100, _ma50,
+                                                                                                         _ma20,
+                                                                                                         _ma7) \
+                         or bullishness_2(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_3(_opens, _closes,
+                                                                                                        _ma100, _ma50,
+                                                                                                        _ma20, _ma7)
 
-            if _cond1:
-                _bullish_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+                if _cond1:
+                    _bullish_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+        except ValueError:
+            print('Value Error for {} in {}'.format(_ticker, _market))
     sort_assets(_bullish_assets)
     return _bullish_assets
 
@@ -362,16 +370,16 @@ def print_assets(_assets):
         print(_a.name + " : " + ' '.join(_a.tickers)+" bid price : "+"{:.8f}".format(_a.bid_price))
 
 
-# markets = binance.get_all_btc_currencies(exclude_markets)
-# # ticker = Client.KLINE_INTERVAL_30MINUTE
-# # tradeable_assets_30min = get_tradeable_and_bullish_assets(markets, ticker)
-#
-# tickers = [Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
-#            Client.KLINE_INTERVAL_2HOUR,
-#            Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
-#            Client.KLINE_INTERVAL_12HOUR,
-#            Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
-#
+markets = binance_obj.get_all_btc_currencies(exclude_markets)
+# ticker = Client.KLINE_INTERVAL_30MINUTE
+# tradeable_assets_30min = get_tradeable_and_bullish_assets(markets, ticker)
+
+tickers = [Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
+           Client.KLINE_INTERVAL_2HOUR,
+           Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
+           Client.KLINE_INTERVAL_12HOUR,
+           Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
+
 # print("bullish & tradeable assets")
 # bullish_tradeable_map = {}
 # for ticker in tickers:
