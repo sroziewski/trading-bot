@@ -95,11 +95,11 @@ class BuyStrategy(Strategy):
             self.set_take_profit()
 
     def set_stop_loss(self):
-        _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,), name='_stop_loss_maker')
+        _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,), name='_stop_loss_maker_{}'.format(self.asset.name))
         _stop_loss_maker.start()
 
     def set_take_profit(self):
-        _take_profit_maker = threading.Thread(target=take_profit, args=(self.asset,), name='_take_profit_maker')
+        _take_profit_maker = threading.Thread(target=take_profit, args=(self.asset,), name='_take_profit_maker_{}'.format(self.asset.name))
         _take_profit_maker.start()
 
 

@@ -21,5 +21,5 @@ logger.info("Starting observing assets:\n{}".format(
     '\n'.join(map(lambda _a: "{} :\t{}".format(_a.name, price_to_string(_a.price)), buy_assets))))
 observe_lower_price(buy_assets)
 
-logger.info("Stop loss and taking profits in progress only...")
+logger.info("observe_lower_price -- has finished. Stop loss and taking profits in progress only...")
 
