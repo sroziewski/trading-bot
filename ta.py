@@ -202,7 +202,8 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
                 _ma7 = talib.MA(_closes, timeperiod=7)
 
                 _cond1 = bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7) \
-                         or bullishness_01(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_1(_opens, _closes,
+                         or bullishness_01(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_1(_opens,
+                                                                                                         _closes,
                                                                                                          _ma100, _ma50,
                                                                                                          _ma20,
                                                                                                          _ma7) \
@@ -238,7 +239,8 @@ def get_bullish_assets(_markets, _ticker):
                 _ma7 = talib.MA(_closes, timeperiod=7)
 
                 _cond1 = bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7) \
-                         or bullishness_01(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_1(_opens, _closes,
+                         or bullishness_01(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_1(_opens,
+                                                                                                         _closes,
                                                                                                          _ma100, _ma50,
                                                                                                          _ma20,
                                                                                                          _ma7) \
@@ -263,15 +265,15 @@ def get_avg_last(_values, _stop, _window=1):
 
 
 def get_last(_values, _stop, _window=1):
-    return _values[_stop - _window+1:]
+    return _values[_stop - _window + 1:]
 
 
 def get_avg_last_2(_values, _stop, _window=2):
-    return np.mean(_values[_stop - _window+1:_stop])
+    return np.mean(_values[_stop - _window + 1:_stop])
 
 
 def get_last_2(_values, _stop, _window=2):
-    return _values[_stop - _window+1:_stop]
+    return _values[_stop - _window + 1:_stop]
 
 
 def bullishness_00(_opens, _closes, _ma100, _ma50, _ma20, _ma7, _stop=-1):
@@ -367,42 +369,42 @@ def post_proc(_map):
 
 def print_assets(_assets):
     for _a in _assets:
-        print(_a.name + " : " + ' '.join(_a.tickers)+" bid price : "+"{:.8f}".format(_a.bid_price))
+        print(_a.name + " : " + ' '.join(_a.tickers) + " bid price : " + "{:.8f}".format(_a.bid_price))
 
 
-# markets = binance_obj.get_all_btc_currencies(exclude_markets)
-# # ticker = Client.KLINE_INTERVAL_30MINUTE
-# # tradeable_assets_30min = get_tradeable_and_bullish_assets(markets, ticker)
-#
-# tickers = [Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
-#            Client.KLINE_INTERVAL_2HOUR,
-#            Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
-#            Client.KLINE_INTERVAL_12HOUR,
-#            Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
-#
-# print("bullish & tradeable assets")
-# bullish_tradeable_map = {}
-# for ticker in tickers:
-#     aggregate_assets(bullish_tradeable_map, get_tradeable_and_bullish_assets(markets, ticker), ticker)
-#
-# bullish_tradeable_list = post_proc(bullish_tradeable_map)
-# print_assets(bullish_tradeable_list)
-#
-# print("bullish assets")
-# bullish_map = {}
-# for ticker in tickers:
-#     aggregate_assets(bullish_map, get_bullish_assets(markets, ticker), ticker)
-#
-# bullish_list = post_proc(bullish_map)
-# print_assets(bullish_list)
-#
-# print("tradeable assets")
-# tradeable_map = {}
-# for ticker in tickers:
-#     aggregate_assets(tradeable_map, get_tradeable_assets(markets, ticker), ticker)
-#
-# tradeable_list = post_proc(tradeable_map)
-# print_assets(tradeable_list)
+def analyze_markets():
+    markets = binance_obj.get_all_btc_currencies(exclude_markets)
+
+    tickers = [Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
+               Client.KLINE_INTERVAL_2HOUR,
+               Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
+               Client.KLINE_INTERVAL_12HOUR,
+               Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
+
+    print("bullish & tradeable assets")
+    bullish_tradeable_map = {}
+    for ticker in tickers:
+        aggregate_assets(bullish_tradeable_map, get_tradeable_and_bullish_assets(markets, ticker), ticker)
+
+    bullish_tradeable_list = post_proc(bullish_tradeable_map)
+    print_assets(bullish_tradeable_list)
+
+    print("bullish assets")
+    bullish_map = {}
+    for ticker in tickers:
+        aggregate_assets(bullish_map, get_bullish_assets(markets, ticker), ticker)
+
+    bullish_list = post_proc(bullish_map)
+    print_assets(bullish_list)
+
+    print("tradeable assets")
+    tradeable_map = {}
+    for ticker in tickers:
+        aggregate_assets(tradeable_map, get_tradeable_assets(markets, ticker), ticker)
+
+    tradeable_list = post_proc(tradeable_map)
+    print_assets(tradeable_list)
+
 
 #
 # markets = binance.get_all_btc_currencies(exclude_markets)
@@ -497,5 +499,5 @@ def main():
     i = 1
 
 
-if __name__== "__main__":
-  main()
+if __name__ == "__main__":
+    main()

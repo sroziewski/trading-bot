@@ -89,18 +89,29 @@ class BuyStrategy(Strategy):
         _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
         _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
         if _quantity_to_buy:
-            buy_order(self.asset, _quantity_to_buy)
+            _order_id = buy_order(self.asset, _quantity_to_buy)
             self.set_stop_loss()
+            wait_until_order_filled(self.asset.market, _order_id)
             sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
             self.set_take_profit()
 
     def set_stop_loss(self):
-        _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,), name='_stop_loss_maker_{}'.format(self.asset.name))
+        _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,),
+                                            name='_stop_loss_maker_{}'.format(self.asset.name))
         _stop_loss_maker.start()
 
     def set_take_profit(self):
-        _take_profit_maker = threading.Thread(target=take_profit, args=(self.asset,), name='_take_profit_maker_{}'.format(self.asset.name))
+        _take_profit_maker = threading.Thread(target=take_profit, args=(self.asset,),
+                                              name='_take_profit_maker_{}'.format(self.asset.name))
         _take_profit_maker.start()
+
+
+def wait_until_order_filled(_market, _order_id):
+    _status = {'status': None}
+    while _status['status'] != 'FILLED':
+        _status = client.get_order(symbol=_market, orderId=_order_id)
+        time.sleep(1)
+    logger_global[0].info("{} OrderId : {} has been filled".format(_market, _order_id))
 
 
 def observe_lower_price(_assets: Asset):
@@ -261,7 +272,9 @@ def buy_order(_asset, _quantity):
     _price_str = price_to_string(_asset.price)
     _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
     logger_global[0].info(
-        "{} Buy limit order placed: price={} BTC, quantity={} ".format(_asset.market, _price_str, _quantity))
+        "{} Buy limit order (ID : {}) placed: price={} BTC, quantity={} ".format(_asset.market, _resp['orderId'],
+                                                                                 _price_str, _quantity))
+    return _resp['orderId']
 
 
 def price_to_string(_price):

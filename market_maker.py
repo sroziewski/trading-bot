@@ -8,8 +8,9 @@ ba = BuyAsset("XRP", 0.00004739, 0.00004639, 0.00009439, 100)
 
 # take_profit(ba)
 
-buy_assets = [BuyAsset('SYS', 0.00000419, 0.00000404, 0.00000832, 50),
-              BuyAsset('XRP', 0.00004086, 0.00003956, 0.00011021, 100)]
+buy_assets = [
+    BuyAsset('XRP', 0.00003718, 0.00003631, 0.00011021, 1)
+]
 
 btc_value = get_remaining_btc()
 
