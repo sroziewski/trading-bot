@@ -6,7 +6,7 @@ logger = setup_logger("price-observer")
 # take_profit(ba)
 
 buy_assets = [
-    BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 100)
+    BuyAsset('CELR', 0.00000118, 0.00000101, 0.00000213, 100, 10)
 ]
 
 btc_value = get_remaining_btc()
