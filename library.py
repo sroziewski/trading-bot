@@ -41,22 +41,24 @@ exclude_markets = ['BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
 
 
 class Asset(object):
-    def __init__(self, name, price, stop_loss_price, price_profit, ratio, ticker, barrier=False):
+    def __init__(self, name, price, stop_loss_price, price_profit, ratio, profit, ticker, barrier=False):
         self.name = name
         self.market = "{}BTC".format(name)
         self.price = price
         self.stop_loss_price = stop_loss_price
         self.price_profit = price_profit
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
+        self.profit = profit  # taking profit only when it's higher than profit %
         self.ticker = ticker
         self.barrier = barrier
         self.buy_price = None
 
 
 class BuyAsset(Asset):
-    def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, ticker=Client.KLINE_INTERVAL_1MINUTE,
+    def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, profit=5,
+                 ticker=Client.KLINE_INTERVAL_1MINUTE,
                  barrier=False):
-        super().__init__(name, price, stop_loss_price, price_profit, ratio, ticker, barrier)
+        super().__init__(name, price, stop_loss_price, price_profit, ratio, profit, ticker, barrier)
 
     def set_btc_asset_buy_value(self, _total_btc):
         self.btc_asset_buy_value = self.ratio / 100 * _total_btc
@@ -352,14 +354,33 @@ def stop_loss(_asset):
                 time.sleep(50)
 
 
+def is_profitable(asset, curr_price):
+    return (curr_price - asset.buy_price) / asset.buy_price >= asset.profit / 100.0
+
+
+def adjust_ask_price(asset, _prev_kline, _old_price, _high_price_max, _curr_high):
+    _hp = float(_prev_kline[2])  # high price
+    if _hp - _high_price_max > 0 or np.abs(_hp - _high_price_max) / _hp < 0.005:
+        _hp = _curr_high
+        logger_global[0].info("{} ask price adjusted with current high price : {} -> {}".format(asset.market, _old_price, _hp))
+    else:
+        logger_global[0].info("{} ask price adjusted with previous candle high price : {} -> {}".format(asset.market, _old_price, _hp))
+    return _hp
+
+
 def take_profit(asset):
     _ticker = Client.KLINE_INTERVAL_1MINUTE
     _time_interval = get_interval_unit(_ticker)
+    _prev_kline = None
+    _time_frame = 60  # last 60 candles
     while 1:
         try:
             _klines = binance_obj.get_klines_currency(asset.market, _ticker, _time_interval)
             # _klines = get_pickled('/juno/', "klines")
+            # _klines = _klines[33:-871]
             _closes = get_closes(_klines)
+            _highs = get_highs(_klines)
+
             _ma50 = talib.MA(_closes, timeperiod=50)
             _ma20 = talib.MA(_closes, timeperiod=20)
             _ma7 = talib.MA(_closes, timeperiod=7)
@@ -367,8 +388,15 @@ def take_profit(asset):
             _stop = -1
             _last_candle = _klines[-1]
 
+            # plt.plot(_ma50[0:_stop:1], 'red', lw=1)
+            # plt.plot(_ma20[0:_stop:1], 'blue', lw=1)
+            # plt.plot(_ma7[0:_stop:1], 'green', lw=1)
+            # plt.show()
+
+            _high_price_max = np.max(get_last(_highs, _stop, _time_frame))
+
             _rsi = relative_strength_index(_closes)
-            _rsi_max = np.max(get_last(_rsi, _stop, 10))
+            _rsi_max = np.max(get_last(_rsi, _stop, _time_frame))
             _index_rsi_peak = np.where(_rsi == _rsi_max)[0][0]
             _curr_rsi = get_last(_rsi, _stop)
 
@@ -376,22 +404,27 @@ def take_profit(asset):
             _curr_ma_20 = get_last(_ma20, _stop)
             _curr_ma_7 = get_last(_ma7, _stop)
 
-            _max_volume = get_max_volume(_klines)
+            _max_volume = get_max_volume(_klines, _time_frame)
 
             _c1 = rsi_falling_condition(_rsi_max, _curr_rsi)
             _c2 = volume_condition(_klines, _max_volume)
             _c3 = candle_condition(_last_candle, _curr_ma_7, _curr_ma_50)
             _c4 = mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50)
 
-            if _c1 and _c2 and _c3 and _c4:
+            if is_profitable(asset, _closes[-1]) and _c1 and _c2 and _c3 and _c4:
                 logger_global[0].info("Taking profits {} conditions satisfied...".format(asset.market))
                 _curr_open = float(_last_candle[1])
-                _sold = sell_limit(asset.market, asset.name, _curr_open)
+                _ask_price = _curr_open
+                if _curr_open < _curr_ma_7:
+                    _curr_high = float(_last_candle[2])
+                    _ask_price = adjust_ask_price(asset, _prev_kline, _ask_price, _high_price_max, _curr_high)
+                _sold = sell_limit(asset.market, asset.name, _ask_price)
                 if _sold:
                     logger_global[0].info("Took profits {}: LIMIT order has been made, exiting".format(asset.market))
                 else:
                     logger_global[0].error("Took profits {}: selling not POSSIBLE, exiting".format(asset.market))
                 sys.exit(0)
+            _prev_kline = _last_candle
             time.sleep(40)
         except Exception as err:
             if isinstance(err, requests.exceptions.ConnectionError):
@@ -402,8 +435,8 @@ def take_profit(asset):
                 time.sleep(40)
 
 
-def get_max_volume(_klines):
-    return np.max(list(map(lambda x: float(x[7]), _klines[-30:])))  # get max volume within last 30 minutes
+def get_max_volume(_klines, _time_frame):
+    return np.max(list(map(lambda x: float(x[7]), _klines[-int(_time_frame/2):])))  # get max volume within last 30 klines
 
 
 def mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50):
@@ -427,6 +460,10 @@ def rsi_falling_condition(_rsi_max, _curr_rsi):
 
 def get_closes(_klines):
     return np.array(list(map(lambda _x: float(_x[4]), _klines)))
+
+
+def get_highs(_klines):
+    return np.array(list(map(lambda _x: float(_x[2]), _klines)))
 
 
 def relative_strength_index(_closes, n=14):
@@ -459,8 +496,8 @@ def relative_strength_index(_closes, n=14):
     return _rsi
 
 
-def get_avg_last(_values, _stop, _window=1):
-    return np.mean(_values[_stop - _window:])
+def get_avg_last(_values, _stop, _window=2):
+    return np.mean(_values[_stop - _window + 1:])
 
 
 def get_last(_values, _stop, _window=1):
@@ -471,8 +508,8 @@ def get_avg_last_2(_values, _stop, _window=2):
     return np.mean(_values[_stop - _window + 1:_stop])
 
 
-def get_last_2(_values, _stop, _window=2):
-    return _values[_stop - _window:_stop]
+def get_last_2(_values, _stop, _window=1):
+    return _values[_stop+1]
 
 
 def check_buy_assets(assets):

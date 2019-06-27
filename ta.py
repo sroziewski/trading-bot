@@ -1,13 +1,11 @@
-import binance
 import numpy as np
 
 import matplotlib.pyplot as plt
 import talib
 from binance.client import Client
-from matplotlib import collections  as mc
 
 from library import binance_obj, get_interval_unit, AssetTicker, Asset, highest_bid, save_to_file, get_pickled, \
-    exclude_markets
+    exclude_markets, take_profit, BuyAsset
 
 
 def relative_strength_index(_closes, n=14):
@@ -424,14 +422,16 @@ def analyze_markets():
 # tradeable_assets_12h = get_tradeable_assets(markets, ticker)
 
 def main():
-    asset = "NULS"
+    analyze_markets()
+
+    asset = "ZRX"
     market = "{}BTC".format(asset)
-    ticker = Client.KLINE_INTERVAL_5MINUTE
-    time_interval = "40 hours ago"
+    ticker = Client.KLINE_INTERVAL_1MINUTE
+    time_interval = "26 hours ago"
 
-    _klines = binance_obj.get_klines_currency(market, ticker, time_interval)
+    # _klines = binance_obj.get_klines_currency(market, ticker, time_interval)
 
-    save_to_file("/juno/", "klines", _klines)
+    # save_to_file("/juno/", "klines", _klines)
     _klines = get_pickled('/juno/', "klines")
 
     r = relative_strength_index(get_closes(_klines))
@@ -447,8 +447,8 @@ def main():
 
     #
     start = 33
-    # stop = -2175
-    stop = -1
+    stop = -870
+    # stop = -1
 
     t = is_tradeable(_closes, r, macd, macdsignal)
 
@@ -496,6 +496,11 @@ def main():
     plt.plot(ma20[start:stop:1], 'blue', lw=1)
     plt.show()
 
+    i = 1
+
+
+    ba = BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 1)
+    take_profit(ba)
     i = 1
 
 

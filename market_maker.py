@@ -2,14 +2,11 @@ from library import setup_logger, BuyAsset, observe_lower_price, price_to_string
     get_remaining_btc, adjust_buy_asset_btc_volume
 
 logger = setup_logger("price-observer")
-ba = BuyAsset("XRP", 0.00004739, 0.00004639, 0.00009439, 100)
-# take_profit(ba)
-
-
+# ba = BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 1)
 # take_profit(ba)
 
 buy_assets = [
-    BuyAsset('XRP', 0.00003718, 0.00003631, 0.00011021, 1)
+    BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 100)
 ]
 
 btc_value = get_remaining_btc()
