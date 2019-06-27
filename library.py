@@ -1,12 +1,10 @@
 import sys
-from functools import reduce
 
 import talib
 import threading
 import time
 import traceback
 
-import binance
 import requests
 from binance.client import Client
 import numpy as np
@@ -41,13 +39,11 @@ exclude_markets = ['BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
 
 
 class Asset(object):
-    def __init__(self, name, price, stop_loss_price, price_profit, ratio, profit, ticker, barrier=False):
+    def __init__(self, name, stop_loss_price, price_profit, profit, ticker, barrier=False):
         self.name = name
         self.market = "{}BTC".format(name)
-        self.price = price
         self.stop_loss_price = stop_loss_price
         self.price_profit = price_profit
-        self.ratio = ratio  # buying ratio [%] of all possessed BTC
         self.profit = profit  # taking profit only when it's higher than profit %
         self.ticker = ticker
         self.barrier = barrier
@@ -56,12 +52,20 @@ class Asset(object):
 
 class BuyAsset(Asset):
     def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, profit=5,
-                 ticker=Client.KLINE_INTERVAL_1MINUTE,
-                 barrier=False):
-        super().__init__(name, price, stop_loss_price, price_profit, ratio, profit, ticker, barrier)
+                 ticker=Client.KLINE_INTERVAL_1MINUTE, barrier=False):
+        super().__init__(name, stop_loss_price, price_profit, profit, ticker, barrier)
+        self.price = price
+        self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
     def set_btc_asset_buy_value(self, _total_btc):
         self.btc_asset_buy_value = self.ratio / 100 * _total_btc
+
+
+class ObserveAsset(Asset):
+    def __init__(self, name, buy_price, stop_loss_price, price_profit, profit=5, ticker=Client.KLINE_INTERVAL_1MINUTE,
+                 barrier=False):
+        super().__init__(name, stop_loss_price, price_profit, profit, ticker, barrier)
+        self.buy_price = buy_price
 
 
 class AssetTicker(object):
@@ -75,15 +79,26 @@ class AssetTicker(object):
 
 
 class Strategy(object):
-    def __init__(self, asset, btc_value, params):
+    def __init__(self, asset):
         self.asset = asset
-        self.btc_value = btc_value
-        self.params = params
+
+    def set_stop_loss(self):
+        _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,),
+                                            name='_stop_loss_maker_{}'.format(self.asset.name))
+        _stop_loss_maker.start()
+
+    def set_take_profit(self):
+        _take_profit_maker = threading.Thread(target=take_profit, args=(self.asset,),
+                                              name='_take_profit_maker_{}'.format(self.asset.name))
+        _take_profit_maker.start()
 
 
 class BuyStrategy(Strategy):
     def __init__(self, asset, btc_value, params):
-        super().__init__(asset, btc_value, params)
+        super().__init__(asset)
+        self.btc_value = btc_value
+        self.params = params
+        logger_global[0].info("{} BuyStrategy object has been created".format(self.asset.market))
 
     def run(self):
         _la = lowest_ask(self.asset.market)
@@ -97,15 +112,16 @@ class BuyStrategy(Strategy):
             sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
             self.set_take_profit()
 
-    def set_stop_loss(self):
-        _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,),
-                                            name='_stop_loss_maker_{}'.format(self.asset.name))
-        _stop_loss_maker.start()
 
-    def set_take_profit(self):
-        _take_profit_maker = threading.Thread(target=take_profit, args=(self.asset,),
-                                              name='_take_profit_maker_{}'.format(self.asset.name))
-        _take_profit_maker.start()
+class ObserverStrategy(Strategy):
+    def __init__(self, asset):
+        super().__init__(asset)
+        logger_global[0].info("{} ObserverStrategy object has been created".format(self.asset.market))
+
+    def run(self):
+        self.set_stop_loss()
+        sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
+        self.set_take_profit()
 
 
 def wait_until_order_filled(_market, _order_id):
@@ -362,9 +378,11 @@ def adjust_ask_price(asset, _prev_kline, _old_price, _high_price_max, _curr_high
     _hp = float(_prev_kline[2])  # high price
     if _hp - _high_price_max > 0 or np.abs(_hp - _high_price_max) / _hp < 0.005:
         _hp = _curr_high
-        logger_global[0].info("{} ask price adjusted with current high price : {} -> {}".format(asset.market, _old_price, _hp))
+        logger_global[0].info(
+            "{} ask price adjusted with current high price : {} -> {}".format(asset.market, _old_price, _hp))
     else:
-        logger_global[0].info("{} ask price adjusted with previous candle high price : {} -> {}".format(asset.market, _old_price, _hp))
+        logger_global[0].info(
+            "{} ask price adjusted with previous candle high price : {} -> {}".format(asset.market, _old_price, _hp))
     return _hp
 
 
@@ -384,6 +402,8 @@ def take_profit(asset):
             _ma50 = talib.MA(_closes, timeperiod=50)
             _ma20 = talib.MA(_closes, timeperiod=20)
             _ma7 = talib.MA(_closes, timeperiod=7)
+
+            _local_rsi_max_value = get_rsi_local_max_value(_closes)
 
             _stop = -1
             _last_candle = _klines[-1]
@@ -406,12 +426,13 @@ def take_profit(asset):
 
             _max_volume = get_max_volume(_klines, _time_frame)
 
-            _c1 = rsi_falling_condition(_rsi_max, _curr_rsi)
+            _c1 = rsi_falling_condition(_rsi_max, _curr_rsi, _local_rsi_max_value)
             _c2 = volume_condition(_klines, _max_volume)
             _c3 = candle_condition(_last_candle, _curr_ma_7, _curr_ma_50)
             _c4 = mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50)
+            _c5 = is_profitable(asset, _closes[-1])
 
-            if is_profitable(asset, _closes[-1]) and _c1 and _c2 and _c3 and _c4:
+            if _c5 and _c1 and _c2 and _c3 and _c4:
                 logger_global[0].info("Taking profits {} conditions satisfied...".format(asset.market))
                 _curr_open = float(_last_candle[1])
                 _ask_price = _curr_open
@@ -435,8 +456,17 @@ def take_profit(asset):
                 time.sleep(40)
 
 
+def get_rsi_local_max_value(_closes, _window=10):
+    _start = 33
+    _stop = -1
+    _rsi = relative_strength_index(_closes)
+    _rsi_max_val, _rsi_reversed_max_ind = find_maximum(_rsi[_start:_stop:1], _window)
+    return _rsi_max_val
+
+
 def get_max_volume(_klines, _time_frame):
-    return np.max(list(map(lambda x: float(x[7]), _klines[-int(_time_frame/2):])))  # get max volume within last 30 klines
+    return np.max(
+        list(map(lambda x: float(x[7]), _klines[-int(_time_frame / 2):])))  # get max volume within last 30 klines
 
 
 def mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50):
@@ -454,8 +484,8 @@ def volume_condition(_klines, _max_volume):
     return 10.0 > _vol_curr / _max_volume > 0.6
 
 
-def rsi_falling_condition(_rsi_max, _curr_rsi):
-    return _rsi_max - _curr_rsi > 0 and _rsi_max > 76.0 and _curr_rsi < 65.0 and (_rsi_max - _curr_rsi) / _rsi_max > 0.2
+def rsi_falling_condition(_rsi_max, _curr_rsi, _local_rsi_max_value):
+    return _local_rsi_max_value > 70 and _rsi_max - _curr_rsi > 0 and _rsi_max > 76.0 and _curr_rsi < 65.0 and (_rsi_max - _curr_rsi) / _rsi_max > 0.2
 
 
 def get_closes(_klines):
@@ -509,7 +539,7 @@ def get_avg_last_2(_values, _stop, _window=2):
 
 
 def get_last_2(_values, _stop, _window=1):
-    return _values[_stop+1]
+    return _values[_stop + 1]
 
 
 def check_buy_assets(assets):
@@ -517,8 +547,36 @@ def check_buy_assets(assets):
     if not all(x.price_profit > x.price > x.stop_loss_price for x in assets):
         logger_global[0].error("BuyAsset prices not coherent, stopped")
         raise Exception("BuyAsset prices not coherent, stopped")
-    logger_global[0].info("Buy Asset prices : OK")
+    logger_global[0].info("BuyAsset prices : OK")
+
+
+def check_observe_assets(assets):
+    logger_global[0].info("Checking ObserveAsset prices...")
+    if not all(x.price_profit > x.buy_price > x.stop_loss_price for x in assets):
+        logger_global[0].error("ObserveAsset prices not coherent, stopped")
+        raise Exception("ObserveAsset prices not coherent, stopped")
+    logger_global[0].info("ObserveAsset prices : OK")
 
 
 def adjust_buy_asset_btc_volume(_buy_assets, _btc_value):
     list(map(lambda x: x.set_btc_asset_buy_value(_btc_value), _buy_assets))
+
+
+def find_maximum(values, window):
+    _range = int(len(values) / window)
+    _max_val = -1
+    _min_stop_level = 0.9
+    _activate_stop = False
+    _max_ind = -1
+    for _i in range(0, _range - 1):
+        _i_max = np.max(values[len(values) - (_i + 1) * window - 1:len(values) - _i * window - 1])
+        _tmp = list(values[len(values) - (_i + 1) * window - 1:len(values) - _i * window - 1])
+        _index = window - _tmp.index(max(_tmp)) + _i * window + 1
+        if _i_max > _max_val:
+            _max_val = _i_max
+            _max_ind = _index
+            if _max_val > 0:
+                _activate_stop = True
+        if _activate_stop and _i_max < _min_stop_level * _max_val:
+            return _max_val, _max_ind
+    return _max_val, _max_ind

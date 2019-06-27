@@ -4,8 +4,8 @@ import matplotlib.pyplot as plt
 import talib
 from binance.client import Client
 
-from library import binance_obj, get_interval_unit, AssetTicker, Asset, highest_bid, save_to_file, get_pickled, \
-    exclude_markets, take_profit, BuyAsset
+from library import binance_obj, get_interval_unit, AssetTicker, highest_bid, get_pickled, \
+    exclude_markets, take_profit, BuyAsset, find_maximum
 
 
 def relative_strength_index(_closes, n=14):
@@ -50,26 +50,6 @@ plt.figure(1)
 # plt.plot(r[-wins:], color='black', lw=1)
 # plt.axhline(y=30,     color='red',   linestyle='-')
 # plt.axhline(y=70,     color='blue',  linestyle='-')
-
-
-def find_maximum(values, window):
-    _range = int(len(values) / window)
-    _max_val = -1
-    _min_stop_level = 0.9
-    _activate_stop = False
-    _max_ind = -1
-    for _i in range(0, _range - 1):
-        _i_max = np.max(values[len(values) - (_i + 1) * window - 1:len(values) - _i * window - 1])
-        _tmp = list(values[len(values) - (_i + 1) * window - 1:len(values) - _i * window - 1])
-        _index = window - _tmp.index(max(_tmp)) + _i * window + 1
-        if _i_max > _max_val:
-            _max_val = _i_max
-            _max_ind = _index
-            if _max_val > 0:
-                _activate_stop = True
-        if _activate_stop and _i_max < _min_stop_level * _max_val:
-            return _max_val, _max_ind
-    return _max_val, _max_ind
 
 
 def get_magnitude(_reversed_max_ind, _max_val):
