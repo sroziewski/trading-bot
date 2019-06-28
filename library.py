@@ -68,6 +68,12 @@ class ObserveAsset(Asset):
         self.buy_price = buy_price
 
 
+class TradeAsset(Asset):
+    def __init__(self, name, ticker=Client.KLINE_INTERVAL_1MINUTE):
+        super().__init__(name, None, None, None, ticker, None)
+        self.filled = False
+
+
 class AssetTicker(object):
     def __init__(self, name, ticker, bid_price):
         self.name = name
@@ -458,8 +464,8 @@ def take_profit(asset):
 
 
 def is_red_candle(_kline):
-    __close = float(_kline[4])-float(_kline[4])
-    __open = float(_kline[4])-float(_kline[1])
+    __close = float(_kline[4]) - float(_kline[4])
+    __open = float(_kline[4]) - float(_kline[1])
     return __close - __open > 0
 
 
@@ -492,7 +498,8 @@ def volume_condition(_klines, _max_volume):
 
 
 def rsi_falling_condition(_rsi_max, _curr_rsi, _local_rsi_max_value):
-    return _local_rsi_max_value > 70 and _rsi_max - _curr_rsi > 0 and _rsi_max > 76.0 and _curr_rsi < 65.0 and (_rsi_max - _curr_rsi) / _rsi_max > 0.2
+    return _local_rsi_max_value > 70 and _rsi_max - _curr_rsi > 0 and _rsi_max > 76.0 and _curr_rsi < 65.0 and (
+                _rsi_max - _curr_rsi) / _rsi_max > 0.2
 
 
 def get_closes(_klines):
@@ -501,6 +508,52 @@ def get_closes(_klines):
 
 def get_highs(_klines):
     return np.array(list(map(lambda _x: float(_x[2]), _klines)))
+
+
+def is_bearish_setup(asset):  # or price lower than MA200
+    _time_interval = get_interval_unit(asset.ticker)
+    _klines = binance_obj.get_klines_currency(asset.market, asset.ticker, _time_interval)
+    _stop = -1
+    _start = 33
+    _last_candle = _klines[-1]
+    _closes = get_closes(_klines)
+    _time_horizon = 5 * 60
+    _ma200 = talib.MA(_closes, timeperiod=200)
+
+    _below, _above = price_counter(_ma200, _closes, _time_horizon)
+
+    _values = _ma200[-_time_horizon:]
+    _min_ma200, _ma200_reversed_min_ind = find_minimum(_values)
+    a1, ind1 = find_maximum(_values, 10)
+
+    # _ma200_magnitude = get_magnitude(_ma200_reversed_min_ind, _min_ma200)
+    # if _rsi_magnitude == -1:
+    #     return False
+    # _rsi_angle = get_angle((0, _rsi[_start:_stop:1][-1]),
+    #                        (_rsi_reversed_max_ind / np.power(10, _rsi_magnitude), _rsi_max_val))
+
+    _ma50 = talib.MA(_closes, timeperiod=50)
+    _ma20 = talib.MA(_closes, timeperiod=20)
+
+    import matplotlib.pyplot as plt
+    plt.plot(_values, 'black', lw=1)
+    plt.show()
+
+    _flipped_values = np.max(_values[_start:_stop:1]) - _values
+    _max_val, _reversed_max_ind = find_maximum(_flipped_values[_start:_stop:1], 2)
+
+    get_angle()
+
+
+def price_counter(_ma200, _closes, _time_horizon):
+    _above = 0
+    _below = 0
+    for _i in range(0, _time_horizon):
+        if (_ma200[-_time_horizon:][_i] - _closes[-_time_horizon:][_i]) / _closes[-_time_horizon:][_i] > 0.001:
+            _below += 1
+        else:
+            _above += 1
+    return _below, _above
 
 
 def relative_strength_index(_closes, n=14):
@@ -587,3 +640,23 @@ def find_maximum(values, window):
         if _activate_stop and _i_max < _min_stop_level * _max_val:
             return _max_val, _max_ind
     return _max_val, _max_ind
+
+
+def find_minimum(values):
+    _range = len(values)
+    _min = values[-1]
+    _ind = -1
+    _threshold = 0.001
+    for _i in range(0, _range - 1):
+        if (_min - values[-_i]) / values[-_i] > _threshold:
+            _min = values[-_i]
+            _ind = -_i
+    return _min, _ind
+
+
+def get_angle(p1, p2):
+    return np.arctan((p2[1] - p1[1]) / (p2[0] - p1[0])) * 180 / np.pi
+
+
+def get_magnitude(_reversed_max_ind, _max_val):
+    return int(np.log10(_reversed_max_ind / np.abs(_max_val)))
