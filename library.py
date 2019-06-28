@@ -431,8 +431,9 @@ def take_profit(asset):
             _c3 = candle_condition(_last_candle, _curr_ma_7, _curr_ma_50)
             _c4 = mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50)
             _c5 = is_profitable(asset, _closes[-1])
+            _c6 = is_red_candle(_last_candle)
 
-            if _c5 and _c1 and _c2 and _c3 and _c4:
+            if _c6 and _c5 and _c1 and _c2 and _c3 and _c4:
                 logger_global[0].info("Taking profits {} conditions satisfied...".format(asset.market))
                 _curr_open = float(_last_candle[1])
                 _ask_price = _curr_open
@@ -454,6 +455,12 @@ def take_profit(asset):
                 traceback.print_tb(err.__traceback__)
                 logger_global[0].exception(err.__traceback__)
                 time.sleep(40)
+
+
+def is_red_candle(_kline):
+    __close = float(_kline[4])-float(_kline[4])
+    __open = float(_kline[4])-float(_kline[1])
+    return __close - __open > 0
 
 
 def get_rsi_local_max_value(_closes, _window=10):
