@@ -5,7 +5,7 @@ import talib
 from binance.client import Client
 
 from library import binance_obj, get_interval_unit, AssetTicker, highest_bid, get_pickled, \
-    exclude_markets, take_profit, BuyAsset, find_maximum
+    exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file
 
 
 def relative_strength_index(_closes, n=14):
@@ -402,17 +402,17 @@ def analyze_markets():
 # tradeable_assets_12h = get_tradeable_assets(markets, ticker)
 
 def main():
-    analyze_markets()
+    # analyze_markets()
 
-    asset = "ZRX"
+    asset = "CELR"
     market = "{}BTC".format(asset)
     ticker = Client.KLINE_INTERVAL_1MINUTE
-    time_interval = "26 hours ago"
+    time_interval = "16 hours ago"
 
-    # _klines = binance_obj.get_klines_currency(market, ticker, time_interval)
+    _klines = binance_obj.get_klines_currency(market, ticker, time_interval)
 
-    # save_to_file("/juno/", "klines", _klines)
-    _klines = get_pickled('/juno/', "klines")
+    save_to_file("/juno/", "klines", _klines)
+    # _klines = get_pickled('/juno/', "klines")
 
     r = relative_strength_index(get_closes(_klines))
 
@@ -427,7 +427,7 @@ def main():
 
     #
     start = 33
-    stop = -870
+    stop = -5*60-30-32
     # stop = -1
 
     t = is_tradeable(_closes, r, macd, macdsignal)

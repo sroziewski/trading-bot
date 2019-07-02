@@ -5,7 +5,8 @@ import requests
 
 from binance.client import Client
 
-from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, TradeAsset, is_bearish_setup
+from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, TradeAsset, is_bullish_setup, \
+    get_remaining_btc, adjust_buy_asset_btc_volume, BullishStrategy, get_lot_size_params
 
 trade_assets = [
         TradeAsset('CELR')
@@ -13,13 +14,15 @@ trade_assets = [
 
 logger = setup_logger("trader")
 
+btc_value = get_remaining_btc()
+adjust_buy_asset_btc_volume(trade_assets, btc_value)
+
 while 1:
     try:
         for trade_asset in trade_assets:
-            if trade_asset.filled:  # now we want to sell with profit
-                pass
-            else:  # now we want to buy the bottom ;)
-                is_bearish_setup(trade_asset)
+            if is_bullish_setup(trade_asset):
+                _params = get_lot_size_params(trade_asset.market)
+                BullishStrategy(trade_asset, btc_value, _params).run()
 
         time.sleep(40)
     except Exception as err:
