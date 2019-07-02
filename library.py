@@ -30,6 +30,7 @@ class Config(object):
 config = Config()
 
 key_dir = config.get_parameter('key_dir')
+trades_logs_dir = config.get_parameter('trades_logs_dir')
 logger_global = []
 exclude_markets = ['BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
                    'SALTBTC',
@@ -72,6 +73,7 @@ class TradeAsset(BuyAsset):
     def __init__(self, name, ticker=Client.KLINE_INTERVAL_1MINUTE, ratio=100, profit=8):
         super().__init__(name, None, None, None, ratio, profit, ticker, None)
         self.trading = False
+        self.running = False
 
 
 class AssetTicker(object):
@@ -138,14 +140,15 @@ class BullishStrategy(BuyStrategy):
     def run(self):
         if self.asset.trading:
             self.set_sell_local_top()
-            self.set_take_profit()
         else:
-            self.asset.trading = True
             self.set_buy_local_bottom()
+            wait_until_running(self)
+            if self.asset.trading:
+                self.set_sell_local_top()
 
     def set_buy_local_bottom(self):
         _buy_local_bottom_maker = threading.Thread(target=buy_local_bottom, args=(self,),
-                                                 name='set_buy_local_bottom_{}'.format(self.asset.name))
+                                                 name='_buy_local_bottom_maker_{}'.format(self.asset.name))
         _buy_local_bottom_maker.start()
 
     def set_sell_local_top(self):
@@ -154,12 +157,17 @@ class BullishStrategy(BuyStrategy):
         _sell_local_top_maker.start()
 
 
+def wait_until_running(_strategy):
+    while _strategy.asset.running:
+        time.sleep(1)
+
+
 def adjust_stop_loss_price(asset):
     asset.stop_loss_price = np.round(0.968 * asset.buy_price, 8)
 
 
 def adjust_price_profit(asset):
-    asset.stop_loss_price = np.round(0.968 * asset.buy_price, 8)
+    asset.price_profit = np.round((1+asset.profit/100) * asset.buy_price, 8)
 
 
 def buy_local_bottom(strategy):
@@ -167,7 +175,6 @@ def buy_local_bottom(strategy):
     _time_frame_rsi = 50
     _time_horizon = 60
     _time_horizon_long = 360
-    _prev_rsi = False
     _prev_rsi_high = False
     _trigger = False
     _rsi_low = False
@@ -188,9 +195,8 @@ def buy_local_bottom(strategy):
                 if volume_condition(_klines, _max_volume, 0.9):
                     _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
-            if not _rsi_low and _rsi[-1] < 31 and is_red_candle(_curr_kline) and not is_fresh(_prev_rsi_high,
-                                                                                              _time_horizon) and \
-                    is_fresh(_prev_rsi, _time_frame_rsi) and volume_condition(_klines, _max_volume, 0.5):
+            if not _rsi_low and _rsi[-1] < 31 and is_red_candle(_curr_kline) and \
+                    not is_fresh(_prev_rsi_high, _time_horizon) and volume_condition(_klines, _max_volume, 0.5):
                 _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
             if not _rsi_low and _rsi[-1] < 20:
@@ -208,7 +214,7 @@ def buy_local_bottom(strategy):
             _close = _closes[-1]
             _max_volume = get_max_volume(_klines, 15)
 
-            if _rsi_low and _ma7[-1] - _close >= 0 and _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume,
+            if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume,
                                                                                                    1.0):  # reversal
                 _trigger = TimeTuple(True, _curr_kline[0])
 
@@ -219,14 +225,19 @@ def buy_local_bottom(strategy):
                 _possible_buying_quantity = get_buying_asset_quantity(strategy.asset, strategy.btc_value)
                 _quantity_to_buy = adjust_quantity(_possible_buying_quantity, strategy.params)
                 if _quantity_to_buy and is_buy_possible(strategy.asset, strategy.btc_value, strategy.params):
-                    _order_id = buy_order(strategy.asset, _quantity_to_buy)
+                    strategy.asset.trading = True
+                    # _order_id = buy_order(strategy.asset, _quantity_to_buy)
                     adjust_stop_loss_price(strategy.asset)
                     adjust_price_profit(strategy.asset)
-                    strategy.set_stop_loss()
-                    wait_until_order_filled(strategy.asset.market, _order_id)
-                    strategy.asset.trading = True
-                    sell_limit(strategy.asset.market, strategy.asset.name, strategy.asset.price_profit)
+                    # strategy.set_stop_loss()
+                    # wait_until_order_filled(strategy.asset.market, _order_id)
+                    # sell_limit(strategy.asset.market, strategy.asset.name, strategy.asset.price_profit)
                     strategy.set_take_profit()
+                    logger_global[0].info("{} Bought Local Bottom : price : {} value : {} BTC, exiting".format(strategy.asset.market, strategy.asset.buy_price, strategy.btc_value))
+                    strategy.asset.running = False
+                    save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
+                    sys.exit(0)
+            strategy.asset.running = False
             _prev_rsi = TimeTuple(_rsi[-1], _curr_kline[0])
             time.sleep(45)
         except Exception as err:
@@ -259,21 +270,26 @@ def sell_local_top(asset):
                 if is_fresh(_prev_rsi, _time_frame) and volume_condition(_klines, _max_volume, 0.4):
                     # if volume_condition(_klines, _max_volume, 0.4):
                     _trigger = TimeTuple(True, _curr_kline[0])
-                _prev_rsi = TimeTuple(_rsi[-1], _curr_kline[0])
 
             if _trigger and is_red_candle(_curr_kline):
+            # if True:
                 _ma7 = talib.MA(_closes, timeperiod=7)
                 _open = float(_curr_kline[1])
                 _close = _closes[-1]
-                if _ma7[-1] - _close >= 0:
+                if _ma7[-1] - _close > 0:
+                # if True:
                     logger_global[0].info(
                         "{} Sell Local Maximum Conditions: trigger and red candle below MA7 : TRUE".format(
                             asset.market))
                     _price = highest_bid(asset.market)
-                    sell_limit(asset.market, asset.name, _price)
+                    # _quantity = sell_limit(asset.market, asset.name, _price)
+                    _quantity = 1111.0
+                    logger_global[0].info("{} Sold Local Top price : {} value : {} BTC, exiting".format(asset.market, _price, _quantity*_price))
+                    save_to_file(trades_logs_dir, "sell_klines_{}".format(time.time()), _klines)
+                    asset.running = False
                     asset.trading = False
-                    logger_global[0].info("Sell Local Top LIMIT {} order has been made, exiting".format(asset.market))
                     sys.exit(0)
+            _prev_rsi = TimeTuple(_rsi[-1], _curr_kline[0])
             time.sleep(45)
         except Exception as err:
             if isinstance(err, requests.exceptions.ConnectionError):
@@ -327,37 +343,11 @@ def observe_lower_price(_assets):
         time.sleep(40)
 
 
-def trade_assets(_assets):
-    while 1:
-        for _asset in _assets:
-            _time_interval = get_interval_unit(_asset.ticker)
-            _time_frame_rsi = 50
-            _time_horizon = 60
-            _time_horizon_long = 360
-            _prev_rsi = False
-            _prev_rsi_high = False
-            _trigger = False
-            _rsi_low = False
-
-            if stop_signal(get_market(_asset), _asset.ticker, get_interval_unit(_asset.ticker), _asset.price, 1):
-                _assets = list(
-                    filter(lambda _a: _a.name != _asset.name, _assets))  # remove the observed asset from the list
-                _btc_value = get_remaining_btc()
-                _params = get_lot_size_params(_asset.market)
-                if is_buy_possible(_asset, _btc_value, _params):
-                    BuyStrategy(_asset, _btc_value, _params).run()
-                else:
-                    logger_global[0].warning(
-                        "{} buying not POSSIBLE, only {} BTC left".format(_asset.market, price_to_string(_btc_value)))
-                    return
-                if len(_assets) == 0:
-                    logger_global[0].info("All assets OBSERVED, exiting")
-                    return
-        time.sleep(40)
-
-
 def is_buy_possible(_asset, _btc_value, _params):
-    _min_amount = float(_params['minQty']) * _asset.price
+    if _asset.price:
+        _min_amount = float(_params['minQty']) * _asset.price
+    else:
+        _min_amount = float(_params['minQty']) * _asset.buy_price
     b = 0.01 < _btc_value > _min_amount
     return True
 
@@ -523,7 +513,7 @@ def sell_limit(market, asset_name, price):
     _quantity = adjust_quantity(_quantity, _lot_size_params)
     if _quantity:
         _sell_order(market, price, _quantity)
-        return True
+        return _quantity
     else:
         logger_global[0].error("{} No quantity to SELL".format(market))
         return False
@@ -563,6 +553,10 @@ def stop_loss(_asset):
     logger_global[0].info("Stop price {} is set up to : {:.8f} BTC".format(_asset.market, _stop_price))
 
     while 1:
+        if type(_asset) is TradeAsset:
+            if not _asset.trading:
+                logger_global[0].info("{} Stop-Loss : sold, not trading, skipping, exiting".format(_asset.market))
+                sys.exit(0)
         try:
             _stop_sl = stop_signal(_asset.market, _ticker, _time_interval, _stop_price, 1)
             # stop = True
@@ -584,6 +578,10 @@ def is_profitable(asset, curr_price):
     return (curr_price - asset.buy_price) / asset.buy_price >= asset.profit / 100.0
 
 
+def is_trading_possible(_assets):
+    return not any(filter(lambda _a: _a.running, _assets))
+
+
 def adjust_ask_price(asset, _prev_kline, _old_price, _high_price_max, _curr_high):
     _hp = float(_prev_kline[2])  # high price
     if _hp - _high_price_max > 0 or np.abs(_hp - _high_price_max) / _hp < 0.005:
@@ -602,6 +600,10 @@ def take_profit(asset):
     _prev_kline = None
     _time_frame = 60  # last 60 candles
     while 1:
+        if type(asset) is TradeAsset:
+            if not asset.trading:
+                logger_global[0].info("{} Take profit : sold, not trading, skipping, exiting".format(asset.market))
+                sys.exit(0)
         try:
             _klines = binance_obj.get_klines_currency(asset.market, _ticker, _time_interval)
             # _klines = get_pickled('/juno/', "klines")
@@ -753,7 +755,8 @@ def is_bullish_setup(asset):  # or price lower than MA100
     # _flipped_values = np.max(_values[_start:_stop:1]) - _values
     # _max_val, _reversed_max_ind = find_maximum(_flipped_values[_start:_stop:1], 2)
 
-    return _curr_ma100 - _min_ma100 > 0
+    # return _curr_ma100 - _min_ma100 > 0
+    return True
 
 
 def price_counter(_ma200, _closes, _time_horizon):
