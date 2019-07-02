@@ -140,10 +140,11 @@ class BullishStrategy(BuyStrategy):
             self.set_sell_local_top()
             self.set_take_profit()
         else:
+            self.asset.trading = True
             self.set_buy_local_bottom()
 
     def set_buy_local_bottom(self):
-        _buy_local_bottom_maker = threading.Thread(target=buy_local_bottom, args=(self.asset,),
+        _buy_local_bottom_maker = threading.Thread(target=buy_local_bottom, args=(self,),
                                                  name='set_buy_local_bottom_{}'.format(self.asset.name))
         _buy_local_bottom_maker.start()
 

@@ -20,7 +20,7 @@ adjust_buy_asset_btc_volume(trade_assets, btc_value)
 while 1:
     try:
         for trade_asset in trade_assets:
-            if is_bullish_setup(trade_asset):
+            if not trade_asset.trading and is_bullish_setup(trade_asset):
                 _params = get_lot_size_params(trade_asset.market)
                 BullishStrategy(trade_asset, btc_value, _params).run()
 
