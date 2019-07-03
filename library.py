@@ -145,13 +145,17 @@ class BullishStrategy(BuyStrategy):
 
     def set_buy_local_bottom(self):
         _buy_local_bottom_maker = threading.Thread(target=buy_local_bottom, args=(self,),
-                                                 name='_buy_local_bottom_maker_{}'.format(self.asset.name))
+                                                   name='_buy_local_bottom_maker_{}'.format(self.asset.name))
         _buy_local_bottom_maker.start()
 
     def set_sell_local_top(self):
         _sell_local_top_maker = threading.Thread(target=sell_local_top, args=(self.asset,),
                                                  name='_sell_local_top_maker_{}'.format(self.asset.name))
         _sell_local_top_maker.start()
+
+
+def run_strategy(_strategy):
+    _strategy.run()
 
 
 def wait_until_running(_strategy):
@@ -164,7 +168,7 @@ def adjust_stop_loss_price(asset):
 
 
 def adjust_price_profit(asset):
-    asset.price_profit = np.round((1+asset.profit/100) * asset.buy_price, 8)
+    asset.price_profit = np.round((1 + asset.profit / 100) * asset.buy_price, 8)
 
 
 def buy_local_bottom(strategy):
@@ -180,7 +184,8 @@ def buy_local_bottom(strategy):
             strategy.asset.price = lowest_ask(strategy.asset.market)
             if not is_buy_possible(strategy.asset, strategy.btc_value, strategy.params):
                 strategy.asset.running = False
-                logger_global[0].info("{} buy_local_bottom : other asset was bought, skipping, exiting".format(strategy.asset.market))
+                logger_global[0].info(
+                    "{} buy_local_bottom : other asset was bought, skipping, exiting".format(strategy.asset.market))
                 sys.exit(0)
 
             _klines = binance_obj.get_klines_currency(strategy.asset.market, strategy.asset.ticker, _time_interval)
@@ -218,7 +223,7 @@ def buy_local_bottom(strategy):
             _max_volume = get_max_volume(_klines, 15)
 
             if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume,
-                                                                                                   1.0):  # reversal
+                                                                                                  1.0):  # reversal
                 _trigger = TimeTuple(True, _curr_kline[0])
 
             if _trigger:
@@ -236,11 +241,13 @@ def buy_local_bottom(strategy):
                     # wait_until_order_filled(strategy.asset.market, _order_id)
                     # sell_limit(strategy.asset.market, strategy.asset.name, strategy.asset.price_profit)
                     strategy.set_take_profit()
-                    logger_global[0].info("{} Bought Local Bottom : price : {} value : {} BTC, exiting".format(strategy.asset.market, strategy.asset.buy_price, strategy.btc_value))
+                    logger_global[0].info(
+                        "{} Bought Local Bottom : price : {} value : {} BTC, exiting".format(strategy.asset.market,
+                                                                                             strategy.asset.buy_price,
+                                                                                             strategy.btc_value))
                     strategy.asset.running = False
                     save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
                     sys.exit(0)
-            strategy.asset.running = False
             _prev_rsi = TimeTuple(_rsi[-1], _curr_kline[0])
             time.sleep(45)
         except Exception as err:
@@ -275,19 +282,21 @@ def sell_local_top(asset):
                     _trigger = TimeTuple(True, _curr_kline[0])
 
             if _trigger and is_red_candle(_curr_kline):
-            # if True:
+                # if True:
                 _ma7 = talib.MA(_closes, timeperiod=7)
                 _open = float(_curr_kline[1])
                 _close = _closes[-1]
                 if _ma7[-1] - _close > 0:
-                # if True:
+                    # if True:
                     logger_global[0].info(
                         "{} Sell Local Maximum Conditions: trigger and red candle below MA7 : TRUE".format(
                             asset.market))
                     _price = highest_bid(asset.market)
                     # _quantity = sell_limit(asset.market, asset.name, _price)
                     _quantity = 1111.0
-                    logger_global[0].info("{} Sold Local Top price : {} value : {} BTC, exiting".format(asset.market, _price, _quantity*_price))
+                    logger_global[0].info(
+                        "{} Sold Local Top price : {} value : {} BTC, exiting".format(asset.market, _price,
+                                                                                      _quantity * _price))
                     save_to_file(trades_logs_dir, "sell_klines_{}".format(time.time()), _klines)
                     asset.running = False
                     asset.trading = False
@@ -301,6 +310,24 @@ def sell_local_top(asset):
                 traceback.print_tb(err.__traceback__)
                 logger_global[0].exception(err.__traceback__)
                 time.sleep(45)
+
+
+_last_asset = 'START'
+
+
+def start_trading(_trade_asset, _btc_value):
+    global _last_asset
+    _c = not _trade_asset.running
+    if _c and is_bullish_setup(_trade_asset):
+        if _last_asset and _last_asset != _trade_asset.name:
+            _last_asset = _trade_asset.name
+            _trade_asset.running = True
+            _params = get_lot_size_params(_trade_asset.market)
+            _bs = BullishStrategy(_trade_asset, _btc_value, _params)
+            _run_strategy_maker = threading.Thread(target=run_strategy, args=(_bs,),
+                                                   name='_run_strategy_maker_{}'.format(_trade_asset.name))
+            _run_strategy_maker.start()
+        time.sleep(1)
 
 
 def is_fresh(_tuple, _period):
@@ -565,7 +592,9 @@ def stop_loss(_asset):
             # stop = True
             if _stop_sl:
                 # sell_limit_stop_loss(_asset.market, _asset.name)
-                logger_global[0].info("Stop-loss LIMIT {} order has been made : {}, exiting".format(_asset.market, lowest_ask(_asset.market)))
+                logger_global[0].info("Stop-loss LIMIT {} order has been made : {}, exiting".format(_asset.market,
+                                                                                                    lowest_ask(
+                                                                                                        _asset.market)))
                 sys.exit(0)
             time.sleep(50)
         except Exception as err:
