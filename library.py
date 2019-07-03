@@ -194,7 +194,7 @@ def buy_local_bottom(strategy):
             _klines = binance_obj.get_klines_currency(strategy.asset.market, strategy.asset.ticker, _time_interval)
             _curr_kline = _klines[-1]
             _closes = get_closes(_klines)
-            _rsi = relative_strength_index(_closes)
+            _rsi = relative_strength_index(_closes, 14, strategy.asset)
 
             if _rsi[-1] > 70:
                 _prev_rsi_high = TimeTuple(_rsi[-1], _curr_kline[0])
@@ -273,7 +273,7 @@ def sell_local_top(asset):
             _klines = binance_obj.get_klines_currency(asset.market, asset.ticker, _time_interval)
             _curr_kline = _klines[-1]
             _closes = get_closes(_klines)
-            _rsi = relative_strength_index(_closes)
+            _rsi = relative_strength_index(_closes, 14, asset)
 
             if _rsi[-1] > 70:
                 _max_volume_temp = get_volume(_curr_kline)
@@ -662,7 +662,7 @@ def take_profit(asset):
 
             _high_price_max = np.max(get_last(_highs, _stop, _time_frame))
 
-            _rsi = relative_strength_index(_closes)
+            _rsi = relative_strength_index(_closes, 14, asset)
             _rsi_max = np.max(get_last(_rsi, _stop, _time_frame))
             _index_rsi_peak = np.where(_rsi == _rsi_max)[0][0]
             _curr_rsi = get_last(_rsi, _stop)
@@ -805,7 +805,7 @@ def price_counter(_ma200, _closes, _time_horizon):
     return _below, _above
 
 
-def relative_strength_index(_closes, n=14):
+def relative_strength_index(_closes, n=14, _asset=None):
     try:
         _prices = np.array(_closes, dtype=np.float32)
 
@@ -833,7 +833,7 @@ def relative_strength_index(_closes, n=14):
             _rs = _up / _down
             _rsi[_i] = 100. - 100. / (1. + _rs)
     except Warning:
-        pass
+        logger_global[0].error("RSI computing error {}".format(_asset.market))
 
     return _rsi
 
