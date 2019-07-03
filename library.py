@@ -336,7 +336,7 @@ def is_fresh(_tuple, _period):
 
 
 def is_fresh_test(_tuple, _period, _curr_timestamp):
-    _ts = _curr_timestamp
+    _ts = _curr_timestamp / 1000
     return _period - (_ts - _tuple.timestamp) / 60 >= 0 if _tuple else False
 
 # def is_mature(_tuple, _period):

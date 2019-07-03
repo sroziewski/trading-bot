@@ -48,8 +48,17 @@ def start_buy_local_bottom_test(_asset):
         buy_local_bottom_test(_klines_test, _i)
 
 
+_prev_rsi_high = False
+_trigger = False
+_rsi_low = False
+_rsi_low_fresh = False
+
 
 def buy_local_bottom_test(_klines, _i):
+    global _prev_rsi_high
+    global _trigger
+    global _rsi_low
+    global _rsi_low_fresh
     logger = setup_logger("test")
     _btc_value = 0.1
     _trade_asset = TradeAsset('CELR')
@@ -62,9 +71,7 @@ def buy_local_bottom_test(_klines, _i):
     _time_frame_rsi = 50
     _time_horizon = 60
     _time_horizon_long = 360
-    _prev_rsi_high = False
-    _trigger = False
-    _rsi_low = False
+
     # while 1:
     try:
         strategy.asset.price = lowest_ask(strategy.asset.market)
@@ -78,8 +85,8 @@ def buy_local_bottom_test(_klines, _i):
         _closes = get_closes(_klines)
         _rsi = relative_strength_index(_closes, 14, strategy.asset)
 
-        _0time = datetime.datetime.fromtimestamp(_curr_kline[0]/1000).strftime('%d %B %Y %H:%M:%S')
-
+        _0time = get_time(_curr_kline[0]/1000)
+        __rsi = _rsi[-1]
         if _rsi[-1] < 30:
             ii = 1
 
@@ -88,10 +95,15 @@ def buy_local_bottom_test(_klines, _i):
 
         _max_volume = get_max_volume(_klines, _time_horizon)
 
-        if _rsi[-1] < 33.5 and not is_fresh_test(_prev_rsi_high, _time_frame_rsi, _curr_kline[0]):
+        # if _rsi[-1] < 33.5 and not is_fresh_test(_prev_rsi_high, _time_frame_rsi, _curr_kline[0]):
+        if _rsi[-1] < 33.5:
             _max_volume_long = get_max_volume(_klines, _time_horizon_long)
             if volume_condition(_klines, _max_volume_long, 0.9):
                 _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
+
+        if _rsi[-1] < 33.5 and is_fresh_test(_prev_rsi_high, _time_frame_rsi, _curr_kline[0]):
+            if volume_condition(_klines, _max_volume, 0.9):
+                _rsi_low_fresh = TimeTuple(_rsi[-1], _curr_kline[0])
 
         if not _rsi_low and _rsi[-1] < 31 and not is_fresh_test(_prev_rsi_high, _time_frame_rsi, _curr_kline[0]) \
                 and volume_condition(_klines, _max_volume, 0.5):
@@ -101,7 +113,7 @@ def buy_local_bottom_test(_klines, _i):
             _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
         if _rsi_low and _rsi[-1] < 33.5 and is_fresh_test(_rsi_low, _time_frame_rsi, _curr_kline[0]) and not is_fresh_test(_rsi_low, 15, _curr_kline[0]) and \
-                _rsi[-1] > _rsi_low.value:
+                _rsi[-1] > _rsi_low.value or _rsi_low and _rsi_low_fresh and _rsi[-1] > _rsi_low_fresh.value and _rsi[-1] > _rsi_low.value and not is_fresh_test(_rsi_low_fresh, 25, _curr_kline[0]):
             _max_volume_short = get_max_volume(_klines, 10)
             # if _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
             if volume_condition(_klines, _max_volume_short, 0.3):  # RSI HL
@@ -145,6 +157,10 @@ def buy_local_bottom_test(_klines, _i):
             traceback.print_tb(err.__traceback__)
             logger.exception(err.__traceback__)
             # time.sleep(45)
+
+
+def get_time(_timestamp):
+    return datetime.datetime.fromtimestamp(_timestamp).strftime('%d %B %Y %H:%M:%S')
 
 
 if __name__ == "__main__":
