@@ -833,7 +833,7 @@ def relative_strength_index(_closes, n=14, _asset=None):
             _rs = _up / _down
             _rsi[_i] = 100. - 100. / (1. + _rs)
     except Warning:
-        logger_global[0].error("RSI computing error {}".format(_asset.market))
+        logger_global[0].error("{} RSI computing error".format(_asset.market))
         _rsi = [False]
 
     return _rsi
