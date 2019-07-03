@@ -182,6 +182,7 @@ def buy_local_bottom(strategy):
     _prev_rsi_high = False
     _trigger = False
     _rsi_low = False
+    _rsi_low_fresh = False
     while 1:
         try:
             strategy.asset.price = lowest_ask(strategy.asset.market)
@@ -200,10 +201,15 @@ def buy_local_bottom(strategy):
             if _rsi[-1] > 70:
                 _prev_rsi_high = TimeTuple(_rsi[-1], _curr_kline[0])
 
-            if _rsi[-1] < 33.5 and not is_fresh(_prev_rsi_high, _time_frame_rsi):
+            # if _rsi[-1] < 33.5 and not is_fresh(_prev_rsi_high, _time_frame_rsi):
+            if _rsi[-1] < 33.5:
                 _max_volume_long = get_max_volume(_klines, _time_horizon_long)
                 if volume_condition(_klines, _max_volume_long, 0.9):
                     _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
+
+            if _rsi[-1] < 33.5 and is_fresh(_prev_rsi_high, _time_frame_rsi):
+                if volume_condition(_klines, _max_volume, 0.9):
+                    _rsi_low_fresh = TimeTuple(_rsi[-1], _curr_kline[0])
 
             if not _rsi_low and _rsi[-1] < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) and volume_condition(_klines, _max_volume, 0.5):
                 _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
@@ -212,7 +218,7 @@ def buy_local_bottom(strategy):
                 _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
             if _rsi_low and _rsi[-1] < 33.5 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low, 15) and \
-                    _rsi[-1] > _rsi_low.value:
+                    _rsi[-1] > _rsi_low.value or _rsi_low and _rsi_low_fresh and _rsi[-1] > _rsi_low_fresh.value and _rsi[-1] > _rsi_low.value and not is_fresh(_rsi_low_fresh, 25):
                 _max_volume_short = get_max_volume(_klines, 10)
                 # if _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
                 if volume_condition(_klines, _max_volume_short, 0.3):  # RSI HL
