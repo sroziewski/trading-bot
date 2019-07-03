@@ -1,4 +1,5 @@
 import sys
+import warnings
 
 import talib
 import threading
@@ -13,6 +14,8 @@ import configparser
 import logging
 import logging.config
 from Binance import Binance
+
+warnings.filterwarnings('error')
 
 
 class Config(object):
@@ -829,7 +832,7 @@ def relative_strength_index(_closes, n=14):
 
             _rs = _up / _down
             _rsi[_i] = 100. - 100. / (1. + _rs)
-    except RuntimeWarning:
+    except Warning:
         pass
 
     return _rsi
