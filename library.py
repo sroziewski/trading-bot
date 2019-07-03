@@ -211,7 +211,7 @@ def buy_local_bottom(strategy):
                 _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
             if _rsi_low and _rsi[-1] < 33.5 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low, 15) and \
-                    _rsi[-1] > _rsi_low[0]:
+                    _rsi[-1] > _rsi_low.value:
                 _max_volume = get_max_volume(_klines, 10)
                 # if _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
                 if volume_condition(_klines, _max_volume, 0.3):  # RSI HL
@@ -222,7 +222,7 @@ def buy_local_bottom(strategy):
             _close = _closes[-1]
             _max_volume = get_max_volume(_klines, 15)
 
-            if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume,
+            if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low.value and volume_condition(_klines, _max_volume,
                                                                                                   1.0):  # reversal
                 _trigger = TimeTuple(True, _curr_kline[0])
 
@@ -332,7 +332,7 @@ def start_trading(_trade_asset, _btc_value):
 
 def is_fresh(_tuple, _period):
     _ts = time.time()
-    return _period - (_ts - _tuple[1]) / 60 >= 0 if _tuple else False
+    return _period - (_ts - _tuple.timestamp) / 60 >= 0 if _tuple else False
 
 
 # def is_mature(_tuple, _period):
