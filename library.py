@@ -177,7 +177,7 @@ def buy_local_bottom(strategy):
     _rsi_low = False
     while 1:
         try:
-            strategy.asset.price = highest_bid(strategy.asset.market)
+            strategy.asset.price = lowest_ask(strategy.asset.market)
             if not is_buy_possible(strategy.asset, strategy.btc_value, strategy.params):
                 strategy.asset.running = False
                 logger_global[0].info("{} buy_local_bottom : other asset was bought, skipping, exiting".format(strategy.asset.market))
@@ -232,7 +232,7 @@ def buy_local_bottom(strategy):
                     # _order_id = buy_order(strategy.asset, _quantity_to_buy)
                     adjust_stop_loss_price(strategy.asset)
                     adjust_price_profit(strategy.asset)
-                    # strategy.set_stop_loss()
+                    strategy.set_stop_loss()
                     # wait_until_order_filled(strategy.asset.market, _order_id)
                     # sell_limit(strategy.asset.market, strategy.asset.name, strategy.asset.price_profit)
                     strategy.set_take_profit()
@@ -564,8 +564,8 @@ def stop_loss(_asset):
             _stop_sl = stop_signal(_asset.market, _ticker, _time_interval, _stop_price, 1)
             # stop = True
             if _stop_sl:
-                sell_limit_stop_loss(_asset.market, _asset.name)
-                logger_global[0].info("Stop-loss LIMIT {} order has been made, exiting".format(_asset.market))
+                # sell_limit_stop_loss(_asset.market, _asset.name)
+                logger_global[0].info("Stop-loss LIMIT {} order has been made : {}, exiting".format(_asset.market, lowest_ask(_asset.market)))
                 sys.exit(0)
             time.sleep(50)
         except Exception as err:
