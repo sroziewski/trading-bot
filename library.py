@@ -138,13 +138,10 @@ class BullishStrategy(BuyStrategy):
         logger_global[0].info("{} BullishStrategy object has been created".format(self.asset.market))
 
     def run(self):
+        self.set_buy_local_bottom()
+        wait_until_running(self)
         if self.asset.trading:
             self.set_sell_local_top()
-        else:
-            self.set_buy_local_bottom()
-            wait_until_running(self)
-            if self.asset.trading:
-                self.set_sell_local_top()
 
     def set_buy_local_bottom(self):
         _buy_local_bottom_maker = threading.Thread(target=buy_local_bottom, args=(self,),
@@ -180,6 +177,12 @@ def buy_local_bottom(strategy):
     _rsi_low = False
     while 1:
         try:
+            strategy.asset.price = highest_bid(strategy.asset.market)
+            if not is_buy_possible(strategy.asset, strategy.btc_value, strategy.params):
+                strategy.asset.running = False
+                logger_global[0].info("{} buy_local_bottom : other asset was bought, skipping, exiting".format(strategy.asset.market))
+                sys.exit(0)
+
             _klines = binance_obj.get_klines_currency(strategy.asset.market, strategy.asset.ticker, _time_interval)
             _curr_kline = _klines[-1]
             _closes = get_closes(_klines)
