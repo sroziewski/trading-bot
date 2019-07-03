@@ -8,7 +8,8 @@ trade_assets = [
         TradeAsset('CELR'),
         TradeAsset('FTM'),
         TradeAsset('ONE'),
-        TradeAsset('MATIC')
+        TradeAsset('MATIC'),
+        TradeAsset('ALGO')
     ]
 
 logger = setup_logger("trader")

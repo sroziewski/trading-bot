@@ -402,7 +402,7 @@ def analyze_markets():
 # tradeable_assets_12h = get_tradeable_assets(markets, ticker)
 
 def main():
-    # analyze_markets()
+    analyze_markets()
 
     asset = "CELR"
     market = "{}BTC".format(asset)
