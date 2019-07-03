@@ -803,31 +803,34 @@ def price_counter(_ma200, _closes, _time_horizon):
 
 
 def relative_strength_index(_closes, n=14):
-    _prices = np.array(_closes, dtype=np.float32)
+    try:
+        _prices = np.array(_closes, dtype=np.float32)
 
-    _deltas = np.diff(_prices)
-    _seed = _deltas[:n + 1]
-    _up = _seed[_seed >= 0].sum() / n
-    _down = -_seed[_seed < 0].sum() / n
-    _rs = _up / _down
-    _rsi = np.zeros_like(_prices)
-    _rsi[:n] = 100. - 100. / (1. + _rs)
-
-    for _i in range(n, len(_prices)):
-        _delta = _deltas[_i - 1]  # cause the diff is 1 shorter
-
-        if _delta > 0:
-            _upval = _delta
-            _downval = 0.
-        else:
-            _upval = 0.
-            _downval = -_delta
-
-        _up = (_up * (n - 1) + _upval) / n
-        _down = (_down * (n - 1) + _downval) / n
-
+        _deltas = np.diff(_prices)
+        _seed = _deltas[:n + 1]
+        _up = _seed[_seed >= 0].sum() / n
+        _down = -_seed[_seed < 0].sum() / n
         _rs = _up / _down
-        _rsi[_i] = 100. - 100. / (1. + _rs)
+        _rsi = np.zeros_like(_prices)
+        _rsi[:n] = 100. - 100. / (1. + _rs)
+
+        for _i in range(n, len(_prices)):
+            _delta = _deltas[_i - 1]  # cause the diff is 1 shorter
+
+            if _delta > 0:
+                _upval = _delta
+                _downval = 0.
+            else:
+                _upval = 0.
+                _downval = -_delta
+
+            _up = (_up * (n - 1) + _upval) / n
+            _down = (_down * (n - 1) + _downval) / n
+
+            _rs = _up / _down
+            _rsi[_i] = 100. - 100. / (1. + _rs)
+    except RuntimeWarning:
+        pass
 
     return _rsi
 
