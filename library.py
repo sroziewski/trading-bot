@@ -188,7 +188,7 @@ def buy_local_bottom(strategy):
             if not is_buy_possible(strategy.asset, strategy.btc_value, strategy.params):
                 strategy.asset.running = False
                 logger_global[0].info(
-                    "{} buy_local_bottom : other asset was bought, skipping, exiting".format(strategy.asset.market))
+                    "{} buy_local_bottom : buy not possible, skipping, exiting".format(strategy.asset.market))
                 sys.exit(0)
 
             _klines = binance_obj.get_klines_currency(strategy.asset.market, strategy.asset.ticker, _time_interval)
@@ -201,13 +201,12 @@ def buy_local_bottom(strategy):
 
             _max_volume = get_max_volume(_klines, _time_horizon)
 
-            if _rsi[-1] < 33.5 and is_red_candle(_curr_kline) and not is_fresh(_prev_rsi_high, _time_horizon):
+            if _rsi[-1] < 33.5 and not is_fresh(_prev_rsi_high, _time_frame_rsi):
                 _max_volume = get_max_volume(_klines, _time_horizon_long)
                 if volume_condition(_klines, _max_volume, 0.9):
                     _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
-            if not _rsi_low and _rsi[-1] < 31 and is_red_candle(_curr_kline) and \
-                    not is_fresh(_prev_rsi_high, _time_horizon) and volume_condition(_klines, _max_volume, 0.5):
+            if not _rsi_low and _rsi[-1] < 31 and not is_fresh(_prev_rsi_high, _time_horizon) and volume_condition(_klines, _max_volume, 0.5):
                 _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
             if not _rsi_low and _rsi[-1] < 20:
@@ -337,6 +336,10 @@ def is_fresh(_tuple, _period):
     _ts = time.time()
     return _period - (_ts - _tuple.timestamp) / 60 >= 0 if _tuple else False
 
+
+def is_fresh_test(_tuple, _period, _curr_timestamp):
+    _ts = _curr_timestamp
+    return _period - (_ts - _tuple.timestamp) / 60 >= 0 if _tuple else False
 
 # def is_mature(_tuple, _period):
 #     _ts = time.time()
