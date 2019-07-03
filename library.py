@@ -651,7 +651,7 @@ def take_profit(asset):
             _ma20 = talib.MA(_closes, timeperiod=20)
             _ma7 = talib.MA(_closes, timeperiod=7)
 
-            _local_rsi_max_value = get_rsi_local_max_value(_closes)
+            _local_rsi_max_value = get_rsi_local_max_value(_closes, 10, asset)
 
             _stop = -1
             _last_candle = _klines[-1]
@@ -717,10 +717,10 @@ def is_green_candle(_kline):
     return __close - __open >= 0
 
 
-def get_rsi_local_max_value(_closes, _window=10):
+def get_rsi_local_max_value(_closes, _window=10, _asset=None):
     _start = 33
     _stop = -1
-    _rsi = relative_strength_index(_closes)
+    _rsi = relative_strength_index(_closes, 14, _asset)
     _rsi_max_val, _rsi_reversed_max_ind = find_maximum(_rsi[_start:_stop:1], _window)
     return _rsi_max_val
 
