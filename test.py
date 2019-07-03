@@ -1,5 +1,6 @@
+import datetime
+
 import talib
-import time
 import traceback
 import matplotlib.pyplot as plt
 
@@ -76,6 +77,8 @@ def buy_local_bottom_test(_klines, _i):
         _curr_kline = _klines[-1]
         _closes = get_closes(_klines)
         _rsi = relative_strength_index(_closes, 14, strategy.asset)
+
+        _0time = datetime.datetime.fromtimestamp(_curr_kline[0]/1000).strftime('%d %B %Y %H:%M:%S')
 
         if _rsi[-1] < 30:
             ii = 1

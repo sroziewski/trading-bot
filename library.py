@@ -401,7 +401,7 @@ class SellAsset(Asset):
 class TimeTuple(object):
     def __init__(self, value, timestamp):
         self.value = value
-        self.timestamp = timestamp
+        self.timestamp = timestamp/1000
 
 
 def save_to_file(_dir, filename, obj):
