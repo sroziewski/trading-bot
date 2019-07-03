@@ -195,18 +195,17 @@ def buy_local_bottom(strategy):
             _curr_kline = _klines[-1]
             _closes = get_closes(_klines)
             _rsi = relative_strength_index(_closes, 14, strategy.asset)
+            _max_volume = get_max_volume(_klines, _time_horizon)
 
             if _rsi[-1] > 70:
                 _prev_rsi_high = TimeTuple(_rsi[-1], _curr_kline[0])
 
-            _max_volume = get_max_volume(_klines, _time_horizon)
-
             if _rsi[-1] < 33.5 and not is_fresh(_prev_rsi_high, _time_frame_rsi):
-                _max_volume = get_max_volume(_klines, _time_horizon_long)
-                if volume_condition(_klines, _max_volume, 0.9):
+                _max_volume_long = get_max_volume(_klines, _time_horizon_long)
+                if volume_condition(_klines, _max_volume_long, 0.9):
                     _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
-            if not _rsi_low and _rsi[-1] < 31 and not is_fresh(_prev_rsi_high, _time_horizon) and volume_condition(_klines, _max_volume, 0.5):
+            if not _rsi_low and _rsi[-1] < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) and volume_condition(_klines, _max_volume, 0.5):
                 _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
             if not _rsi_low and _rsi[-1] < 20:
@@ -214,18 +213,17 @@ def buy_local_bottom(strategy):
 
             if _rsi_low and _rsi[-1] < 33.5 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low, 15) and \
                     _rsi[-1] > _rsi_low.value:
-                _max_volume = get_max_volume(_klines, 10)
+                _max_volume_short = get_max_volume(_klines, 10)
                 # if _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
-                if volume_condition(_klines, _max_volume, 0.3):  # RSI HL
+                if volume_condition(_klines, _max_volume_short, 0.3):  # RSI HL
                     _trigger = TimeTuple(True, _curr_kline[0])
 
             _ma7 = talib.MA(_closes, timeperiod=7)
             _open = float(_curr_kline[1])
             _close = _closes[-1]
-            _max_volume = get_max_volume(_klines, 15)
+            _max_volume_middle = get_max_volume(_klines, 15)
 
-            if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low.value and volume_condition(_klines, _max_volume,
-                                                                                                  1.0):  # reversal
+            if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low.value and volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
                 _trigger = TimeTuple(True, _curr_kline[0])
 
             if _trigger:

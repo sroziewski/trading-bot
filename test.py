@@ -86,8 +86,8 @@ def buy_local_bottom_test(_klines, _i):
         _max_volume = get_max_volume(_klines, _time_horizon)
 
         if _rsi[-1] < 33.5 and not is_fresh_test(_prev_rsi_high, _time_frame_rsi, _curr_kline[0]):
-            _max_volume = get_max_volume(_klines, _time_horizon_long)
-            if volume_condition(_klines, _max_volume, 0.9):
+            _max_volume_long = get_max_volume(_klines, _time_horizon_long)
+            if volume_condition(_klines, _max_volume_long, 0.9):
                 _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
 
         if not _rsi_low and _rsi[-1] < 31 and not is_fresh_test(_prev_rsi_high, _time_frame_rsi, _curr_kline[0]) \
@@ -99,18 +99,17 @@ def buy_local_bottom_test(_klines, _i):
 
         if _rsi_low and _rsi[-1] < 33.5 and is_fresh_test(_rsi_low, _time_frame_rsi, _curr_kline[0]) and not is_fresh_test(_rsi_low, 15, _curr_kline[0]) and \
                 _rsi[-1] > _rsi_low.value:
-            _max_volume = get_max_volume(_klines, 10)
+            _max_volume_short = get_max_volume(_klines, 10)
             # if _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
-            if volume_condition(_klines, _max_volume, 0.3):  # RSI HL
+            if volume_condition(_klines, _max_volume_short, 0.3):  # RSI HL
                 _trigger = TimeTuple(True, _curr_kline[0])
 
         _ma7 = talib.MA(_closes, timeperiod=7)
         _open = float(_curr_kline[1])
         _close = _closes[-1]
-        _max_volume = get_max_volume(_klines, 15)
+        _max_volume_middle = get_max_volume(_klines, 15)
 
-        if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low.value and volume_condition(_klines, _max_volume,
-                                                                                              1.0):  # reversal
+        if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low.value and volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
             _trigger = TimeTuple(True, _curr_kline[0])
 
         if _trigger:
