@@ -377,7 +377,7 @@ class BearishStrategy(BullishStrategy):
                         volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
                     _trigger = TimeTuple(True, _time_curr)
 
-                if _big_volume_sold_out:
+                if _big_volume_sold_out.value:
                     if price_drop(_last_ma7_gt_ma100.value, _close, 0.08):
                         _bearish_trigger = TimeTuple(True, _time_curr)
 
