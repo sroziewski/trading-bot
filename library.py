@@ -184,6 +184,7 @@ def buy_local_bottom(strategy):
     _trigger = False
     _rsi_low = False
     _rsi_low_fresh = False
+    _prev_rsi = TimeTuple(0, 0)
     while 1:
         try:
             strategy.asset.price = lowest_ask(strategy.asset.market)
@@ -196,7 +197,7 @@ def buy_local_bottom(strategy):
             _klines = binance_obj.get_klines_currency(strategy.asset.market, strategy.asset.ticker, _time_interval)
             _curr_kline = _klines[-1]
             _closes = get_closes(_klines)
-            _rsi = relative_strength_index(_closes, 14, strategy.asset)
+            _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, strategy.asset)
             _max_volume = get_max_volume(_klines, _time_horizon)
             _rsi_curr = _rsi[-1]
             _ma7 = talib.MA(_closes, timeperiod=7)
@@ -273,7 +274,7 @@ def buy_local_bottom(strategy):
                     strategy.asset.running = False
                     save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
                     sys.exit(0)
-            _prev_rsi = TimeTuple(_rsi[-1], _curr_kline[0])
+            _prev_rsi = TimeTuple(_rsi, _curr_kline[0])
             time.sleep(45)
         except Exception as err:
             if isinstance(err, requests.exceptions.ConnectionError):
@@ -289,13 +290,13 @@ def sell_local_top(asset):
     _max_volume_max_rsi = -1
     _trigger = False
     _time_frame = 30
-    _prev_rsi = False
+    _prev_rsi = TimeTuple(0, 0)
     while 1:
         try:
             _klines = binance_obj.get_klines_currency(asset.market, asset.ticker, _time_interval)
             _curr_kline = _klines[-1]
             _closes = get_closes(_klines)
-            _rsi = relative_strength_index(_closes, 14, asset)
+            _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, asset)
 
             if _rsi[-1] > 70:
                 _max_volume_temp = get_volume(_curr_kline)
@@ -326,7 +327,7 @@ def sell_local_top(asset):
                     asset.running = False
                     asset.trading = False
                     sys.exit(0)
-            _prev_rsi = TimeTuple(_rsi[-1], _curr_kline[0])
+            _prev_rsi = TimeTuple(_rsi, _curr_kline[0])
             time.sleep(45)
         except Exception as err:
             if isinstance(err, requests.exceptions.ConnectionError):
@@ -660,6 +661,7 @@ def take_profit(asset):
     _ticker = Client.KLINE_INTERVAL_1MINUTE
     _time_interval = get_interval_unit(_ticker)
     _prev_kline = None
+    _prev_rsi = TimeTuple(0, 0)
     _time_frame = 60  # last 60 candles
     while 1:
         if type(asset) is TradeAsset:
@@ -677,10 +679,10 @@ def take_profit(asset):
             _ma20 = talib.MA(_closes, timeperiod=20)
             _ma7 = talib.MA(_closes, timeperiod=7)
 
-            _local_rsi_max_value = get_rsi_local_max_value(_closes, 10, asset)
+            _local_rsi_max_value = get_rsi_local_max_value(_closes, _prev_rsi.value, 10, asset)
 
             _stop = -1
-            _last_candle = _klines[-1]
+            _curr_kline = _klines[-1]
 
             # plt.plot(_ma50[0:_stop:1], 'red', lw=1)
             # plt.plot(_ma20[0:_stop:1], 'blue', lw=1)
@@ -689,7 +691,7 @@ def take_profit(asset):
 
             _high_price_max = np.max(get_last(_highs, _stop, _time_frame))
 
-            _rsi = relative_strength_index(_closes, 14, asset)
+            _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, asset)
             _rsi_max = np.max(get_last(_rsi, _stop, _time_frame))
             _index_rsi_peak = np.where(_rsi == _rsi_max)[0][0]
             _curr_rsi = get_last(_rsi, _stop)
@@ -702,17 +704,17 @@ def take_profit(asset):
 
             _c1 = rsi_falling_condition(_rsi_max, _curr_rsi, _local_rsi_max_value)
             _c2 = volume_condition(_klines, _max_volume)
-            _c3 = candle_condition(_last_candle, _curr_ma_7, _curr_ma_50)
+            _c3 = candle_condition(_curr_kline, _curr_ma_7, _curr_ma_50)
             _c4 = mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50)
             _c5 = is_profitable(asset, _closes[-1])
-            _c6 = is_red_candle(_last_candle)
+            _c6 = is_red_candle(_curr_kline)
 
             if _c6 and _c5 and _c1 and _c2 and _c3 and _c4:
                 logger_global[0].info("Taking profits {} conditions satisfied...".format(asset.market))
-                _curr_open = float(_last_candle[1])
+                _curr_open = float(_curr_kline[1])
                 _ask_price = _curr_open
                 if _curr_open < _curr_ma_7:
-                    _curr_high = float(_last_candle[2])
+                    _curr_high = float(_curr_kline[2])
                     _ask_price = adjust_ask_price(asset, _prev_kline, _ask_price, _high_price_max, _curr_high)
                 _sold = sell_limit(asset.market, asset.name, _ask_price)
                 if _sold:
@@ -720,7 +722,8 @@ def take_profit(asset):
                 else:
                     logger_global[0].error("Took profits {}: selling not POSSIBLE, exiting".format(asset.market))
                 sys.exit(0)
-            _prev_kline = _last_candle
+            _prev_kline = _curr_kline
+            _prev_rsi = TimeTuple(_rsi, _curr_kline[0])
             time.sleep(40)
         except Exception as err:
             if isinstance(err, requests.exceptions.ConnectionError):
@@ -743,10 +746,10 @@ def is_green_candle(_kline):
     return __close - __open >= 0
 
 
-def get_rsi_local_max_value(_closes, _window=10, _asset=None):
+def get_rsi_local_max_value(_closes, _prev_rsi, _window=10, _asset=None):
     _start = 33
     _stop = -1
-    _rsi = relative_strength_index(_closes, 14, _asset)
+    _rsi = relative_strength_index(_closes, _prev_rsi, 14, _asset)
     _rsi_max_val, _rsi_reversed_max_ind = find_maximum(_rsi[_start:_stop:1], _window)
     return _rsi_max_val
 
@@ -794,7 +797,7 @@ def is_bullish_setup(asset):  # or price lower than MA100
     # _klines = get_pickled('/juno/', "klines")
     _stop = -1  # -5*60-30-16-10
     _start = 33
-    _last_candle = _klines[-1]
+    _curr_kline = _klines[-1]
     _closes = get_closes(_klines)
     _time_horizon = 6 * 60
 
@@ -832,7 +835,7 @@ def price_counter(_ma200, _closes, _time_horizon):
     return _below, _above
 
 
-def relative_strength_index(_closes, n=14, _asset=None):
+def relative_strength_index(_closes, _prev_rsi, n=14, _asset=None):
     try:
         _prices = np.array(_closes, dtype=np.float32)
 
@@ -862,7 +865,7 @@ def relative_strength_index(_closes, n=14, _asset=None):
     except Warning:
         logger_global[0].error("{} RSI computing error".format(_asset.market))
         save_to_file(trades_logs_dir, "broken_rsi_closes_{}".format(time.time()), _closes)
-        _rsi = [False]
+        _rsi = _prev_rsi
 
     return _rsi
 

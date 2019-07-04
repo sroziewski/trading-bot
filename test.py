@@ -14,6 +14,7 @@ from library import BullishStrategy, TradeAsset, get_remaining_btc, adjust_buy_a
 
 
 def main():
+    read_broken_rsi()
     _asset = TradeAsset('FTM')
     start_buy_local_bottom_test(_asset)
     # show_klines(_asset)
@@ -52,6 +53,7 @@ _prev_rsi_high = False
 _trigger = False
 _rsi_low = False
 _rsi_low_fresh = False
+_prev_rsi = TimeTuple(0, 0)
 
 
 def buy_local_bottom_test(_klines, _i):
@@ -59,6 +61,7 @@ def buy_local_bottom_test(_klines, _i):
     global _trigger
     global _rsi_low
     global _rsi_low_fresh
+    global _prev_rsi
     logger = setup_logger("test")
     _btc_value = 0.1
     _trade_asset = TradeAsset('FTM')
@@ -85,7 +88,7 @@ def buy_local_bottom_test(_klines, _i):
         # _klines = binance_obj.get_klines_currency(strategy.asset.market, strategy.asset.ticker, _time_interval)
         _curr_kline = _klines[-1]
         _closes = get_closes(_klines)
-        _rsi = relative_strength_index(_closes, 14, strategy.asset)
+        _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, strategy.asset)
         _ma7 = talib.MA(_closes, timeperiod=7)
         _open = float(_curr_kline[1])
         _close = _closes[-1]
@@ -171,6 +174,12 @@ def buy_local_bottom_test(_klines, _i):
 def get_time(_timestamp):
     return datetime.datetime.fromtimestamp(_timestamp).strftime('%d %B %Y %H:%M:%S')
 
+
+def read_broken_rsi():
+    _closes = get_pickled(trades_logs_dir, "broken_rsi_closes_1562196654.5590825")
+    r = relative_strength_index(_closes)
+
+    i = 1
 
 if __name__ == "__main__":
     main()
