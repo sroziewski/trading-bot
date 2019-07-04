@@ -195,6 +195,12 @@ def buy_local_bottom(strategy):
                 logger_global[0].info(
                     "{} buy_local_bottom : buy not possible, skipping, exiting".format(strategy.asset.market))
                 sys.exit(0)
+                
+            if not is_bullish_setup(strategy.asset):
+                strategy.asset.running = False
+                logger_global[0].info(
+                    "{} buy_local_bottom : NOT bullish setup, skipping, exiting".format(strategy.asset.market))
+                sys.exit(0)
 
             _klines = binance_obj.get_klines_currency(strategy.asset.market, strategy.asset.ticker, _time_interval)
             _curr_kline = _klines[-1]
@@ -355,7 +361,7 @@ def start_trading(_trade_asset, _btc_value):
             _run_strategy_maker = threading.Thread(target=run_strategy, args=(_bs,),
                                                    name='_run_strategy_maker_{}'.format(_trade_asset.name))
             _run_strategy_maker.start()
-        time.sleep(1)
+        time.sleep(5)
 
 
 def is_fresh(_tuple, _period):
@@ -823,8 +829,8 @@ def is_bullish_setup(asset):  # or price lower than MA100
     # _flipped_values = np.max(_values[_start:_stop:1]) - _values
     # _max_val, _reversed_max_ind = find_maximum(_flipped_values[_start:_stop:1], 2)
 
-    # return _curr_ma100 - _min_ma100 > 0
-    return True
+    return _curr_ma100 - _min_ma100 > 0
+    # return True
 
 
 def price_counter(_ma200, _closes, _time_horizon):
