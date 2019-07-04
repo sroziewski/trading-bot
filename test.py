@@ -171,10 +171,6 @@ def buy_local_bottom_test(_klines, _i):
             # time.sleep(45)
 
 
-def get_time(_timestamp):
-    return datetime.datetime.fromtimestamp(_timestamp).strftime('%d %B %Y %H:%M:%S')
-
-
 def read_broken_rsi():
     _closes = get_pickled(trades_logs_dir, "broken_rsi_closes_1562196654.5590825")
     r = relative_strength_index(_closes)

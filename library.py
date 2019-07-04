@@ -1,3 +1,4 @@
+import datetime
 import sys
 import warnings
 
@@ -176,6 +177,7 @@ def adjust_price_profit(asset):
 
 def buy_local_bottom(strategy):
     _time_interval = get_interval_unit(strategy.asset.ticker)
+    _time_frame_short = 10
     _time_frame_middle = 30
     _time_frame_rsi = 50
     _time_horizon = 60
@@ -238,7 +240,7 @@ def buy_local_bottom(strategy):
                   volume_condition(_klines, _max_volume, 0.9) and _rsi_curr < 33.5
 
             if _c1 or _c2 or _c3:
-                _max_volume_short = get_max_volume(_klines, 10)
+                _max_volume_short = get_max_volume(_klines, _time_frame_short)
                 # if _rsi_curr > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
                 if volume_condition(_klines, _max_volume_short, 0.3):  # RSI HL
                     _trigger = TimeTuple(True, _curr_kline[0])
@@ -252,7 +254,7 @@ def buy_local_bottom(strategy):
                     volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
                 _trigger = TimeTuple(True, _curr_kline[0])
 
-            if _trigger and _close - _ma7[-1] > 0:
+            if _trigger and _close - _ma7[-1] and is_fresh(_trigger, _time_frame_short) > 0:
                 logger_global[0].info("{} Buy Local Bottom triggered...".format(strategy.asset.market))
                 _la = lowest_ask(strategy.asset.market)
                 strategy.asset.buy_price = _la
@@ -457,7 +459,7 @@ general_fee = 0.001
 
 def get_interval_unit(_ticker):
     return {
-        Client.KLINE_INTERVAL_1MINUTE: "15 hours ago",
+        Client.KLINE_INTERVAL_1MINUTE: "8 hours ago",
         Client.KLINE_INTERVAL_15MINUTE: "40 hours ago",
         Client.KLINE_INTERVAL_30MINUTE: "75 hours ago",
         Client.KLINE_INTERVAL_1HOUR: "150 hours ago",
@@ -541,6 +543,7 @@ def adjust_quantity(quantity, lot_size_params):
         return False
     else:
         _power = int(np.log10(float(lot_size_params['stepSize'])))
+        _power = 0 if _power < 0 else _power
         _adjusted_quantity = round(quantity, _power)
         if _adjusted_quantity > quantity:
             _adjusted_quantity -= _min_sell_amount
@@ -958,3 +961,7 @@ def get_one_of_rsi(_rsi_fresh, _rsi_):
             return _rsi_
     else:
         return False
+
+
+def get_time(_timestamp):
+    return datetime.datetime.fromtimestamp(_timestamp).strftime('%d %B %Y %H:%M:%S')
