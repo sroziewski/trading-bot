@@ -176,6 +176,7 @@ def adjust_price_profit(asset):
 
 def buy_local_bottom(strategy):
     _time_interval = get_interval_unit(strategy.asset.ticker)
+    _time_frame_middle = 30
     _time_frame_rsi = 50
     _time_horizon = 60
     _time_horizon_long = 360
@@ -197,30 +198,47 @@ def buy_local_bottom(strategy):
             _closes = get_closes(_klines)
             _rsi = relative_strength_index(_closes, 14, strategy.asset)
             _max_volume = get_max_volume(_klines, _time_horizon)
+            _rsi_curr = _rsi[-1]
+            _ma7 = talib.MA(_closes, timeperiod=7)
+            _open = float(_curr_kline[1])
+            _close = _closes[-1]
 
-            if _rsi[-1] > 70:
-                _prev_rsi_high = TimeTuple(_rsi[-1], _curr_kline[0])
+            if _rsi_curr > 70:
+                _prev_rsi_high = TimeTuple(_rsi_curr, _curr_kline[0])
 
-            # if _rsi[-1] < 33.5 and not is_fresh(_prev_rsi_high, _time_frame_rsi):
-            if _rsi[-1] < 33.5:
+            _max_volume = get_max_volume(_klines, _time_horizon)
+
+            # if _rsi_curr < 33.5 and not is_fresh_test(_prev_rsi_high, _time_frame_rsi, _curr_kline[0]):
+            if _rsi_curr < 33.5 and not is_fresh(_prev_rsi_high, _time_frame_rsi):
                 _max_volume_long = get_max_volume(_klines, _time_horizon_long)
-                if volume_condition(_klines, _max_volume_long, 0.9):
-                    _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
+                if volume_condition(_klines, _max_volume_long, 0.9) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                    _rsi_low = TimeTuple(_rsi_curr, _curr_kline[0])
 
-            if _rsi[-1] < 33.5 and is_fresh(_prev_rsi_high, _time_frame_rsi):
+            if _rsi_curr < 33.5 and is_fresh(_prev_rsi_high, _time_frame_middle) and not_equal_rsi(
+                    _rsi_curr, _rsi_low):
                 if volume_condition(_klines, _max_volume, 0.9):
-                    _rsi_low_fresh = TimeTuple(_rsi[-1], _curr_kline[0])
+                    _rsi_low_fresh = TimeTuple(_rsi_curr, _curr_kline[0])
 
-            if not _rsi_low and _rsi[-1] < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) and volume_condition(_klines, _max_volume, 0.5):
-                _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
+            if not _rsi_low and _rsi_curr < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) \
+                    and volume_condition(_klines, _max_volume, 0.5) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                _rsi_low = TimeTuple(_rsi_curr, _curr_kline[0])
 
-            if not _rsi_low and _rsi[-1] < 20:
-                _rsi_low = TimeTuple(_rsi[-1], _curr_kline[0])
+            if not _rsi_low and _rsi_curr < 20 and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                _rsi_low = TimeTuple(_rsi_curr, _curr_kline[0])
 
-            if _rsi_low and _rsi[-1] < 33.5 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low, 15) and \
-                    _rsi[-1] > _rsi_low.value or _rsi_low and _rsi_low_fresh and _rsi[-1] > _rsi_low_fresh.value and _rsi[-1] > _rsi_low.value and not is_fresh(_rsi_low_fresh, 25):
+            _c1 = _rsi_low and _rsi_curr < 33.5 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low, 15) and \
+                  _rsi_curr > _rsi_low.value and not is_fresh(_rsi_low_fresh, _time_frame_middle)
+
+            _c2 = _rsi_low and _rsi_low_fresh and _rsi_curr > _rsi_low_fresh.value and _rsi_curr > _rsi_low.value and \
+                  not is_fresh(_rsi_low_fresh, _time_frame_middle)
+
+            _rsi_temp = get_one_of_rsi(_rsi_low_fresh, _rsi_low)
+            _c3 = _rsi_temp and _rsi_curr > _rsi_temp.value and not is_fresh(_rsi_temp, _time_horizon) and \
+                  volume_condition(_klines, _max_volume, 0.9) and _rsi_curr < 33.5
+
+            if _c1 or _c2 or _c3:
                 _max_volume_short = get_max_volume(_klines, 10)
-                # if _rsi[-1] > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
+                # if _rsi_curr > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
                 if volume_condition(_klines, _max_volume_short, 0.3):  # RSI HL
                     _trigger = TimeTuple(True, _curr_kline[0])
 
@@ -229,10 +247,11 @@ def buy_local_bottom(strategy):
             _close = _closes[-1]
             _max_volume_middle = get_max_volume(_klines, 15)
 
-            if _rsi_low and _close - _ma7[-1] > 0 and _rsi[-1] > _rsi_low.value and volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
+            if _rsi_low and _close - _ma7[-1] > 0 and _rsi_curr > _rsi_low.value and \
+                    volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
                 _trigger = TimeTuple(True, _curr_kline[0])
 
-            if _trigger:
+            if _trigger and _close - _ma7[-1] > 0:
                 logger_global[0].info("{} Buy Local Bottom triggered...".format(strategy.asset.market))
                 _la = lowest_ask(strategy.asset.market)
                 strategy.asset.buy_price = _la
@@ -345,6 +364,7 @@ def is_fresh_test(_tuple, _period, _curr_timestamp):
     _ts = _curr_timestamp / 1000
     return _period - (_ts - _tuple.timestamp) / 60 >= 0 if _tuple else False
 
+
 # def is_mature(_tuple, _period):
 #     _ts = time.time()
 #     return (_ts - _tuple[1])/60 - _period >= 0 if _tuple else False
@@ -407,7 +427,7 @@ class SellAsset(Asset):
 class TimeTuple(object):
     def __init__(self, value, timestamp):
         self.value = value
-        self.timestamp = timestamp/1000
+        self.timestamp = timestamp / 1000
 
 
 def save_to_file(_dir, filename, obj):
@@ -921,3 +941,17 @@ def get_angle(p1, p2):
 
 def get_magnitude(_reversed_max_ind, _max_val):
     return int(np.log10(_reversed_max_ind / np.abs(_max_val)))
+
+
+def not_equal_rsi(_rsi_1, _rsi_2):
+    return not _rsi_1 or not _rsi_2 or _rsi_1 != _rsi_2.value
+
+
+def get_one_of_rsi(_rsi_fresh, _rsi_):
+    if _rsi_fresh or _rsi_:
+        if _rsi_fresh:
+            return _rsi_fresh
+        else:
+            return _rsi_
+    else:
+        return False
