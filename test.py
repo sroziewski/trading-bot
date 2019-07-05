@@ -15,21 +15,20 @@ from library import BullishStrategy, TradeAsset, get_remaining_btc, adjust_buy_a
 
 def main():
     # read_broken_rsi()
-    _asset = TradeAsset('MATIC')
+    _asset = TradeAsset('FTM')
     start_buy_local_bottom_test(_asset)
     # show_klines(_asset)
     # generate_klines(_asset)
 
 
 def generate_klines(asset):
-    _time_interval = "16 hours ago"  # get_interval_unit(asset.ticker)
+    _time_interval = "6 hours ago"  # get_interval_unit(asset.ticker)
     _klines = binance_obj.get_klines_currency(asset.market, asset.ticker, _time_interval)
     save_to_file(trades_logs_dir, "test_klines_{}".format(asset.market), _klines)
 
 
 def show_klines(_asset):
     _klines = get_pickled(trades_logs_dir, "test_klines_{}".format(_asset.market))
-    _klines = _klines[0:400]
     _closes = get_closes(_klines)
     _ma7 = talib.MA(_closes, timeperiod=7)
     _ma50 = talib.MA(_closes, timeperiod=50)
@@ -46,8 +45,8 @@ def show_klines(_asset):
 
 def start_buy_local_bottom_test(_asset):
     _klines = get_pickled(trades_logs_dir, "test_klines_{}".format(_asset.market))
-    _klines_tail = get_last(_klines, -1, 800)
-    for _i in range(120, len(_klines_tail)):
+    _klines_tail = get_last(_klines, -1, 190)
+    for _i in range(80, len(_klines_tail)):
         _klines_test = _klines_tail[0:_i]
         buy_local_bottom_test(_klines_test, _i)
 
@@ -162,6 +161,9 @@ def buy_local_bottom_test(_klines, _i):
         if _big_volume_sold_out.value:
             if price_drop(_last_ma7_gt_ma100.value, _close, 0.08):
                 _bearish_trigger = TimeTuple(True, _time_curr)
+
+        if _rsi_low and _rsi_low.value < 20 and is_fresh_test(_rsi_low, _time_frame_middle, _time_curr):
+            _trigger = False
 
         if _trigger and _close - _ma7_curr > 0 and is_fresh_test(_bearish_trigger, _time_frame_middle, _time_curr):
             logger.info("{} Buy Local Bottom triggered...".format(strategy.asset.market))

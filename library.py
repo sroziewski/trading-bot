@@ -171,6 +171,7 @@ class BullishStrategy(BuyStrategy):
         _rsi_low = False
         _rsi_low_fresh = False
         _prev_rsi = TimeTuple(0, 0)
+        _rsi_lowest_low = False
         while 1:
             try:
                 self.asset.price = lowest_ask(self.asset.market)
@@ -242,6 +243,9 @@ class BullishStrategy(BuyStrategy):
                 if _rsi_low and _close - _ma7[-1] > 0 and _rsi_curr > _rsi_low.value and \
                         volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
                     _trigger = TimeTuple(True, _time_curr)
+
+                if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, _time_frame_middle):
+                    _trigger = False
 
                 if _close - _ma7[-1] and is_fresh(_trigger, 15) > 0:
                     logger_global[0].info("{} Buy Local Bottom triggered...".format(self.asset.market))
@@ -380,6 +384,9 @@ class BearishStrategy(BullishStrategy):
                 if _big_volume_sold_out.value:
                     if price_drop(_last_ma7_gt_ma100.value, _close, 0.08):
                         _bearish_trigger = TimeTuple(True, _time_curr)
+
+                if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, _time_frame_middle):
+                    _trigger = False
 
                 if _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
                     logger_global[0].info("{} Buy Local Bottom triggered...".format(self.asset.market))
