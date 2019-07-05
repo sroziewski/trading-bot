@@ -398,12 +398,12 @@ class BearishStrategy(BullishStrategy):
                     _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
                         self.asset.trading = True
-                        # _order_id = buy_order(strategy.asset, _quantity_to_buy)
+                        _order_id = buy_order(self.asset, _quantity_to_buy)
                         adjust_stop_loss_price(self.asset)
                         adjust_price_profit(self.asset)
                         self.set_stop_loss()
-                        # wait_until_order_filled(strategy.asset.market, _order_id)
-                        # sell_limit(strategy.asset.market, strategy.asset.name, strategy.asset.price_profit)
+                        wait_until_order_filled(self.asset.market, _order_id)
+                        sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
                         self.set_take_profit()
                         logger_global[0].info(
                             "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market, self,
