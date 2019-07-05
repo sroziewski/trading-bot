@@ -259,7 +259,7 @@ class BullishStrategy(BuyStrategy):
                         # sell_limit(strategy.asset.market, strategy.asset.name, strategy.asset.price_profit)
                         self.set_take_profit()
                         logger_global[0].info(
-                            "{} Bought Local Bottom : price : {} value : {} BTC, exiting".format(self.asset.market,
+                            "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market, self,
                                                                                                  self.asset.buy_price,
                                                                                                  self.btc_value))
                         self.asset.running = False
@@ -431,19 +431,26 @@ def adjust_price_profit(asset):
     asset.price_profit = np.round((1 + asset.profit / 100) * asset.buy_price, 8)
 
 
-def get_klines(_asset, _time_interval):
+def get_klines(*args):
+    if len(args) == 2:
+        return get_klines_1(args[0], args[1])
+    elif len(args) == 3:
+        return get_klines_1(args[0], args[1], args[2])
+
+
+def get_klines_1(_asset, _time_interval):
     try:
         return binance_obj.get_klines_currency(_asset.market, _asset.ticker, _time_interval)
     except TypeError:
-        get_klines(_asset, _time_interval)
+        get_klines_1(_asset, _time_interval)
         time.sleep(2)
 
 
-def get_klines(_market, _ticker, _time_interval):
+def get_klines_2(_market, _ticker, _time_interval):
     try:
         return binance_obj.get_klines_currency(_market, _ticker, _time_interval)
     except TypeError:
-        get_klines(_market, _ticker, _time_interval)
+        get_klines_2(_market, _ticker, _time_interval)
         time.sleep(2)
 
 
