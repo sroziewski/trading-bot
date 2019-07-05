@@ -16,7 +16,6 @@ logger = setup_logger("trader")
 
 btc_value = 0.01  # get_remaining_btc()
 adjust_buy_asset_btc_volume(trade_assets, btc_value)
-
 while 1:
     try:
         for trade_asset in trade_assets:  # remove asset from here
