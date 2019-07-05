@@ -186,7 +186,7 @@ class BullishStrategy(BuyStrategy):
                         "{} buy_local_bottom : NOT bullish setup, skipping, exiting".format(self.asset.market))
                     sys.exit(0)
 
-                _klines = binance_obj.get_klines_currency(self.asset.market, self.asset.ticker, _time_interval)
+                _klines = get_klines(self.asset, _time_interval)
                 _curr_kline = _klines[-1]
                 _closes = get_closes(_klines)
                 _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, self.asset)
@@ -311,7 +311,7 @@ class BearishStrategy(BullishStrategy):
                         "{} buy_local_bottom : NOT bearish setup, skipping, exiting".format(self.asset.market))
                     sys.exit(0)
 
-                _klines = binance_obj.get_klines_currency(self.asset.market, self.asset.ticker, _time_interval)
+                _klines = get_klines(self.asset, _time_interval)
                 _curr_kline = _klines[-1]
                 _closes = get_closes(_klines)
                 _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, self.asset)
@@ -431,6 +431,22 @@ def adjust_price_profit(asset):
     asset.price_profit = np.round((1 + asset.profit / 100) * asset.buy_price, 8)
 
 
+def get_klines(_asset, _time_interval):
+    try:
+        return binance_obj.get_klines_currency(_asset.market, _asset.ticker, _time_interval)
+    except TypeError:
+        get_klines(_asset, _time_interval)
+        time.sleep(2)
+
+
+def get_klines(_market, _ticker, _time_interval):
+    try:
+        return binance_obj.get_klines_currency(_market, _ticker, _time_interval)
+    except TypeError:
+        get_klines(_market, _ticker, _time_interval)
+        time.sleep(2)
+
+
 def sell_local_top(asset):
     _time_interval = get_interval_unit(asset.ticker)
     _max_volume_max_rsi = -1
@@ -439,7 +455,7 @@ def sell_local_top(asset):
     _prev_rsi = TimeTuple(0, 0)
     while 1:
         try:
-            _klines = binance_obj.get_klines_currency(asset.market, asset.ticker, _time_interval)
+            _klines = get_klines(asset, _time_interval)
             _curr_kline = _klines[-1]
             _closes = get_closes(_klines)
             _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, asset)
@@ -622,11 +638,12 @@ def get_interval_unit(_ticker):
     }[_ticker]
 
 
-def stop_signal(market, time_interval, time0, stop_price, _times=4):
-    _klines = binance_obj.get_klines_currency(market, time_interval, time0)
+def stop_signal(_market, _ticker, _time_interval, _stop_price, _times=4):
+    # _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
+    _klines = get_klines(_market, _ticker, _time_interval)
     if len(_klines) > 0:
         _mean_close_price = np.mean(list(map(lambda x: float(x[4]), _klines[-_times:])))
-        return True if _mean_close_price <= stop_price else False
+        return True if _mean_close_price <= _stop_price else False
 
 
 def get_sell_price(market):
@@ -821,7 +838,7 @@ def take_profit(asset):
                 logger_global[0].info("{} Take profit : sold, not trading, skipping, exiting".format(asset.market))
                 sys.exit(0)
         try:
-            _klines = binance_obj.get_klines_currency(asset.market, _ticker, _time_interval)
+            _klines = get_klines(asset.market, _ticker, _time_interval)
             # _klines = get_pickled('/juno/', "klines")
             # _klines = _klines[33:-871]
             _closes = get_closes(_klines)
@@ -945,7 +962,7 @@ def get_highs(_klines):
 
 def is_bullish_setup(asset):  # or price lower than MA100
     _time_interval = get_interval_unit(asset.ticker)
-    _klines = binance_obj.get_klines_currency(asset.market, asset.ticker, _time_interval)
+    _klines = get_klines(asset, _time_interval)
     # _klines = get_pickled('/juno/', "klines")
     _stop = -1  # -5*60-30-16-10
     _start = 33

@@ -5,7 +5,7 @@ import talib
 from binance.client import Client
 
 from library import binance_obj, get_interval_unit, AssetTicker, highest_bid, get_pickled, \
-    exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file
+    exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file, get_klines
 
 
 def relative_strength_index(_closes, n=14):
@@ -152,7 +152,7 @@ def get_tradeable_assets(_markets, _ticker):
         try:
             if _asset:
                 # print(_asset)
-                _closes = get_closes(binance_obj.get_klines_currency(_market, _ticker, _time_interval))
+                _closes = get_closes(get_klines(_market, _ticker, _time_interval))
                 _rsi = relative_strength_index(_closes)
                 _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
                 if is_tradeable(_closes, _rsi, _macd, _macdsignal):
@@ -171,7 +171,7 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
         try:
             if _asset:
                 # print(_asset)
-                _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
+                _klines = get_klines(_market, _ticker, _time_interval)
                 _closes = get_closes(_klines)
                 _opens = get_opens(_klines)
                 _ma100 = talib.MA(_closes, timeperiod=100)
@@ -208,7 +208,7 @@ def get_bullish_assets(_markets, _ticker):
             _asset = _market.split("BTC")[0]
             if _asset:
                 # print(_asset)
-                _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
+                _klines = get_klines(_market, _ticker, _time_interval)
                 _closes = get_closes(_klines)
                 _opens = get_opens(_klines)
                 _ma100 = talib.MA(_closes, timeperiod=100)
@@ -409,7 +409,7 @@ def main():
     ticker = Client.KLINE_INTERVAL_1MINUTE
     time_interval = "16 hours ago"
 
-    _klines = binance_obj.get_klines_currency(market, ticker, time_interval)
+    _klines = get_klines(market, ticker, time_interval)
 
     save_to_file("/juno/", "klines", _klines)
     # _klines = get_pickled('/juno/', "klines")
