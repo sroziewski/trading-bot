@@ -135,8 +135,8 @@ class ObserverStrategy(Strategy):
         logger_global[0].info("{} ObserverStrategy object has been created".format(self.asset.market))
 
     def run(self):
-        self.set_stop_loss()
-        sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
+        # self.set_stop_loss()
+        # sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
         self.set_take_profit()
 
 
@@ -444,7 +444,7 @@ def get_klines(*args):
     if len(args) == 2:
         return get_klines_1(args[0], args[1])
     elif len(args) == 3:
-        return get_klines_1(args[0], args[1], args[2])
+        return get_klines_2(args[0], args[1], args[2])
 
 
 def get_klines_1(_asset, _time_interval):
