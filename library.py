@@ -36,7 +36,7 @@ config = Config()
 key_dir = config.get_parameter('key_dir')
 trades_logs_dir = config.get_parameter('trades_logs_dir')
 logger_global = []
-exclude_markets = ['BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
+exclude_markets = ['DOGEBTC', 'ERDBTC','BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
                    'SALTBTC',
                    'SUBBTC',
                    'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
