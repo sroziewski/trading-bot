@@ -171,7 +171,6 @@ class BullishStrategy(BuyStrategy):
         _rsi_low = False
         _rsi_low_fresh = False
         _prev_rsi = TimeTuple(0, 0)
-        _rsi_lowest_low = False
         while 1:
             try:
                 self.asset.price = lowest_ask(self.asset.market)
