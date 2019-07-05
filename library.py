@@ -246,7 +246,7 @@ class BullishStrategy(BuyStrategy):
                         volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
                     _trigger = TimeTuple(True, _time_curr)
 
-                if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, _time_frame_middle):
+                if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, 15):
                     _trigger = False
 
                 if _close - _ma7[-1] and is_fresh(_trigger, 15) > 0:
@@ -387,7 +387,7 @@ class BearishStrategy(BullishStrategy):
                     if price_drop(_last_ma7_gt_ma100.value, _close, 0.08):
                         _bearish_trigger = TimeTuple(True, _time_curr)
 
-                if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, _time_frame_middle):
+                if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, 15):
                     _trigger = False
 
                 if _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
