@@ -8,8 +8,8 @@ from binance.client import Client
 from library import stop_signal, sat, sell_limit_stop_loss, setup_logger
 
 
-asset = "HOT"
-stop_price_in_satoshi = 25
+asset = "DOGE"
+stop_price_in_satoshi = 29
 
 
 market = "{}BTC".format(asset)
