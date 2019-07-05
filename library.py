@@ -220,7 +220,7 @@ class BullishStrategy(BuyStrategy):
                 if not _rsi_low and _rsi_curr < 20 and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
                     _rsi_low = TimeTuple(_rsi_curr, _time_curr)
 
-                _c1 = _rsi_low and _rsi_curr < 33.5 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low,
+                _c1 = _rsi_low and _rsi_curr < 35 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low,
                                                                                                              15) and \
                       _rsi_curr > _rsi_low.value and not is_fresh(_rsi_low_fresh, _time_frame_middle)
 
