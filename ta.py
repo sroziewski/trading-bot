@@ -376,7 +376,7 @@ def analyze_markets():
                Client.KLINE_INTERVAL_12HOUR,
                Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
 
-    tickers = [Client.KLINE_INTERVAL_3MINUTE]
+    # tickers = [Client.KLINE_INTERVAL_3MINUTE]
 
     print("bullish & tradeable assets")
     bullish_tradeable_map = {}
