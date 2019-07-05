@@ -45,13 +45,14 @@ def relative_strength_index(_closes, n=14):
 
 
 def get_rsi(_market, _ticker, _time_interval):
-    _klines = get_klines(_market, _ticker, _time_interval)
-    _closes = get_closes(_klines)
-    try:
-        return relative_strength_index(_closes)
-    except Warning:
-        time.sleep(1)
-        return get_rsi(_market, _ticker, _time_interval)
+    for _i in range(0, 10):
+        try:
+            _klines = get_klines(_market, _ticker, _time_interval)
+            _closes = get_closes(_klines)
+            return talib.RSI(_closes, timeperiod=14)
+        except Warning:
+            time.sleep(1)
+
 
 plt.figure(1)
 
@@ -128,6 +129,8 @@ def is_higher_low(_values, _limit, _start, _stop, _window=10):
 
 
 def is_tradeable(_closes, _rsi, _macd, _macdsignal):
+    if len(list(filter(lambda x: x == 0, get_last(_rsi, -1, 10)))) > 0:
+        return False
     _start = 33
     _stop = -1
     _slope = 30

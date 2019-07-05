@@ -15,10 +15,10 @@ from library import BullishStrategy, TradeAsset, get_remaining_btc, adjust_buy_a
 
 def main():
     # read_broken_rsi()
-    _asset = TradeAsset('FTM')
-    start_buy_local_bottom_test(_asset)
-    # show_klines(_asset)
-    # generate_klines(_asset)
+    _asset = TradeAsset('ALGO')
+    # start_buy_local_bottom_test(_asset)
+    generate_klines(_asset)
+    show_klines(_asset)
 
 
 def generate_klines(asset):
@@ -33,7 +33,7 @@ def show_klines(_asset):
     _ma7 = talib.MA(_closes, timeperiod=7)
     _ma50 = talib.MA(_closes, timeperiod=50)
     _ma100 = talib.MA(_closes, timeperiod=100)
-    r = relative_strength_index(_closes)
+    r = talib.RSI(_closes, timeperiod=14)
     plt.subplot2grid((3, 1), (1, 0))
     plt.plot(_ma7, 'pink', lw=1)
     # plt.plot(_ma50, 'red', lw=1)
