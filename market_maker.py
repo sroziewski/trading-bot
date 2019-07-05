@@ -28,7 +28,7 @@ def price_buy_strategy():
 def price_observer_strategy():
     logger = setup_logger("price_observer_strategy")
     buy_assets = [
-        ObserveAsset('CELR', 0.00000126, 0.00000101, 0.00000213, 10)
+        ObserveAsset('DOGE', 0.00000039, 0.00000097, 0.00000213, 30)
     ]
     check_observe_assets(buy_assets)
     logger.info("Starting price_observer_strategy :\n{}".format(
