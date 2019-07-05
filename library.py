@@ -135,8 +135,8 @@ class ObserverStrategy(Strategy):
         logger_global[0].info("{} ObserverStrategy object has been created".format(self.asset.market))
 
     def run(self):
-        # self.set_stop_loss()
-        # sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
+        self.set_stop_loss()
+        sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
         self.set_take_profit()
 
 
