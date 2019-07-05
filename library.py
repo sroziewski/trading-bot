@@ -640,7 +640,9 @@ general_fee = 0.001
 
 def get_interval_unit(_ticker):
     return {
-        Client.KLINE_INTERVAL_1MINUTE: "8 hours ago",
+        Client.KLINE_INTERVAL_1MINUTE: "6 hours ago",
+        Client.KLINE_INTERVAL_3MINUTE: "18 hours ago",
+        Client.KLINE_INTERVAL_5MINUTE: "28 hours ago",
         Client.KLINE_INTERVAL_15MINUTE: "40 hours ago",
         Client.KLINE_INTERVAL_30MINUTE: "75 hours ago",
         Client.KLINE_INTERVAL_1HOUR: "150 hours ago",

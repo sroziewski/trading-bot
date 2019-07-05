@@ -1,3 +1,7 @@
+import time
+import traceback
+import warnings
+
 import numpy as np
 
 import matplotlib.pyplot as plt
@@ -6,6 +10,8 @@ from binance.client import Client
 
 from library import binance_obj, get_interval_unit, AssetTicker, highest_bid, get_pickled, \
     exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file, get_klines
+
+warnings.filterwarnings('error')
 
 
 def relative_strength_index(_closes, n=14):
@@ -37,6 +43,15 @@ def relative_strength_index(_closes, n=14):
 
     return _rsi
 
+
+def get_rsi(_market, _ticker, _time_interval):
+    _klines = get_klines(_market, _ticker, _time_interval)
+    _closes = get_closes(_klines)
+    try:
+        return relative_strength_index(_closes)
+    except Warning:
+        time.sleep(1)
+        return get_rsi(_market, _ticker, _time_interval)
 
 plt.figure(1)
 
@@ -153,7 +168,8 @@ def get_tradeable_assets(_markets, _ticker):
             if _asset:
                 # print(_asset)
                 _closes = get_closes(get_klines(_market, _ticker, _time_interval))
-                _rsi = relative_strength_index(_closes)
+                # _rsi = relative_strength_index(_closes)
+                _rsi = get_rsi(_market, _ticker, _time_interval)
                 _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
                 if is_tradeable(_closes, _rsi, _macd, _macdsignal):
                     _tradeable_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
@@ -188,14 +204,15 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
                          or bullishness_2(_opens, _closes, _ma100, _ma50, _ma20, _ma7) or bullishness_3(_opens, _closes,
                                                                                                         _ma100, _ma50,
                                                                                                         _ma20, _ma7)
-                _rsi = relative_strength_index(_closes)
+                _rsi = get_rsi(_market, _ticker, _time_interval)
                 _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
                 _cond2 = is_tradeable(_closes, _rsi, _macd, _macdsignal)
 
                 if _cond1 and _cond2:
                     _assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
-        except Exception:
+        except Exception as err:
             print('Value Error for {} in {}'.format(_ticker, _market))
+            traceback.print_tb(err.__traceback__)
     sort_assets(_assets)
     return _assets
 
@@ -358,6 +375,8 @@ def analyze_markets():
                Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
                Client.KLINE_INTERVAL_12HOUR,
                Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
+
+    tickers = [Client.KLINE_INTERVAL_3MINUTE]
 
     print("bullish & tradeable assets")
     bullish_tradeable_map = {}
