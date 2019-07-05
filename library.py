@@ -104,6 +104,9 @@ class Strategy(object):
                                               name='_take_profit_maker_{}'.format(self.asset.name))
         _take_profit_maker.start()
 
+    def __str__(self):
+        return str(self.__class__).split('\'')[1].split('.')[1]
+
 
 class BuyStrategy(Strategy):
     def __init__(self, asset, btc_value, params, subclass=False):
@@ -177,13 +180,13 @@ class BullishStrategy(BuyStrategy):
                 if not is_buy_possible(self.asset, self.btc_value, self.params):
                     self.asset.running = False
                     logger_global[0].info(
-                        "{} buy_local_bottom : buy not possible, skipping, exiting".format(self.asset.market))
+                        "{} buy_local_bottom {} : buy not possible, skipping, exiting".format(self.asset.market, self))
                     sys.exit(0)
 
                 if not is_bullish_setup(self.asset):
                     self.asset.running = False
                     logger_global[0].info(
-                        "{} buy_local_bottom : NOT bullish setup, skipping, exiting".format(self.asset.market))
+                        "{} buy_local_bottom {} : NOT bullish setup, skipping, exiting".format(self.asset.market, self))
                     sys.exit(0)
 
                 _klines = get_klines(self.asset, _time_interval)
@@ -247,7 +250,7 @@ class BullishStrategy(BuyStrategy):
                     _trigger = False
 
                 if _close - _ma7[-1] and is_fresh(_trigger, 15) > 0:
-                    logger_global[0].info("{} Buy Local Bottom triggered...".format(self.asset.market))
+                    logger_global[0].info("{} Buy Local Bottom triggered : {} ...".format(self.asset.market, self))
                     _la = lowest_ask(self.asset.market)
                     self.asset.buy_price = _la
                     _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
@@ -305,13 +308,13 @@ class BearishStrategy(BullishStrategy):
                 if not is_buy_possible(self.asset, self.btc_value, self.params):
                     self.asset.running = False
                     logger_global[0].info(
-                        "{} buy_local_bottom : buy not possible, skipping, exiting".format(self.asset.market))
+                        "{} buy_local_bottom {} : buy not possible, skipping, exiting".format(self.asset.market, self))
                     sys.exit(0)
 
                 if is_bullish_setup(self.asset):
                     self.asset.running = False
                     logger_global[0].info(
-                        "{} buy_local_bottom : NOT bearish setup, skipping, exiting".format(self.asset.market))
+                        "{} buy_local_bottom {} : NOT bearish setup, skipping, exiting".format(self.asset.market, self))
                     sys.exit(0)
 
                 _klines = get_klines(self.asset, _time_interval)
@@ -388,7 +391,7 @@ class BearishStrategy(BullishStrategy):
                     _trigger = False
 
                 if _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
-                    logger_global[0].info("{} Buy Local Bottom triggered...".format(self.asset.market))
+                    logger_global[0].info("{} Buy Local Bottom triggered {} ...".format(self.asset.market, self))
                     _la = lowest_ask(self.asset.market)
                     self.asset.buy_price = _la
                     _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
@@ -403,7 +406,7 @@ class BearishStrategy(BullishStrategy):
                         # sell_limit(strategy.asset.market, strategy.asset.name, strategy.asset.price_profit)
                         self.set_take_profit()
                         logger_global[0].info(
-                            "{} Bought Local Bottom : price : {} value : {} BTC, exiting".format(self.asset.market,
+                            "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market, self,
                                                                                                  self.asset.buy_price,
                                                                                                  self.btc_value))
                         self.asset.running = False
