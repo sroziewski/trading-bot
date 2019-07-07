@@ -674,7 +674,7 @@ def get_pickled(_dir, filename):
         return data
 
 
-keys = get_pickled(key_dir, "keys")
+keys = get_pickled(key_dir, ".keys")
 
 client = Client(keys[0], keys[1])
 
