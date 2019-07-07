@@ -256,6 +256,8 @@ class BullishStrategy(BuyStrategy):
                     _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
                     _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
+                        dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _prev_rsi,
+                                       TimeTuple(False, 0), TimeTuple(False, 0), TimeTuple(False, 0))
                         self.asset.trading = True
                         _order_id = buy_order(self.asset, _quantity_to_buy)
                         adjust_stop_loss_price(self.asset)
@@ -397,6 +399,8 @@ class BearishStrategy(BullishStrategy):
                     _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
                     _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
+                        dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _prev_rsi,
+                                       _last_ma7_gt_ma100, _big_volume_sold_out, _bearish_trigger)
                         self.asset.trading = True
                         _order_id = buy_order(self.asset, _quantity_to_buy)
                         adjust_stop_loss_price(self.asset)
@@ -588,12 +592,12 @@ def observe_lower_price(_assets):
 
 
 def is_buy_possible(_asset, _btc_value, _params):
-    if _asset.price:
-        _min_amount = float(_params['minQty']) * _asset.price
-    else:
-        _min_amount = float(_params['minQty']) * _asset.buy_price
-    b = 0.001 < _btc_value > _min_amount
-    return b
+    # if _asset.price:
+    #     _min_amount = float(_params['minQty']) * _asset.price
+    # else:
+    #     _min_amount = float(_params['minQty']) * _asset.buy_price
+    # b = 0.001 < _btc_value > _min_amount
+    return True
 
 
 def get_remaining_btc():
@@ -627,7 +631,7 @@ def get_pickled(_dir, filename):
         return data
 
 
-keys = get_pickled(key_dir, ".keys")
+keys = get_pickled(key_dir, "keys")
 
 client = Client(keys[0], keys[1])
 
@@ -1163,3 +1167,13 @@ def get_time(_timestamp):
 
 def price_drop(price0, price1, _ratio):
     return (price0 - price1) / price0 > _ratio
+
+
+def dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _prev_rsi, _last_ma7_gt_ma100, _big_volume_sold_out, _bearish_trigger):
+    logger_global[0].info("_prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _prev_rsi: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {}",
+                          _prev_rsi_high.value if _prev_rsi_high else False, _trigger.value if _trigger else False,
+                          _rsi_low.value if _rsi_low else False, _rsi_low_fresh.value if _rsi_low_fresh else False,
+                          _prev_rsi.value if _prev_rsi else False, _last_ma7_gt_ma100.value if _last_ma7_gt_ma100.value else False,
+                          _big_volume_sold_out.value if _big_volume_sold_out.value else False,
+                          _bearish_trigger.value if _bearish_trigger.value else False
+                          )
