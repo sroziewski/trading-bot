@@ -17,7 +17,7 @@ logger = setup_logger("trader")
 while 1:
     try:
         _btc = get_remaining_btc()
-        btc_value = 0.01 if _btc > 0.01 else _btc
+        btc_value = 0.004 if _btc > 0.004 else _btc
         adjust_buy_asset_btc_volume(trade_assets, btc_value)
 
         for trade_asset in trade_assets:  # remove asset from here

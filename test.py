@@ -1,5 +1,3 @@
-import datetime
-
 import talib
 import traceback
 import matplotlib.pyplot as plt
@@ -10,7 +8,9 @@ from library import BullishStrategy, TradeAsset, get_remaining_btc, adjust_buy_a
     get_interval_unit, lowest_ask, is_buy_possible, setup_logger, get_buying_asset_quantity, \
     adjust_quantity, adjust_stop_loss_price, adjust_price_profit, TimeTuple, relative_strength_index, get_closes, \
     get_max_volume, is_red_candle, is_fresh, volume_condition, binance_obj, save_to_file, trades_logs_dir, get_pickled, \
-    get_last, is_fresh_test, not_equal_rsi, get_one_of_rsi, get_time, price_drop, is_bullish_setup
+    get_last, is_fresh_test, not_equal_rsi, get_one_of_rsi, get_time, price_drop, is_bullish_setup, dump_variables, \
+    get_green_candles
+from ta import is_rsi_slope_condition
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
 
 
 def generate_klines(asset):
-    _time_interval = "38 hours ago"  # get_interval_unit(asset.ticker)
+    _time_interval = "49 hours ago"  # get_interval_unit(asset.ticker)
     _klines = binance_obj.get_klines_currency(asset.market, asset.ticker, _time_interval)
     save_to_file(trades_logs_dir, "test_klines_{}".format(asset.market), _klines)
 
@@ -55,6 +55,7 @@ _prev_rsi_high = False
 _trigger = False
 _rsi_low = False
 _rsi_low_fresh = False
+_slope_condition = TimeTuple(False, 0)
 _prev_rsi = TimeTuple(0, 0)
 _last_ma7_gt_ma100 = TimeTuple(False, 0)
 _big_volume_sold_out = TimeTuple(False, 0)
@@ -70,6 +71,7 @@ def buy_local_bottom_bullish_test(_klines, _i):
     global _big_volume_sold_out
     global _bearish_trigger
     global _prev_rsi_high
+    global _slope_condition
     logger = setup_logger("test")
     _btc_value = 0.1
     _trade_asset = TradeAsset('ALGO')
@@ -115,6 +117,8 @@ def buy_local_bottom_bullish_test(_klines, _i):
 
         if _rsi_curr > 70:
             _prev_rsi_high = TimeTuple(_rsi_curr, _time_curr)
+            _rsi_low = False
+            _rsi_low_fresh = False
 
         _max_volume = get_max_volume(_klines, _time_horizon)
 
@@ -131,7 +135,10 @@ def buy_local_bottom_bullish_test(_klines, _i):
 
         if not _rsi_low and _rsi_curr < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) \
                 and volume_condition(_klines, _max_volume, 0.5) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
-            _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+            if not is_rsi_slope_condition(_rsi, 100, 68, len(_rsi) - 45, -1, _window=10):
+                _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+            else:
+                _slope_condition = TimeTuple(True, _time_curr)
 
         if not _rsi_low and _rsi_curr < 20 and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
             _rsi_low = TimeTuple(_rsi_curr, _time_curr)
@@ -162,8 +169,25 @@ def buy_local_bottom_bullish_test(_klines, _i):
         if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, 15):
             _trigger = False
 
-        if _trigger:
-            i2 = 12
+        if _slope_condition.value:
+            _rsi_low = False
+            _rsi_low_fresh = False
+            _trigger = False
+
+        if not is_fresh_test(_slope_condition, _time_horizon, _time_curr):
+            _slope_condition = TimeTuple(False, _time_curr)
+
+        if _rsi_low and is_red_candle(_curr_kline):
+            _green_klines = get_green_candles(_klines)
+            _max_volume_long = get_max_volume(_green_klines, _time_horizon)
+            if volume_condition(_klines, _max_volume_long, 2.1):
+                _rsi_low = False
+
+        # if _trigger:
+        #     i2 = 12
+        #
+        #     dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh,
+        #                    TimeTuple(False, 0), TimeTuple(False, 0), TimeTuple(False, 0))
 
         if _close - _ma7[-1] and is_fresh(_trigger, 15) > 0:
             logger.info("{} Buy Local Bottom triggered : {} ...".format(strategy.asset.market, strategy))

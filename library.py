@@ -36,7 +36,7 @@ config = Config()
 key_dir = config.get_parameter('key_dir')
 trades_logs_dir = config.get_parameter('trades_logs_dir')
 logger_global = []
-exclude_markets = ['DOGEBTC', 'ERDBTC','BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
+exclude_markets = ['DOGEBTC', 'ERDBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
                    'SALTBTC',
                    'SUBBTC',
                    'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
@@ -174,6 +174,7 @@ class BullishStrategy(BuyStrategy):
         _rsi_low = False
         _rsi_low_fresh = False
         _prev_rsi = TimeTuple(0, 0)
+        _slope_condition = TimeTuple(False, 0)
         while 1:
             try:
                 self.asset.price = lowest_ask(self.asset.market)
@@ -202,6 +203,8 @@ class BullishStrategy(BuyStrategy):
 
                 if _rsi_curr > 70:
                     _prev_rsi_high = TimeTuple(_rsi_curr, _time_curr)
+                    _rsi_low = False
+                    _rsi_low_fresh = False
 
                 _max_volume = get_max_volume(_klines, _time_horizon)
 
@@ -218,13 +221,16 @@ class BullishStrategy(BuyStrategy):
 
                 if not _rsi_low and _rsi_curr < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) \
                         and volume_condition(_klines, _max_volume, 0.5) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
-                    _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+                    if not is_rsi_slope_condition(_rsi, 100, 68, len(_rsi) - 45, -1, _window=10):
+                        _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+                    else:
+                        _slope_condition = TimeTuple(True, _time_curr)
 
                 if not _rsi_low and _rsi_curr < 20 and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
                     _rsi_low = TimeTuple(_rsi_curr, _time_curr)
 
                 _c1 = _rsi_low and _rsi_curr < 35 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low,
-                                                                                                             15) and \
+                                                                                                           15) and \
                       _rsi_curr > _rsi_low.value and not is_fresh(_rsi_low_fresh, _time_frame_middle)
 
                 _c2 = _rsi_low and _rsi_low_fresh and _rsi_curr > _rsi_low_fresh.value and _rsi_curr > _rsi_low.value and \
@@ -249,15 +255,29 @@ class BullishStrategy(BuyStrategy):
                 if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, 15):
                     _trigger = False
 
-                if _close - _ma7[-1] and is_fresh(_trigger, 15) > 0:
-                    logger_global[0].info("{} Buy Local Bottom triggered : {} ...".format(self.asset.market, self))
+                if _slope_condition.value:
+                    _rsi_low = False
+                    _rsi_low_fresh = False
+                    _trigger = False
+                if not is_fresh_test(_slope_condition, _time_horizon, _time_curr):
+                    _slope_condition = TimeTuple(False, _time_curr)
+
+                if _rsi_low and is_red_candle(_curr_kline):
+                    _green_klines = get_green_candles(_klines)
+                    _max_volume_long = get_max_volume(_green_klines, _time_horizon)
+                    if volume_condition(_klines, _max_volume_long, 2.1):
+                        _rsi_low = False
+                        _rsi_low_fresh
+
+                if _close - _ma7[-1] > 0 and is_fresh(_trigger, 15) > 0:
+                    # logger_global[0].info("{} Buy Local Bottom triggered : {} ...".format(self.asset.market, self))
                     _la = lowest_ask(self.asset.market)
                     self.asset.buy_price = _la
                     _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
                     _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
-                        dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _prev_rsi,
-                                       TimeTuple(False, 0), TimeTuple(False, 0), TimeTuple(False, 0))
+                        dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh,
+                                       TimeTuple(False, 0), TimeTuple(False, 0), TimeTuple(False, 0), _slope_condition)
                         self.asset.trading = True
                         _order_id = buy_order(self.asset, _quantity_to_buy)
                         adjust_stop_loss_price(self.asset)
@@ -267,9 +287,10 @@ class BullishStrategy(BuyStrategy):
                         sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
                         self.set_take_profit()
                         logger_global[0].info(
-                            "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market, self,
-                                                                                                 self.asset.buy_price,
-                                                                                                 self.btc_value))
+                            "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
+                                                                                                    self,
+                                                                                                    self.asset.buy_price,
+                                                                                                    self.btc_value))
                         self.asset.running = False
                         save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
                         sys.exit(0)
@@ -304,6 +325,7 @@ class BearishStrategy(BullishStrategy):
         _last_ma7_gt_ma100 = TimeTuple(False, 0)
         _big_volume_sold_out = TimeTuple(False, 0)
         _bearish_trigger = TimeTuple(False, 0)
+        _slope_condition = TimeTuple(False, 0)
         while 1:
             try:
                 self.asset.price = lowest_ask(self.asset.market)
@@ -334,13 +356,16 @@ class BearishStrategy(BullishStrategy):
                 if _ma7_curr > _ma100_curr:
                     _last_ma7_gt_ma100 = TimeTuple(_close, _time_curr)
 
-                if _last_ma7_gt_ma100.value and is_red_candle(_curr_kline) and _ma100_curr > _ma7_curr > _close and _rsi_curr < 30:
+                if _last_ma7_gt_ma100.value and is_red_candle(
+                        _curr_kline) and _ma100_curr > _ma7_curr > _close and _rsi_curr < 30:
                     _max_volume_long = get_max_volume(_klines, _time_horizon_long)
                     if volume_condition(_klines, _max_volume_long, 1.2):
                         _big_volume_sold_out = TimeTuple(_volume_curr, _time_curr)
 
                 if _rsi_curr > 70:
                     _prev_rsi_high = TimeTuple(_rsi_curr, _time_curr)
+                    _rsi_low = False
+                    _rsi_low_fresh = False
 
                 _max_volume = get_max_volume(_klines, _time_horizon)
 
@@ -357,7 +382,10 @@ class BearishStrategy(BullishStrategy):
 
                 if not _rsi_low and _rsi_curr < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) \
                         and volume_condition(_klines, _max_volume, 0.5) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
-                    _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+                    if not is_rsi_slope_condition(_rsi, 100, 68, len(_rsi) - 45, -1, _window=10):
+                        _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+                    else:
+                        _slope_condition = TimeTuple(True, _time_curr)
 
                 if not _rsi_low and _rsi_curr < 20 and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
                     _rsi_low = TimeTuple(_rsi_curr, _time_curr)
@@ -392,15 +420,29 @@ class BearishStrategy(BullishStrategy):
                 if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, 15):
                     _trigger = False
 
+                if _slope_condition.value:
+                    _rsi_low = False
+                    _rsi_low_fresh = False
+                    _trigger = False
+                if not is_fresh_test(_slope_condition, _time_horizon, _time_curr):
+                    _slope_condition = TimeTuple(False, _time_curr)
+
+                if _rsi_low and is_red_candle(_curr_kline):
+                    _green_klines = get_green_candles(_klines)
+                    _max_volume_long = get_max_volume(_green_klines, _time_horizon)
+                    if volume_condition(_klines, _max_volume_long, 2.1):
+                        _rsi_low = False
+                        _rsi_low_fresh
+
                 if _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
-                    logger_global[0].info("{} Buy Local Bottom triggered {} ...".format(self.asset.market, self))
+                    # logger_global[0].info("{} Buy Local Bottom triggered {} ...".format(self.asset.market, self))
                     _la = lowest_ask(self.asset.market)
                     self.asset.buy_price = _la
                     _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
                     _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
                         dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _prev_rsi,
-                                       _last_ma7_gt_ma100, _big_volume_sold_out, _bearish_trigger)
+                                       _last_ma7_gt_ma100, _big_volume_sold_out, _bearish_trigger, _slope_condition)
                         self.asset.trading = True
                         _order_id = buy_order(self.asset, _quantity_to_buy)
                         adjust_stop_loss_price(self.asset)
@@ -410,9 +452,10 @@ class BearishStrategy(BullishStrategy):
                         sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
                         self.set_take_profit()
                         logger_global[0].info(
-                            "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market, self,
-                                                                                                 self.asset.buy_price,
-                                                                                                 self.btc_value))
+                            "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
+                                                                                                    self,
+                                                                                                    self.asset.buy_price,
+                                                                                                    self.btc_value))
                         self.asset.running = False
                         save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
                         sys.exit(0)
@@ -592,12 +635,12 @@ def observe_lower_price(_assets):
 
 
 def is_buy_possible(_asset, _btc_value, _params):
-    # if _asset.price:
-    #     _min_amount = float(_params['minQty']) * _asset.price
-    # else:
-    #     _min_amount = float(_params['minQty']) * _asset.buy_price
-    # b = 0.001 < _btc_value > _min_amount
-    return True
+    if _asset.price:
+        _min_amount = float(_params['minQty']) * _asset.price
+    else:
+        _min_amount = float(_params['minQty']) * _asset.buy_price
+    b = 0.001 < _btc_value > _min_amount
+    return b
 
 
 def get_remaining_btc():
@@ -951,7 +994,8 @@ def get_volume(_kline):
 
 def get_max_volume(_klines, _time_frame):
     return np.max(
-        list(map(lambda x: float(x[7]), _klines[-_time_frame:-1])))  # get max volume within last _time_frame klines, without current volume
+        list(map(lambda x: float(x[7]),
+                 _klines[-_time_frame:-1])))  # get max volume within last _time_frame klines, without current volume
 
 
 def mas_condition(_curr_ma_7, _curr_ma_20, _curr_ma_50):
@@ -1028,13 +1072,17 @@ def price_counter(_ma200, _closes, _time_horizon):
 
 def relative_strength_index(_closes, _prev_rsi=None, n=14, _asset=None):
     try:
-        return talib.RSI(_closes, timeperiod=14)
+        _rsi = talib.RSI(_closes, timeperiod=14)
     except Warning:
         # logger_global[0].error("{} RSI computing error".format(_asset.market))
         # save_to_file(trades_logs_dir, "broken_rsi_closes_{}".format(time.time()), _closes)
         _rsi = _prev_rsi
 
+    if len(list(filter(lambda x: x == 0, get_last(_rsi, 10))))==10:
+        _rsi = _prev_rsi
+
     return _rsi
+
 
 # def relative_strength_index(_closes, _prev_rsi=None, n=14, _asset=None):
 #     try:
@@ -1169,11 +1217,39 @@ def price_drop(price0, price1, _ratio):
     return (price0 - price1) / price0 > _ratio
 
 
-def dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _prev_rsi, _last_ma7_gt_ma100, _big_volume_sold_out, _bearish_trigger):
-    logger_global[0].info("_prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _prev_rsi: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {}",
-                          _prev_rsi_high.value if _prev_rsi_high else False, _trigger.value if _trigger else False,
-                          _rsi_low.value if _rsi_low else False, _rsi_low_fresh.value if _rsi_low_fresh else False,
-                          _prev_rsi.value if _prev_rsi else False, _last_ma7_gt_ma100.value if _last_ma7_gt_ma100.value else False,
-                          _big_volume_sold_out.value if _big_volume_sold_out.value else False,
-                          _bearish_trigger.value if _bearish_trigger.value else False
-                          )
+def get_green_candles(_klines):
+    return list(filter(lambda x: float(x[4]) - float(x[1]) >= 0, _klines))
+
+
+def is_rsi_slope_condition(_rsi, _rsi_limit, _angle_limit, _start, _stop, _window=10):
+    if (_rsi[_stop] + _rsi[_stop - 1]) / 2 > _rsi_limit:
+        return False
+    _rsi_max_val, _rsi_reversed_max_ind = find_maximum(_rsi[_start:_stop:1], _window)
+    _rsi_magnitude = get_magnitude(_rsi_reversed_max_ind, _rsi_max_val)
+    if _rsi_magnitude == -1:
+        return False
+    _rsi_angle = get_angle((0, _rsi[_start:_stop:1][-1]),
+                           (_rsi_reversed_max_ind / np.power(10, _rsi_magnitude), _rsi_max_val))
+    return _rsi_angle >= _angle_limit
+
+
+def dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _last_ma7_gt_ma100, _big_volume_sold_out,
+                   _bearish_trigger, _slope_condition):
+    logger_global[0].info(
+        "_prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(
+            _prev_rsi_high.value if _prev_rsi_high else False, _trigger.value if _trigger else False,
+            _rsi_low.value if _rsi_low else False, _rsi_low_fresh.value if _rsi_low_fresh else False,
+            _last_ma7_gt_ma100.value if _last_ma7_gt_ma100.value else False,
+            _big_volume_sold_out.value if _big_volume_sold_out.value else False,
+            _bearish_trigger.value if _bearish_trigger.value else False,
+            _slope_condition.value if _slope_condition.value else False
+        ))
+    print(
+        "_prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(
+            _prev_rsi_high.value if _prev_rsi_high else False, _trigger.value if _trigger else False,
+            _rsi_low.value if _rsi_low else False, _rsi_low_fresh.value if _rsi_low_fresh else False,
+            _last_ma7_gt_ma100.value if _last_ma7_gt_ma100.value else False,
+            _big_volume_sold_out.value if _big_volume_sold_out.value else False,
+            _bearish_trigger.value if _bearish_trigger.value else False,
+            _slope_condition.value if _slope_condition.value else False
+        ))
