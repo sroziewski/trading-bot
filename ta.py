@@ -370,7 +370,7 @@ def post_proc(_map):
 
 def print_assets(_assets):
     for _a in _assets:
-        print(_a.name + " : " + ' '.join(_a.tickers) + " bid price : " + "{:.8f} time : {}".format(_a.ask_price, get_time(_a.timestamp)))
+        print(_a.name + " : " + ' '.join(_a.tickers) + " ask price : " + "{:.8f} time : {}".format(_a.ask_price, get_time(_a.timestamp)))
 
 
 def analyze_markets():
