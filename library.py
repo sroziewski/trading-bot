@@ -545,8 +545,7 @@ def sell_local_top(asset):
                         "{} Sell Local Maximum Conditions: trigger and red candle below MA7 : TRUE".format(
                             asset.market))
                     _price = highest_bid(asset.market)
-                    # _quantity = sell_limit(asset.market, asset.name, _price)
-                    _quantity = 1111.0
+                    _quantity = sell_limit(asset.market, asset.name, _price)
                     logger_global[0].info(
                         "{} Sold Local Top price : {} value : {} BTC, exiting".format(asset.market, _price,
                                                                                       _quantity * _price))
