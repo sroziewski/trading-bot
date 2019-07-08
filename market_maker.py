@@ -19,7 +19,7 @@ def price_buy_strategy():
     adjust_buy_asset_btc_volume(buy_assets, btc_value)
     check_buy_assets(buy_assets)
     logger.info("Starting price_buy_strategy :\n{}".format(
-        '\n'.join(map(lambda _a: "{} buy :\t{} stop :\t{} profit :\t{}".format(_a.name, price_to_string(_a.price),
+        '\n'.join(map(lambda _a: "{}\tbuy : {}\tstop : {}\tprofit : {}".format(_a.name, price_to_string(_a.price),
                                                                                price_to_string(_a.stop_loss_price),
                                                                                price_to_string(_a.price_profit)),
                       buy_assets))))
@@ -35,7 +35,7 @@ def price_observer_strategy():
     ]
     check_observe_assets(buy_assets)
     logger.info("Starting price_observer_strategy :\n{}".format(
-        '\n'.join(map(lambda _a: "{} buy :\t{} stop :\t{} profit :\t{}".format(_a.name, price_to_string(_a.buy_price),
+        '\n'.join(map(lambda _a: "{}\tbuy : {}\tstop : {}\tprofit : {}".format(_a.name, price_to_string(_a.buy_price),
                                                                                price_to_string(_a.stop_loss_price),
                                                                                price_to_string(_a.price_profit)),
                       buy_assets))))
