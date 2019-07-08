@@ -71,8 +71,8 @@ plt.figure(1)
 def get_magnitude(_reversed_max_ind, _max_val):
     try:
         return int(np.log10(_reversed_max_ind / np.abs(_max_val)))
-    except Exception:
-        return False
+    except Warning:
+        return -1
 
 
 def get_angle(p1, p2):
@@ -218,7 +218,7 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
                     _assets.append(AssetTicker(_asset, _ticker, lowest_ask(_market), time.time()))
         except Exception as err:
             print('Exception for {} in {}'.format(_ticker, _market))
-            traceback.print_tb(err.__traceback__)
+            # traceback.print_tb(err.__traceback__)
     sort_assets(_assets)
     return _assets
 

@@ -1197,7 +1197,10 @@ def get_angle(p1, p2):
 
 
 def get_magnitude(_reversed_max_ind, _max_val):
-    return int(np.log10(_reversed_max_ind / np.abs(_max_val)))
+    try:
+        return int(np.log10(_reversed_max_ind / np.abs(_max_val)))
+    except Warning:
+        return -1
 
 
 def not_equal_rsi(_rsi_1, _rsi_2):
