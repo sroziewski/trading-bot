@@ -7,7 +7,7 @@ from library import setup_logger, BuyAsset, observe_lower_price, price_to_string
 
 
 def main():
-    price_observer_strategy()
+    price_buy_strategy()
 
 
 def price_buy_strategy():
