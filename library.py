@@ -76,7 +76,7 @@ class ObserveAsset(Asset):
 
 class TradeAsset(BuyAsset):
     def __init__(self, name, ticker=Client.KLINE_INTERVAL_1MINUTE, ratio=100, profit=8, tight=False):
-        super().__init__(name, None, None, None, ratio, profit, ticker, tight)
+        super().__init__(name, None, None, None, ratio, profit, tight, ticker)
         self.trading = False
         self.running = False
 
