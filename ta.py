@@ -9,7 +9,7 @@ import talib
 from binance.client import Client
 
 from library import binance_obj, get_interval_unit, AssetTicker, highest_bid, get_pickled, \
-    exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file, get_klines
+    exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file, get_klines, lowest_ask, get_time
 
 warnings.filterwarnings('error')
 
@@ -175,7 +175,7 @@ def get_tradeable_assets(_markets, _ticker):
                 _rsi = get_rsi(_market, _ticker, _time_interval)
                 _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
                 if is_tradeable(_closes, _rsi, _macd, _macdsignal):
-                    _tradeable_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+                    _tradeable_assets.append(AssetTicker(_asset, _ticker, lowest_ask(_market), time.time()))
         except Exception:
             print('Value Error for {} in {}'.format(_ticker, _market))
     sort_assets(_tradeable_assets)
@@ -212,7 +212,7 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
                 _cond2 = is_tradeable(_closes, _rsi, _macd, _macdsignal)
 
                 if _cond1 and _cond2:
-                    _assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+                    _assets.append(AssetTicker(_asset, _ticker, lowest_ask(_market), time.time()))
         except Exception as err:
             print('Value Error for {} in {}'.format(_ticker, _market))
             traceback.print_tb(err.__traceback__)
@@ -247,7 +247,7 @@ def get_bullish_assets(_markets, _ticker):
                                                                                                         _ma20, _ma7)
 
                 if _cond1:
-                    _bullish_assets.append(AssetTicker(_asset, _ticker, highest_bid(_market)))
+                    _bullish_assets.append(AssetTicker(_asset, _ticker, lowest_ask(_market), time.time()))
         except Exception:
             print('Value Error for {} in {}'.format(_ticker, _market))
     sort_assets(_bullish_assets)
@@ -367,7 +367,7 @@ def post_proc(_map):
 
 def print_assets(_assets):
     for _a in _assets:
-        print(_a.name + " : " + ' '.join(_a.tickers) + " bid price : " + "{:.8f}".format(_a.bid_price))
+        print(_a.name + " : " + ' '.join(_a.tickers) + " bid price : " + "{:.8f} time : {}".format(_a.ask_price, get_time(_a.timestamp)))
 
 
 def analyze_markets():
@@ -380,7 +380,7 @@ def analyze_markets():
                Client.KLINE_INTERVAL_12HOUR,
                Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
 
-    # tickers = [Client.KLINE_INTERVAL_3MINUTE]
+    # tickers = [Client.KLINE_INTERVAL_3MINUTE, Client.KLINE_INTERVAL_5MINUTE, Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE]
 
     print("bullish & tradeable assets")
     bullish_tradeable_map = {}

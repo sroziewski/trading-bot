@@ -44,7 +44,7 @@ exclude_markets = ['DOGEBTC', 'ERDBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
 
 
 class Asset(object):
-    def __init__(self, name, stop_loss_price, price_profit, profit, ticker, barrier=False):
+    def __init__(self, name, stop_loss_price, price_profit, profit, ticker, tight=False, barrier=False):
         self.name = name
         self.market = "{}BTC".format(name)
         self.stop_loss_price = stop_loss_price
@@ -53,12 +53,13 @@ class Asset(object):
         self.ticker = ticker
         self.barrier = barrier
         self.buy_price = None
+        self.tight = tight
 
 
 class BuyAsset(Asset):
-    def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, profit=5,
+    def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
                  ticker=Client.KLINE_INTERVAL_1MINUTE, barrier=False):
-        super().__init__(name, stop_loss_price, price_profit, profit, ticker, barrier)
+        super().__init__(name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.price = price
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
@@ -67,24 +68,25 @@ class BuyAsset(Asset):
 
 
 class ObserveAsset(Asset):
-    def __init__(self, name, buy_price, stop_loss_price, price_profit, profit=5, ticker=Client.KLINE_INTERVAL_1MINUTE,
+    def __init__(self, name, buy_price, stop_loss_price, price_profit, profit=5, tight=False, ticker=Client.KLINE_INTERVAL_1MINUTE,
                  barrier=False):
-        super().__init__(name, stop_loss_price, price_profit, profit, ticker, barrier)
+        super().__init__(name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.buy_price = buy_price
 
 
 class TradeAsset(BuyAsset):
-    def __init__(self, name, ticker=Client.KLINE_INTERVAL_1MINUTE, ratio=100, profit=8):
-        super().__init__(name, None, None, None, ratio, profit, ticker, None)
+    def __init__(self, name, ticker=Client.KLINE_INTERVAL_1MINUTE, ratio=100, profit=8, tight=False):
+        super().__init__(name, None, None, None, ratio, profit, ticker, tight)
         self.trading = False
         self.running = False
 
 
 class AssetTicker(object):
-    def __init__(self, name, ticker, bid_price):
+    def __init__(self, name, ticker, ask_price, timestamp):
         self.name = name
         self.tickers = [ticker]
-        self.bid_price = bid_price
+        self.ask_price = ask_price
+        self.timestamp = timestamp
 
     def add_ticker(self, ticker):
         self.tickers.append(ticker)
@@ -711,10 +713,13 @@ def stop_signal(_market, _ticker, _time_interval, _stop_price, _times=4):
         return True if _mean_close_price <= _stop_price else False
 
 
-def get_sell_price(market):
-    _depth = client.get_order_book(symbol=market)
+def get_sell_price(asset):
+    _depth = client.get_order_book(symbol=asset.market)
     _highest_bid = float(_depth['bids'][0][0])
-    _sell_price = _highest_bid + sat
+    if asset.tight:
+        _sell_price = _highest_bid
+    else:
+        _sell_price = _highest_bid + sat
     return _sell_price
 
 
@@ -817,7 +822,7 @@ def sell_limit(market, asset_name, price):
 def sell_limit_stop_loss(market, asset):
     cancel_current_orders(market)
     _quantity = get_asset_quantity(asset)
-    _sell_price = get_sell_price(market)
+    _sell_price = get_sell_price(asset)
     _lot_size_params = get_lot_size_params(market)
     _quantity = adjust_quantity(_quantity, _lot_size_params)
     if _quantity:
