@@ -1149,7 +1149,8 @@ def get_last_2(_values, _stop, _window=1):
 def check_buy_assets(assets):
     logger_global[0].info("Checking BuyAsset prices...")
     if not all(x.price_profit > x.price > x.stop_loss_price for x in assets):
-        logger_global[0].error("BuyAsset prices not coherent, stopped")
+        _l = list(filter(x.price_profit > x.price > x.stop_loss_price for x in assets))
+        logger_global[0].error("BuyAsset prices not coherent : {}, stopped".format(' '.join(map(lambda x: x.name, assets))))
         raise Exception("BuyAsset prices not coherent, stopped")
     logger_global[0].info("BuyAsset prices : OK")
 
