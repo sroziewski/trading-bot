@@ -544,8 +544,7 @@ def sell_local_top(asset):
                 if is_fresh(_prev_rsi, _time_frame) and volume_condition(_klines, _max_volume, 0.4):
                     # if volume_condition(_klines, _max_volume, 0.4):
                     _trigger = TimeTuple(True, _curr_kline[0])
-
-            if _trigger and is_red_candle(_curr_kline):
+            if _trigger and is_red_candle(_curr_kline) and is_profitable(asset, _closes[-1]):
                 # if True:
                 _ma7 = talib.MA(_closes, timeperiod=7)
                 _open = float(_curr_kline[1])
