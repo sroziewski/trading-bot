@@ -67,8 +67,15 @@ class BuyAsset(Asset):
         self.btc_asset_buy_value = self.ratio / 100 * _total_btc
 
 
+class SellAsset(Asset):
+    def __init__(self, name, stop_loss_price, tight=False,
+                 ticker=Client.KLINE_INTERVAL_1MINUTE):
+        super().__init__(name, stop_loss_price, None, None, ticker, tight)
+
+
 class ObserveAsset(Asset):
-    def __init__(self, name, buy_price, stop_loss_price, price_profit, profit=5, tight=False, ticker=Client.KLINE_INTERVAL_1MINUTE,
+    def __init__(self, name, buy_price, stop_loss_price, price_profit, profit=5, tight=False,
+                 ticker=Client.KLINE_INTERVAL_1MINUTE,
                  barrier=False):
         super().__init__(name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.buy_price = buy_price
@@ -652,10 +659,6 @@ def get_market(_asset):
     return "{}BTC".format(_asset.name)
 
 
-class SellAsset(Asset):
-    pass
-
-
 class TimeTuple(object):
     def __init__(self, value, timestamp):
         self.value = value
@@ -705,11 +708,11 @@ def get_interval_unit(_ticker):
 
 
 def stop_signal(_market, _ticker, _time_interval, _stop_price, _times=4):
-    # _klines = binance_obj.get_klines_currency(_market, _ticker, _time_interval)
     _klines = get_klines(_market, _ticker, _time_interval)
     if len(_klines) > 0:
         _mean_close_price = np.mean(list(map(lambda x: float(x[4]), _klines[-_times:])))
         return True if _mean_close_price <= _stop_price else False
+    return False
 
 
 def get_sell_price(asset):
@@ -820,7 +823,7 @@ def sell_limit(market, asset_name, price):
 
 def sell_limit_stop_loss(market, asset):
     cancel_current_orders(market)
-    _quantity = get_asset_quantity(asset)
+    _quantity = get_asset_quantity(asset.name)
     _sell_price = get_sell_price(asset)
     _lot_size_params = get_lot_size_params(market)
     _quantity = adjust_quantity(_quantity, _lot_size_params)
@@ -1082,7 +1085,7 @@ def relative_strength_index(_closes, _prev_rsi=None, n=14, _asset=None):
         # save_to_file(trades_logs_dir, "broken_rsi_closes_{}".format(time.time()), _closes)
         _rsi = _prev_rsi
 
-    if len(list(filter(lambda x: x == 0, get_last(_rsi, 10))))==10:
+    if len(list(filter(lambda x: x == 0, get_last(_rsi, 10)))) == 10:
         _rsi = _prev_rsi
 
     return _rsi
