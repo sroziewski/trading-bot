@@ -276,7 +276,12 @@ class BullishStrategy(BuyStrategy):
                     _max_volume_long = get_max_volume(_green_klines, _time_horizon)
                     if volume_condition(_klines, _max_volume_long, 2.1):
                         _rsi_low = False
-                        _rsi_low_fresh
+                        _rsi_low_fresh = False
+
+                if _rsi_low and _rsi_low.value == 0:
+                    _rsi_low = False
+                if _rsi_low_fresh and _rsi_low_fresh.value == 0:
+                    _rsi_low_fresh = False
 
                 if _close - _ma7[-1] > 0 and is_fresh(_trigger, 15) > 0:
                     # logger_global[0].info("{} Buy Local Bottom triggered : {} ...".format(self.asset.market, self))
@@ -441,7 +446,12 @@ class BearishStrategy(BullishStrategy):
                     _max_volume_long = get_max_volume(_green_klines, _time_horizon)
                     if volume_condition(_klines, _max_volume_long, 2.1):
                         _rsi_low = False
-                        _rsi_low_fresh
+                        _rsi_low_fresh = False
+
+                if _rsi_low and _rsi_low.value == 0:
+                    _rsi_low = False
+                if _rsi_low_fresh and _rsi_low_fresh.value == 0:
+                    _rsi_low_fresh = False
 
                 if _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
                     # logger_global[0].info("{} Buy Local Bottom triggered {} ...".format(self.asset.market, self))
