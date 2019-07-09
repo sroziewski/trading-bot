@@ -527,6 +527,10 @@ def sell_local_top(asset):
     _prev_rsi = TimeTuple(0, 0)
     while 1:
         try:
+            if not asset.trading:
+                logger_global[0].info("{} sell_local_top : sold, not trading, skipping, exiting".format(asset.market))
+                sys.exit(0)
+
             _klines = get_klines(asset, _time_interval)
             _curr_kline = _klines[-1]
             _closes = get_closes(_klines)
@@ -576,7 +580,7 @@ _last_asset = 'START'
 
 def start_trading(_trade_asset, _btc_value):
     global _last_asset
-    _c = not _trade_asset.running
+    _c = not (_trade_asset.running or _trade_asset.trading)
     if _c:
         _params = get_lot_size_params(_trade_asset.market)
         if _last_asset and _last_asset != _trade_asset.name:
