@@ -651,7 +651,7 @@ def is_buy_possible(_asset, _btc_value, _params):
         _min_amount = float(_params['minQty']) * _asset.price
     else:
         _min_amount = float(_params['minQty']) * _asset.buy_price
-    b = 0.001 < _btc_value > _min_amount
+    b = 0.001 <= _btc_value > _min_amount
     return b
 
 
