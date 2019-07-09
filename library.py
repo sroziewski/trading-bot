@@ -803,9 +803,11 @@ def adjust_quantity(quantity, lot_size_params):
 
 def buy_order(_asset, _quantity):
     _price_str = price_to_string(_asset.buy_price)
+    logger_global[0].info(
+        "{} Buy limit order to be placed: price={} BTC, quantity={} ".format(_asset.market, _price_str, _quantity))
     _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
     logger_global[0].info(
-        "{} Buy limit order (ID : {}) placed: price={} BTC, quantity={} ".format(_asset.market, _resp['orderId'],
+        "{} Buy limit order (ID : {}) placed: price={} BTC, quantity={} DONE".format(_asset.market, _resp['orderId'],
                                                                                  _price_str, _quantity))
     return _resp['orderId']
 
@@ -816,9 +818,11 @@ def price_to_string(_price):
 
 def _sell_order(market, _sell_price, _quantity):
     _sell_price_str = price_to_string(_sell_price)
+    logger_global[0].info(
+        "{} Sell limit order to be placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
     _resp = client.order_limit_sell(symbol=market, quantity=_quantity, price=_sell_price_str)
     logger_global[0].info(
-        "{} Sell limit order placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
+        "{} Sell limit order placed: price={} BTC, quantity={} DONE".format(market, _sell_price_str, _quantity))
 
 
 def sell_limit(market, asset_name, price):
