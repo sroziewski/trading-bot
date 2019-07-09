@@ -312,10 +312,10 @@ class BullishStrategy(BuyStrategy):
                 time.sleep(45)
             except Exception as err:
                 if isinstance(err, requests.exceptions.ConnectionError):
-                    logger_global[0].error("Connection problem...")
+                    logger_global[0].error("{} {}".format(self.asset.market, "Connection problem..."))
                 else:
                     traceback.print_tb(err.__traceback__)
-                    logger_global[0].exception(err.__traceback__)
+                    logger_global[0].exception("{} {}".format(self.asset.market, err.__traceback__))
                     time.sleep(45)
 
 
@@ -482,10 +482,10 @@ class BearishStrategy(BullishStrategy):
                 time.sleep(45)
             except Exception as err:
                 if isinstance(err, requests.exceptions.ConnectionError):
-                    logger_global[0].error("Connection problem...")
+                    logger_global[0].error("{} {}".format(self.asset.market, "Connection problem..."))
                 else:
                     traceback.print_tb(err.__traceback__)
-                    logger_global[0].exception(err.__traceback__)
+                    logger_global[0].exception("{} {}".format(self.asset.market, err.__traceback__))
                     time.sleep(45)
 
 
