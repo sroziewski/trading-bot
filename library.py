@@ -818,6 +818,7 @@ def sell_limit(market, asset_name, price):
     _lot_size_params = get_lot_size_params(market)
     _quantity = adjust_quantity(_quantity, _lot_size_params)
     if _quantity:
+        logger_global[0].info("{} : {} : {}".format(market, price, _quantity))
         _sell_order(market, price, _quantity)
         return _quantity
     else:
