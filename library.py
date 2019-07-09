@@ -193,7 +193,7 @@ class BullishStrategy(BuyStrategy):
                         "{} buy_local_bottom {} : buy not possible, skipping, exiting".format(self.asset.market, self))
                     sys.exit(0)
 
-                if not is_bullish_setup(self.asset):
+                if not _rsi_low and not _rsi_low_fresh and not is_bullish_setup(self.asset):
                     self.asset.running = False
                     logger_global[0].info(
                         "{} buy_local_bottom {} : NOT bullish setup, skipping, exiting".format(self.asset.market, self))
@@ -357,7 +357,7 @@ class BearishStrategy(BullishStrategy):
                         "{} buy_local_bottom {} : buy not possible, skipping, exiting".format(self.asset.market, self))
                     sys.exit(0)
 
-                if is_bullish_setup(self.asset):
+                if not _rsi_low and not _rsi_low_fresh and is_bullish_setup(self.asset):
                     self.asset.running = False
                     logger_global[0].info(
                         "{} buy_local_bottom {} : NOT bearish setup, skipping, exiting".format(self.asset.market, self))
