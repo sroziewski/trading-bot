@@ -863,7 +863,7 @@ def stop_loss(_asset):
             _stop_sl = stop_signal(_asset.market, _ticker, _time_interval, _stop_price, 1)
             # stop = True
             if _stop_sl:
-                sell_limit_stop_loss(_asset.market, _asset.name)
+                sell_limit_stop_loss(_asset.market, _asset)
                 logger_global[0].info("Stop-loss LIMIT {} order has been made : {}, exiting".format(_asset.market,
                                                                                                     lowest_ask(
                                                                                                         _asset.market)))
