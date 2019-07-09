@@ -283,14 +283,22 @@ class BullishStrategy(BuyStrategy):
                 if _rsi_low_fresh and _rsi_low_fresh.value == 0:
                     _rsi_low_fresh = False
 
-                if _close - _ma7[-1] > 0 and is_fresh(_trigger, 15) > 0:
+                if not self.asset.trading and _close - _ma7[-1] > 0 and is_fresh(_trigger, 15) > 0:
                     # logger_global[0].info("{} Buy Local Bottom triggered : {} ...".format(self.asset.market, self))
                     _la = lowest_ask(self.asset.market)
                     self.asset.buy_price = _la
                     _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
                     _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
+
+                    _min_notional = float(get_filter(self.asset.market, "MIN_NOTIONAL")['minNotional'])
+                    _buy_cond = self.asset.buy_price * _quantity_to_buy >= _min_notional
+
+                    if not _buy_cond:
+                        logger_global[0].error("{} min notional condition NOT MET {} > {}, exiting".format(self.asset.market, _min_notional, price_to_string(self.asset.buy_price * _quantity_to_buy)))
+                        sys.exit(0)
+
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
-                        dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh,
+                        dump_variables(self.asset.market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh,
                                        TimeTuple(False, 0), TimeTuple(False, 0), TimeTuple(False, 0), _slope_condition)
                         self.asset.trading = True
                         _order_id = buy_order(self.asset, _quantity_to_buy)
@@ -453,14 +461,22 @@ class BearishStrategy(BullishStrategy):
                 if _rsi_low_fresh and _rsi_low_fresh.value == 0:
                     _rsi_low_fresh = False
 
-                if _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
+                if not self.asset.trading and _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
                     # logger_global[0].info("{} Buy Local Bottom triggered {} ...".format(self.asset.market, self))
                     _la = lowest_ask(self.asset.market)
                     self.asset.buy_price = _la
                     _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
                     _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
+
+                    _min_notional = float(get_filter(self.asset.market, "MIN_NOTIONAL")['minNotional'])
+                    _buy_cond = self.asset.buy_price * _quantity_to_buy >= _min_notional
+
+                    if not _buy_cond:
+                        logger_global[0].error("{} min notional condition NOT MET {} > {}, exiting".format(self.asset.market, _min_notional, price_to_string(self.asset.buy_price * _quantity_to_buy)))
+                        sys.exit(0)
+
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
-                        dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _prev_rsi,
+                        dump_variables(self.asset.market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _prev_rsi,
                                        _last_ma7_gt_ma100, _big_volume_sold_out, _bearish_trigger, _slope_condition)
                         self.asset.trading = True
                         _order_id = buy_order(self.asset, _quantity_to_buy)
@@ -778,6 +794,12 @@ def get_asset_quantity(asset):
 def get_lot_size_params(market):
     client.get_symbol_info(market)
     _info = list(filter(lambda f: f['filterType'] == "LOT_SIZE", client.get_symbol_info(market)['filters']))
+    return _info[0] if len(_info) > 0 else False
+
+
+def get_filter(_market, _filter):
+    client.get_symbol_info(_market)
+    _info = list(filter(lambda f: f['filterType'] == _filter, client.get_symbol_info(_market)['filters']))
     return _info[0] if len(_info) > 0 else False
 
 
@@ -1273,10 +1295,10 @@ def is_rsi_slope_condition(_rsi, _rsi_limit, _angle_limit, _start, _stop, _windo
     return _rsi_angle >= _angle_limit
 
 
-def dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _last_ma7_gt_ma100, _big_volume_sold_out,
+def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _last_ma7_gt_ma100, _big_volume_sold_out,
                    _bearish_trigger, _slope_condition):
     logger_global[0].info(
-        "_prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(
+        "{} _prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(_market,
             _prev_rsi_high.value if _prev_rsi_high else False, _trigger.value if _trigger else False,
             _rsi_low.value if _rsi_low else False, _rsi_low_fresh.value if _rsi_low_fresh else False,
             _last_ma7_gt_ma100.value if _last_ma7_gt_ma100.value else False,
@@ -1285,7 +1307,7 @@ def dump_variables(_prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _last_ma7
             _slope_condition.value if _slope_condition.value else False
         ))
     print(
-        "_prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(
+        "{} _prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(_market,
             _prev_rsi_high.value if _prev_rsi_high else False, _trigger.value if _trigger else False,
             _rsi_low.value if _rsi_low else False, _rsi_low_fresh.value if _rsi_low_fresh else False,
             _last_ma7_gt_ma100.value if _last_ma7_gt_ma100.value else False,
