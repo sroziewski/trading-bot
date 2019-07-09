@@ -1162,10 +1162,12 @@ def check_prices(assets):
           _n.append(x)
     return _n
 
+
 def check_observe_assets(assets):
     logger_global[0].info("Checking ObserveAsset prices...")
-    if not all(x.price_profit > x.buy_price > x.stop_loss_price for x in assets):
-        logger_global[0].error("ObserveAsset prices not coherent, stopped")
+    _not_passed = check_prices(assets)
+    if len(_not_passed) > 0:
+        logger_global[0].error("ObserveAsset prices not coherent : {}, stopped".format(' '.join(map(lambda x: x.name, _not_passed))))
         raise Exception("ObserveAsset prices not coherent, stopped")
     logger_global[0].info("ObserveAsset prices : OK")
 
