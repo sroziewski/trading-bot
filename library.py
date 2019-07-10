@@ -311,7 +311,7 @@ class BullishStrategy(BuyStrategy):
                         logger_global[0].info(
                             "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
                                                                                                     self,
-                                                                                                    self.asset.buy_price,
+                                                                                                    price_to_string(self.asset.buy_price),
                                                                                                     self.btc_value))
                         self.asset.running = False
                         save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
@@ -489,7 +489,7 @@ class BearishStrategy(BullishStrategy):
                         logger_global[0].info(
                             "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
                                                                                                     self,
-                                                                                                    self.asset.buy_price,
+                                                                                                    price_to_string(self.asset.buy_price),
                                                                                                     self.btc_value))
                         self.asset.running = False
                         save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
