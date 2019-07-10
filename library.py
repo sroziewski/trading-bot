@@ -50,6 +50,7 @@ class Asset(object):
         self.stop_loss_price = stop_loss_price
         self.price_profit = price_profit
         self.profit = profit  # taking profit only when it's higher than profit %
+        self.take_profit_ratio = profit*0.632  # taking profit only when it's higher than profit %
         self.ticker = ticker
         self.barrier = barrier
         self.buy_price = None
@@ -919,7 +920,7 @@ def stop_loss(_asset):
 
 
 def is_profitable(asset, curr_price):
-    return (curr_price - asset.buy_price) / asset.buy_price >= asset.profit / 100.0
+    return (curr_price - asset.buy_price) / asset.buy_price >= asset.take_profit_ratio / 100.0
 
 
 def is_trading_possible(_assets):
