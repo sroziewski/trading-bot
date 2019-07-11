@@ -5,8 +5,8 @@ import requests
 
 from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, SellAsset, get_interval_unit
 
-name = "ALGO"
-stop_price_in_satoshi = 10000
+name = "XRP"
+stop_price_in_satoshi = 2975
 
 stop_price = stop_price_in_satoshi * sat
 sell_asset = SellAsset(name, stop_price)

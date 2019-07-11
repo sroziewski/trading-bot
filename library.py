@@ -71,7 +71,7 @@ class BuyAsset(Asset):
 class SellAsset(Asset):
     def __init__(self, name, stop_loss_price, tight=False,
                  ticker=Client.KLINE_INTERVAL_1MINUTE):
-        super().__init__(name, stop_loss_price, None, None, ticker, tight)
+        super().__init__(name, stop_loss_price, None, 0, ticker, tight)
 
 
 class ObserveAsset(Asset):
@@ -708,7 +708,7 @@ def get_pickled(_dir, filename):
         return data
 
 
-keys = get_pickled(key_dir, ".keys")
+keys = get_pickled(key_dir, "keys")
 
 client = Client(keys[0], keys[1])
 
