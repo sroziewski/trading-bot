@@ -3,6 +3,8 @@ import hashlib
 import sys
 import warnings
 import smtplib, ssl
+from getpass import getpass
+
 import talib
 import threading
 import time
@@ -1682,7 +1684,7 @@ def send_mail(subject, message, asset):
 def authorize():
     global variable
     _phrase = config.get_parameter('phrase')
-    _input = input("type...")
+    _input = getpass("Pass: ")
     _hash = hashlib.sha512(_input.encode('utf-8')).hexdigest()
     if _phrase != _hash:
         print('Exiting...BYE!')
