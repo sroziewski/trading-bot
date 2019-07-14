@@ -1,9 +1,8 @@
-import hashlib
 import time
 import traceback
 import requests
 
-from library import setup_logger, TradeAsset, start_alerts, AlertAsset
+from library import setup_logger, start_alerts, AlertAsset
 
 trade_assets = [
     AlertAsset('CELR'),
