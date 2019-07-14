@@ -679,7 +679,7 @@ class AlertsBullishStrategy(BuyStrategy):
 
 class AlertsBearishStrategy(AlertsBullishStrategy):
     def __init__(self, asset):
-        super().__init__(asset, None, None, True)
+        super().__init__(asset)
         logger_global[0].info("{} AlertsBearishStrategy object has been created".format(self.asset.market))
 
     def alert_buy_local_bottom(self):
