@@ -35,6 +35,7 @@ class Config(object):
 config = Config()
 variable = ''
 key_dir = config.get_parameter('key_dir')
+keys_filename = config.get_parameter('keys_filename')
 trades_logs_dir = config.get_parameter('trades_logs_dir')
 logger_global = []
 exclude_markets = ['DOGEBTC', 'ERDBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
@@ -1064,7 +1065,7 @@ def get_pickled(_dir, filename):
         return data
 
 
-keys = get_pickled(key_dir, "keys")
+keys = get_pickled(key_dir, keys_filename)
 
 client = Client(keys[0], keys[1])
 
