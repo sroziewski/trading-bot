@@ -1,7 +1,8 @@
 import datetime
+import hashlib
 import sys
 import warnings
-
+import smtplib, ssl
 import talib
 import threading
 import time
@@ -32,7 +33,7 @@ class Config(object):
 
 
 config = Config()
-
+variable = ''
 key_dir = config.get_parameter('key_dir')
 trades_logs_dir = config.get_parameter('trades_logs_dir')
 logger_global = []
@@ -87,6 +88,12 @@ class TradeAsset(BuyAsset):
         super().__init__(name, None, None, None, ratio, profit, tight, ticker)
         self.trading = False
         self.running = False
+
+
+class AlertAsset(TradeAsset):
+    def __init__(self, name, ticker=Client.KLINE_INTERVAL_1MINUTE):
+        super().__init__(name, ticker)
+        self.sent = False
 
 
 class AssetTicker(object):
@@ -506,6 +513,336 @@ class BearishStrategy(BullishStrategy):
                     time.sleep(45)
 
 
+class AlertsBullishStrategy(BuyStrategy):
+    def __init__(self, asset, subclass=False):
+        super().__init__(asset, None, None, True)
+        if not subclass:
+            logger_global[0].info("{} AlertsBullishStrategy object has been created".format(self.asset.market))
+
+    def run(self):
+        self.set_alert_buy_local_bottom()
+        wait_until_running(self)
+
+    def set_alert_buy_local_bottom(self):
+        _alert_buy_local_bottom_maker_ = threading.Thread(target=self.alert_buy_local_bottom,
+                                                   name='_alert_buy_local_bottom_maker_{}'.format(self.asset.name))
+        _alert_buy_local_bottom_maker_.start()
+
+    def alert_buy_local_bottom(self):
+        _time_interval = get_interval_unit(self.asset.ticker)
+        _time_frame_short = 10
+        _time_frame_middle = 30
+        _time_frame_rsi = 50
+        _time_horizon = 60
+        _time_horizon_long = 360
+        _prev_rsi_high = False
+        _trigger = False
+        _rsi_low = False
+        _rsi_low_fresh = False
+        _prev_rsi = TimeTuple(0, 0)
+        _slope_condition = TimeTuple(False, 0)
+
+        _mail_title = 'Bullish Buy Bottom Alert'
+
+        while 1:
+            try:
+                if is_fresh(self.asset.sent, _time_horizon):
+                    self.asset.running = False
+                    logger_global[0].info(
+                        "{} buy_local_bottom {} : sent not possible, skipping, exiting".format(self.asset.market, self))
+                    sys.exit(0)
+
+                if not _rsi_low and not _rsi_low_fresh and not is_bullish_setup(self.asset):
+                    self.asset.running = False
+                    logger_global[0].info(
+                        "{} buy_local_bottom {} : NOT bullish setup, skipping, exiting".format(self.asset.market, self))
+                    sys.exit(0)
+
+                _klines = get_klines(self.asset, _time_interval)
+                _curr_kline = _klines[-1]
+                _closes = get_closes(_klines)
+                _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, self.asset)
+                _max_volume = get_max_volume(_klines, _time_horizon)
+                _rsi_curr = _rsi[-1]
+                _ma7 = talib.MA(_closes, timeperiod=7)
+                _time_curr = _curr_kline[0]
+                _open = float(_curr_kline[1])
+                _close = _closes[-1]
+
+                if _rsi_curr > 70:
+                    _prev_rsi_high = TimeTuple(_rsi_curr, _time_curr)
+                    _rsi_low = False
+                    _rsi_low_fresh = False
+
+                _max_volume = get_max_volume(_klines, _time_horizon)
+
+                # if _rsi_curr < 33.5 and not is_fresh_test(_prev_rsi_high, _time_frame_rsi, _time_curr):
+                if _rsi_curr < 33.5 and not is_fresh(_prev_rsi_high, _time_frame_rsi):
+                    _max_volume_long = get_max_volume(_klines, _time_horizon_long)
+                    if volume_condition(_klines, _max_volume_long, 0.9) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                        _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+
+                if _rsi_curr < 33.5 and is_fresh(_prev_rsi_high, _time_frame_middle) and not_equal_rsi(
+                        _rsi_curr, _rsi_low):
+                    if volume_condition(_klines, _max_volume, 0.9):
+                        _rsi_low_fresh = TimeTuple(_rsi_curr, _time_curr)
+
+                if not _rsi_low and _rsi_curr < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) \
+                        and volume_condition(_klines, _max_volume, 0.5) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                    if not is_rsi_slope_condition(_rsi, 100, 68, len(_rsi) - 45, -1, _window=10):
+                        _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+                    else:
+                        _slope_condition = TimeTuple(True, _time_curr)
+
+                if not _rsi_low and _rsi_curr < 20 and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                    _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+
+                _c1 = _rsi_low and _rsi_curr < 35 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low,
+                                                                                                           15) and \
+                      _rsi_curr > _rsi_low.value and not is_fresh(_rsi_low_fresh, _time_frame_middle)
+
+                _c2 = _rsi_low and _rsi_low_fresh and _rsi_curr > _rsi_low_fresh.value and _rsi_curr > _rsi_low.value and \
+                      not is_fresh(_rsi_low_fresh, _time_frame_middle)
+
+                _rsi_temp = get_one_of_rsi(_rsi_low_fresh, _rsi_low)
+                _c3 = _rsi_temp and _rsi_curr > _rsi_temp.value and not is_fresh(_rsi_temp, _time_horizon) and \
+                      volume_condition(_klines, _max_volume, 0.9) and _rsi_curr < 33.5
+
+                if _c1 or _c2 or _c3:
+                    _max_volume_short = get_max_volume(_klines, _time_frame_short)
+                    # if _rsi_curr > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
+                    if volume_condition(_klines, _max_volume_short, 0.3):  # RSI HL
+                        _trigger = TimeTuple(True, _time_curr)
+
+                _max_volume_middle = get_max_volume(_klines, 10)
+
+                if _rsi_low and _close - _ma7[-1] > 0 and _rsi_curr > _rsi_low.value and \
+                        volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
+                    _trigger = TimeTuple(True, _time_curr)
+
+                if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, 15):
+                    _trigger = False
+
+                if _slope_condition.value:
+                    _rsi_low = False
+                    _rsi_low_fresh = False
+                    _trigger = False
+                if not is_fresh_test(_slope_condition, _time_horizon, _time_curr):
+                    _slope_condition = TimeTuple(False, _time_curr)
+
+                if _rsi_low and is_red_candle(_curr_kline):
+                    _green_klines = get_green_candles(_klines)
+                    _max_volume_long = get_max_volume(_green_klines, _time_horizon)
+                    if volume_condition(_klines, _max_volume_long, 2.1):
+                        _rsi_low = False
+                        _rsi_low_fresh = False
+
+                if _rsi_low and _rsi_low.value == 0:
+                    _rsi_low = False
+                if _rsi_low_fresh and _rsi_low_fresh.value == 0:
+                    _rsi_low_fresh = False
+
+                if not self.asset.trading and _close - _ma7[-1] > 0 and is_fresh(_trigger, 15) > 0:
+                    # logger_global[0].info("{} Buy Local Bottom triggered : {} ...".format(self.asset.market, self))
+                    _la = lowest_ask(self.asset.market)
+                    self.asset.buy_price = _la
+                    dump_variables(self.asset.market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh,
+                                   TimeTuple(False, 0), TimeTuple(False, 0), TimeTuple(False, 0), _slope_condition)
+                    self.asset.trading = True
+                    logger_global[0].info(
+                        "{} Alert Buy Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
+                                                                                                self,
+                                                                                                price_to_string(self.asset.buy_price),
+                                                                                                self.btc_value))
+                    _message = "{} Alert Buy Local Bottom {} : price : {} value : {} BTC".format(self.asset.market,
+                                                                                                 self,
+                                                                                                 price_to_string(
+                                                                                                     self.asset.buy_price),
+                                                                                                 get_time(
+                                                                                                     _curr_kline[0]))
+                    self.asset.sent = _curr_kline[0]
+                    send_mail(_mail_title, _message, self.asset)
+                    self.asset.running = False
+                    save_to_file(trades_logs_dir, "alert_buy_klines_{}".format(time.time()), _klines)
+                    sys.exit(0)
+                _prev_rsi = TimeTuple(_rsi, _time_curr)
+                time.sleep(45)
+            except Exception as err:
+                if isinstance(err, requests.exceptions.ConnectionError):
+                    logger_global[0].error("{} {}".format(self.asset.market, "Connection problem..."))
+                else:
+                    traceback.print_tb(err.__traceback__)
+                    logger_global[0].exception("{} {}".format(self.asset.market, err.__traceback__))
+                    time.sleep(45)
+
+
+class AlertsBearishStrategy(AlertsBullishStrategy):
+    def __init__(self, asset):
+        super().__init__(asset, None, None, True)
+        logger_global[0].info("{} AlertsBearishStrategy object has been created".format(self.asset.market))
+
+    def alert_buy_local_bottom(self):
+        _time_interval = get_interval_unit(self.asset.ticker)
+        _time_frame_short = 10
+        _time_frame_middle = 30
+        _time_frame_rsi = 50
+        _time_horizon = 60
+        _time_horizon_long = 360
+        _prev_rsi_high = False
+        _trigger = False
+        _rsi_low = False
+        _rsi_low_fresh = False
+        _prev_rsi = TimeTuple(0, 0)
+        _last_ma7_gt_ma100 = TimeTuple(False, 0)
+        _big_volume_sold_out = TimeTuple(False, 0)
+        _bearish_trigger = TimeTuple(False, 0)
+        _slope_condition = TimeTuple(False, 0)
+
+        _mail_title = 'Bearish Buy Bottom Alert'
+
+        while 1:
+            try:
+                if is_fresh(self.asset.sent, _time_horizon):
+                    self.asset.running = False
+                    logger_global[0].info(
+                        "{} alert_buy_local_bottom {} : sent not possible, skipping, exiting".format(self.asset.market, self))
+                    sys.exit(0)
+
+                if not _rsi_low and not _rsi_low_fresh and is_bullish_setup(self.asset):
+                    self.asset.running = False
+                    logger_global[0].info(
+                        "{} alert_buy_local_bottom {} : NOT bearish setup, skipping, exiting".format(self.asset.market, self))
+                    sys.exit(0)
+
+                _klines = get_klines(self.asset, _time_interval)
+                _curr_kline = _klines[-1]
+                _closes = get_closes(_klines)
+                _rsi = relative_strength_index(_closes, _prev_rsi.value, 14, self.asset)
+                _ma7_curr = talib.MA(_closes, timeperiod=7)[-1]
+                _ma100_curr = talib.MA(_closes, timeperiod=100)[-1]
+                _time_curr = _curr_kline[0]
+                _open = float(_curr_kline[1])
+                _volume_curr = float(_curr_kline[7])
+                _close = _closes[-1]
+                _rsi_curr = _rsi[-1]
+
+                if _ma7_curr > _ma100_curr:
+                    _last_ma7_gt_ma100 = TimeTuple(_close, _time_curr)
+
+                if _last_ma7_gt_ma100.value and is_red_candle(
+                        _curr_kline) and _ma100_curr > _ma7_curr > _close and _rsi_curr < 30:
+                    _max_volume_long = get_max_volume(_klines, _time_horizon_long)
+                    if volume_condition(_klines, _max_volume_long, 1.2):
+                        _big_volume_sold_out = TimeTuple(_volume_curr, _time_curr)
+
+                if _rsi_curr > 70:
+                    _prev_rsi_high = TimeTuple(_rsi_curr, _time_curr)
+                    _rsi_low = False
+                    _rsi_low_fresh = False
+
+                _max_volume = get_max_volume(_klines, _time_horizon)
+
+                # if _rsi_curr < 33.5 and not is_fresh_test(_prev_rsi_high, _time_frame_rsi, _curr_kline[0]):
+                if _rsi_curr < 33.5 and not is_fresh(_prev_rsi_high, _time_frame_rsi):
+                    _max_volume_long = get_max_volume(_klines, _time_horizon_long)
+                    if volume_condition(_klines, _max_volume_long, 0.9) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                        _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+
+                if _rsi_curr < 33.5 and is_fresh(_prev_rsi_high, _time_frame_middle) and not_equal_rsi(
+                        _rsi_curr, _rsi_low):
+                    if volume_condition(_klines, _max_volume, 0.9):
+                        _rsi_low_fresh = TimeTuple(_rsi_curr, _time_curr)
+
+                if not _rsi_low and _rsi_curr < 31 and not is_fresh(_prev_rsi_high, _time_frame_rsi) \
+                        and volume_condition(_klines, _max_volume, 0.5) and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                    if not is_rsi_slope_condition(_rsi, 100, 68, len(_rsi) - 45, -1, _window=10):
+                        _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+                    else:
+                        _slope_condition = TimeTuple(True, _time_curr)
+
+                if not _rsi_low and _rsi_curr < 20 and not_equal_rsi(_rsi_curr, _rsi_low_fresh):
+                    _rsi_low = TimeTuple(_rsi_curr, _time_curr)
+
+                _c1 = _rsi_low and _rsi_curr < 33.5 and is_fresh(_rsi_low, _time_frame_rsi) and not is_fresh(_rsi_low,
+                                                                                                             15) and \
+                      _rsi_curr > _rsi_low.value and not is_fresh(_rsi_low_fresh, _time_frame_middle)
+
+                _c2 = _rsi_low and _rsi_low_fresh and _rsi_curr > _rsi_low_fresh.value and _rsi_curr > _rsi_low.value and \
+                      not is_fresh(_rsi_low_fresh, _time_frame_middle)
+
+                _rsi_temp = get_one_of_rsi(_rsi_low_fresh, _rsi_low)
+                _c3 = _rsi_temp and _rsi_curr > _rsi_temp.value and not is_fresh(_rsi_temp, _time_horizon) and \
+                      volume_condition(_klines, _max_volume, 0.9) and _rsi_curr < 33.5
+
+                if _c1 or _c2 or _c3:
+                    _max_volume_short = get_max_volume(_klines, _time_frame_short)
+                    # if _rsi_curr > _rsi_low[0] and volume_condition(_klines, _max_volume, 0.3):  # RSI HL
+                    if volume_condition(_klines, _max_volume_short, 0.3):  # RSI HL
+                        _trigger = TimeTuple(True, _time_curr)
+
+                _max_volume_middle = get_max_volume(_klines, _time_frame_short)
+
+                if _rsi_low and _close - _ma7_curr > 0 and _rsi_curr > _rsi_low.value and \
+                        volume_condition(_klines, _max_volume_middle, 1.0):  # reversal
+                    _trigger = TimeTuple(True, _time_curr)
+
+                if _big_volume_sold_out.value:
+                    if price_drop(_last_ma7_gt_ma100.value, _close, 0.08):
+                        _bearish_trigger = TimeTuple(True, _time_curr)
+
+                if _rsi_low and _rsi_low.value < 20 and is_fresh(_rsi_low, 15):
+                    _trigger = False
+
+                if _slope_condition.value:
+                    _rsi_low = False
+                    _rsi_low_fresh = False
+                    _trigger = False
+                if not is_fresh_test(_slope_condition, _time_horizon, _time_curr):
+                    _slope_condition = TimeTuple(False, _time_curr)
+
+                if _rsi_low and is_red_candle(_curr_kline):
+                    _green_klines = get_green_candles(_klines)
+                    _max_volume_long = get_max_volume(_green_klines, _time_horizon)
+                    if volume_condition(_klines, _max_volume_long, 2.1):
+                        _rsi_low = False
+                        _rsi_low_fresh = False
+
+                if _rsi_low and _rsi_low.value == 0:
+                    _rsi_low = False
+                if _rsi_low_fresh and _rsi_low_fresh.value == 0:
+                    _rsi_low_fresh = False
+
+                if not self.asset.trading and _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
+                    # logger_global[0].info("{} Buy Local Bottom triggered {} ...".format(self.asset.market, self))
+                    _la = lowest_ask(self.asset.market)
+                    self.asset.buy_price = _la
+                    dump_variables(self.asset.market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh,
+                                   TimeTuple(False, 0), TimeTuple(False, 0), TimeTuple(False, 0), _slope_condition)
+                    logger_global[0].info(
+                        "{} Alert Buy Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
+                                                                                                self,
+                                                                                                price_to_string(self.asset.buy_price),
+                                                                                                self.btc_value))
+                    _message = "{} Alert Buy Local Bottom {} : price : {} value : {} BTC".format(self.asset.market,
+                                                                                                self,
+                                                                                                price_to_string(self.asset.buy_price),
+                                                                                                get_time(_curr_kline[0]))
+                    self.asset.sent = _curr_kline[0]
+                    send_mail(_mail_title, _message, self.asset)
+                    self.asset.running = False
+                    save_to_file(trades_logs_dir, "alert_buy_klines_{}".format(time.time()), _klines)
+                    sys.exit(0)
+                _prev_rsi = TimeTuple(_rsi, _time_curr)
+                time.sleep(45)
+            except Exception as err:
+                if isinstance(err, requests.exceptions.ConnectionError):
+                    logger_global[0].error("{} {}".format(self.asset.market, "Connection problem..."))
+                else:
+                    traceback.print_tb(err.__traceback__)
+                    logger_global[0].exception("{} {}".format(self.asset.market, err.__traceback__))
+                    time.sleep(45)
+
+
 def run_strategy(_strategy):
     _strategy.run()
 
@@ -616,6 +953,25 @@ def start_trading(_trade_asset, _btc_value):
                 _bs = BullishStrategy(_trade_asset, _btc_value, _params)
             else:
                 _bs = BearishStrategy(_trade_asset, _btc_value, _params)
+
+            _run_strategy_maker = threading.Thread(target=run_strategy, args=(_bs,),
+                                                   name='_run_strategy_maker_{}'.format(_trade_asset.name))
+            _run_strategy_maker.start()
+
+        time.sleep(5)
+
+
+def start_alerts(_trade_asset):
+    global _last_asset
+    _c = not (_trade_asset.running or _trade_asset.trading)
+    if _c:
+        if _last_asset and _last_asset != _trade_asset.name:
+            _last_asset = _trade_asset.name
+            _trade_asset.running = True
+            if is_bullish_setup(_trade_asset):
+                _bs = AlertsBullishStrategy(_trade_asset)
+            else:
+                _bs = AlertsBearishStrategy(_trade_asset)
 
             _run_strategy_maker = threading.Thread(target=run_strategy, args=(_bs,),
                                                    name='_run_strategy_maker_{}'.format(_trade_asset.name))
@@ -1294,6 +1650,44 @@ def is_rsi_slope_condition(_rsi, _rsi_limit, _angle_limit, _start, _stop, _windo
     _rsi_angle = get_angle((0, _rsi[_start:_stop:1][-1]),
                            (_rsi_reversed_max_ind / np.power(10, _rsi_magnitude), _rsi_max_val))
     return _rsi_angle >= _angle_limit
+
+
+def send_mail(subject, message, asset):
+    global variable
+    message_sent = 'Subject: {}\n\n{}'.format(subject, message)
+    smtp_server = "smtp.gmail.com"
+    port = 587  # For starttls
+    sender_email = "szymon.roziewski@gmail.com"
+    password = variable
+    receiver_email = "szymon.roziewski@gmail.com"
+    # Create a secure SSL context
+    context = ssl.create_default_context()
+    # Try to log in to server and send email
+    try:
+        server = smtplib.SMTP(smtp_server, port)
+        server.ehlo()  # Can be omitted
+        server.starttls(context=context)  # Secure the connection
+        server.ehlo()  # Can be omitted
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, message_sent)
+        logger_global[0].info("{} Email sent".format(asset.name))
+    except Exception as err:
+        traceback.print_tb(err.__traceback__)
+        logger_global[0].exception(err.__traceback__)
+    finally:
+        server.quit()
+
+
+def authorize():
+    global variable
+    _phrase = config.get_parameter('phrase')
+    _input = input("type...")
+    _hash = hashlib.sha512(_input.encode('utf-8')).hexdigest()
+    if _phrase != _hash:
+        print('Exiting...BYE!')
+        exit(0)
+    variable = _input[1:len(_input)-1]
+    logger_global[0].info('Authorized : OK')
 
 
 def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _last_ma7_gt_ma100, _big_volume_sold_out,
