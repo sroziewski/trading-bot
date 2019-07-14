@@ -2,7 +2,7 @@ import time
 import traceback
 import requests
 
-from library import setup_logger, start_alerts, AlertAsset
+from library import setup_logger, start_alerts, AlertAsset, authorize
 
 trade_assets = [
     AlertAsset('CELR'),
@@ -14,6 +14,7 @@ trade_assets = [
 
 logger = setup_logger("alerts")
 
+authorize()
 
 while 1:
     try:
