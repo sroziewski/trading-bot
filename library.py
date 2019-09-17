@@ -846,6 +846,10 @@ class AlertsBearishStrategy(AlertsBullishStrategy):
                     time.sleep(45)
 
 
+def check_price_filter(_asset):
+    _min_notional = float(get_filter(_asset.market, "MIN_NOTIONAL")['minNotional'])
+
+
 def run_strategy(_strategy):
     _strategy.run()
 
