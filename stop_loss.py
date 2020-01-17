@@ -1,11 +1,12 @@
 import sys
 import time
 import traceback
+
 import requests
 
 from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, SellAsset, get_interval_unit
 
-name = "XRP"
+name = "ETH"
 stop_price_in_satoshi = 2975
 
 stop_price = stop_price_in_satoshi * sat

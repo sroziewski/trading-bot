@@ -59,6 +59,7 @@ class Asset(object):
         self.barrier = barrier
         self.buy_price = None
         self.tight = tight
+        self.price_ticker_size = get_price_tick_size(self.market)
 
 
 class BuyAsset(Asset):
@@ -1114,7 +1115,7 @@ def get_sell_price(asset):
     if asset.tight:
         _sell_price = _highest_bid
     else:
-        _sell_price = _highest_bid + sat
+        _sell_price = _highest_bid + asset.price_ticker_size
     return _sell_price
 
 
@@ -1156,15 +1157,21 @@ def get_asset_quantity(asset):
 
 
 def get_lot_size_params(market):
-    client.get_symbol_info(market)
     _info = list(filter(lambda f: f['filterType'] == "LOT_SIZE", client.get_symbol_info(market)['filters']))
     return _info[0] if len(_info) > 0 else False
 
 
 def get_filter(_market, _filter):
-    client.get_symbol_info(_market)
     _info = list(filter(lambda f: f['filterType'] == _filter, client.get_symbol_info(_market)['filters']))
     return _info[0] if len(_info) > 0 else False
+
+
+def get_filters(_market, _filter):
+    return client.get_symbol_info(_market)['filters']
+
+
+def get_price_tick_size(market):
+    return float(get_filter(market, "PRICE_FILTER")['tickSize'])
 
 
 def get_buying_asset_quantity(asset, total_btc):
