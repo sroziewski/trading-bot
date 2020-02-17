@@ -19,7 +19,7 @@ logger.info("Stop price is set up to : {:.8f} BTC".format(stop_price))
 
 while 1:
     try:
-        stop = stop_signal(sell_asset_kucoin.exchange, sell_asset_kucoin.market, sell_asset_kucoin.ticker, stop_price, 1)
+        stop = stop_signal(sell_asset_kucoin.exchange, sell_asset_kucoin.market, sell_asset_kucoin.ticker, stop_price, 5)
         if stop:
             sell_limit_stop_loss(sell_asset_kucoin.market, sell_asset_kucoin)
             logger.info("Stop-loss LIMIT order has been made on {}, exiting".format(sell_asset_kucoin.exchange))

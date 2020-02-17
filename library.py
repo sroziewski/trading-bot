@@ -1369,7 +1369,7 @@ def sell_limit_stop_loss(market, asset):
         _account = get_or_create_kucoin_trade_account(asset.name)
         _amount = float(_account['available'])
         if _amount == 0.0:
-            raise AccountHoldingZero("You don't have any orders to cancel for market: {}".format(asset.market))
+            raise AccountHoldingZero("You don't have any amount to sell for market: {}".format(asset.market))
         kucoin_client.create_market_order(asset.market, KucoinClient.SIDE_SELL, size=_amount)
 
 
