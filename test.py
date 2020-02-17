@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 import requests
 
-from library import BullishStrategy, TradeAsset, get_remaining_btc, adjust_buy_asset_btc_volume, get_lot_size_params, \
+from library import BullishStrategy, TradeAsset, get_remaining_btc_binance, adjust_buy_asset_btc_volume, get_lot_size_params, \
     get_interval_unit, lowest_ask, is_buy_possible, setup_logger, get_buying_asset_quantity, \
     adjust_quantity, adjust_stop_loss_price, adjust_price_profit, TimeTuple, relative_strength_index, get_closes, \
     get_max_volume, is_red_candle, is_fresh, volume_condition, binance_obj, save_to_file, trades_logs_dir, get_pickled, \

@@ -102,15 +102,15 @@ class Asset(object):
         self.stop_loss_price = stop_loss_price
         self.price_profit = price_profit
         self.profit = profit  # taking profit only when it's higher than profit %
-        self.take_profit_ratio = profit * 0.632  # taking profit only when it's higher than profit %
+        self.take_profit_ratio = profit * 0.632  # taking profit only when it's higher than profit % for a high-candle-sell
         self.barrier = barrier
         self.buy_price = None
 
 
 class BuyAsset(Asset):
-    def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
+    def __init__(self, exchange, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
                  ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, barrier=False):
-        super().__init__(name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
+        super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.price = price
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
@@ -179,20 +179,24 @@ class BuyStrategy(Strategy):
         super().__init__(asset)
         self.btc_value = btc_value
         self.params = params
+        self.asset = asset
         if not subclass:
             logger_global[0].info("{} BuyStrategy object has been created".format(self.asset.market))
 
     def run(self):
-        _la = lowest_ask(self.asset.market)
-        self.asset.buy_price = _la
-        _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
-        _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
-        if _quantity_to_buy:
-            _order_id = buy_order(self.asset, _quantity_to_buy)
-            self.set_stop_loss()
-            wait_until_order_filled(self.asset.market, _order_id)
-            sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
-            self.set_take_profit()
+        if self.asset.exchange == 'binance':
+            _la = lowest_ask(self.asset.market)
+            self.asset.buy_price = _la
+            _possible_buying_quantity = get_buying_asset_quantity(self.asset, self.btc_value)
+            _quantity_to_buy = adjust_quantity(_possible_buying_quantity, self.params)
+            if _quantity_to_buy:
+                _order_id = buy_order(self.asset, _quantity_to_buy)
+                self.set_stop_loss()
+                wait_until_order_filled(self.asset.market, _order_id)
+                sell_limit(self.asset.market, self.asset.name, self.asset.price_profit)
+                self.set_take_profit()
+        if self.asset.exchange == 'kucoin':
+            kucoin_client.create_market_order(self.asset.market, KucoinClient.SIDE_BUY, size=self.btc_value)
 
 
 class ObserverStrategy(Strategy):
@@ -1078,19 +1082,39 @@ def wait_until_order_filled(_market, _order_id):
     logger_global[0].info("{} OrderId : {} has been filled".format(_market, _order_id))
 
 
-def observe_lower_price(_assets):
+def observe_lower_price_binance(_assets):
     while 1:
         for _asset in _assets:
-            if stop_signal(get_market(_asset), _asset.ticker, get_interval_unit(_asset.ticker), _asset.price, 1):
+            if stop_signal(_asset.exchange, _asset.market, _asset.ticker, _asset.price, 1):
                 _assets = list(
                     filter(lambda _a: _a.name != _asset.name, _assets))  # remove the observed asset from the list
-                _btc_value = get_remaining_btc()
+                _btc_value = get_remaining_btc_binance()
                 _params = get_lot_size_params(_asset.market)
                 if is_buy_possible(_asset, _btc_value, _params):
                     BuyStrategy(_asset, _btc_value, _params).run()
                 else:
                     logger_global[0].warning(
                         "{} buying not POSSIBLE, only {} BTC left".format(_asset.market, price_to_string(_btc_value)))
+                    return
+                if len(_assets) == 0:
+                    logger_global[0].info("All assets OBSERVED, exiting")
+                    return
+        time.sleep(40)
+
+
+def observe_lower_price_kucoin(_assets):
+    while 1:
+        for _asset in _assets:
+            if stop_signal(_asset.exchange, _asset.market, _asset.ticker, _asset.price, 1):
+                _assets = list(
+                    filter(lambda _a: _a.name != _asset.name, _assets))  # remove the observed asset from the list
+                _btc_value = get_remaining_btc_binance()
+                _params = get_kucoin_currency_info(_asset.name)
+                if _btc_value > 0:
+                    BuyStrategy(_asset, _btc_value, _params).run()
+                else:
+                    logger_global[0].warning(
+                        "{} -- {} buying not POSSIBLE, only {} BTC left".format(_asset.exchange, _asset.market, price_to_string(_btc_value)))
                     return
                 if len(_assets) == 0:
                     logger_global[0].info("All assets OBSERVED, exiting")
@@ -1107,8 +1131,12 @@ def is_buy_possible(_asset, _btc_value, _params):
     return b
 
 
-def get_remaining_btc():
-    return get_asset_quantity("BTC")
+def get_remaining_btc_binance():
+    return get_asset_quantity_binance("BTC")
+
+
+def get_remaining_btc_kucoin():
+    return float(get_or_create_kucoin_trade_account('BTC')['available'])
 
 
 def get_market(_asset):
@@ -1275,8 +1303,12 @@ def cancel_kucoin_current_orders(market):
         logger_global[0].error("{} Orders not cancelled properly".format(market))
 
 
-def get_asset_quantity(asset):
-    return float(binance_client.get_asset_balance(asset)['free'])
+def get_asset_quantity_binance(currency):
+    return float(binance_client.get_asset_balance(currency)['free'])
+
+
+def get_kucoin_currency_info(currency):
+    return kucoin_client.get_currency(currency)
 
 
 def get_lot_size_params(market):
@@ -1343,7 +1375,7 @@ def _sell_order(market, _sell_price, _quantity):
 
 def sell_limit(market, asset_name, price):
     cancel_binance_current_orders(market)
-    _quantity = get_asset_quantity(asset_name)
+    _quantity = get_asset_quantity_binance(asset_name)
     _lot_size_params = get_lot_size_params(market)
     _quantity = adjust_quantity(_quantity, _lot_size_params)
     if _quantity:
@@ -1358,7 +1390,7 @@ def sell_limit(market, asset_name, price):
 def sell_limit_stop_loss(market, asset):
     if asset.exchange == 'binance':
         cancel_binance_current_orders(market)
-        _quantity = get_asset_quantity(asset.name)
+        _quantity = get_asset_quantity_binance(asset.name)
         _sell_price = get_sell_price(asset)
         _lot_size_params = get_lot_size_params(market)
         _quantity = adjust_quantity(_quantity, _lot_size_params)
@@ -1404,24 +1436,28 @@ def setup_logger(symbol):
 
 
 def stop_loss(_asset):
-    _ticker = BinanceClient.KLINE_INTERVAL_1MINUTE
-    _time_interval = "6 hours ago"
+    if _asset.exchange == 'binance':
+        _ticker = BinanceClient.KLINE_INTERVAL_1MINUTE
+        _time_interval = get_interval_unit(_ticker)
+    if _asset.exchange == 'kucoin':
+        _ticker = ticker_to_kucoin(BinanceClient.KLINE_INTERVAL_5MINUTE)
+        _time_interval = get_kucoin_interval_unit(_ticker)
     _stop_price = _asset.stop_loss_price
 
-    logger_global[0].info("Starting {} stop-loss maker".format(_asset.market))
+    logger_global[0].info("{} -- Starting {} stop-loss maker".format(_asset.exchange, _asset.market))
     logger_global[0].info("Stop price {} is set up to : {:.8f} BTC".format(_asset.market, _stop_price))
 
     while 1:
         if type(_asset) is TradeAsset:
             if not _asset.trading:
-                logger_global[0].info("{} Stop-Loss : sold, not trading, skipping, exiting".format(_asset.market))
+                logger_global[0].info("{} -- {} Stop-Loss : sold, not trading, skipping, exiting".format(_asset.exchange, _asset.market))
                 sys.exit(0)
         try:
-            _stop_sl = stop_signal(_asset.market, _ticker, _time_interval, _stop_price, 1)
+            _stop_sl = stop_signal(_asset.exchange, _asset.market, _ticker, _time_interval, _stop_price, 1)
             # stop = True
             if _stop_sl:
                 sell_limit_stop_loss(_asset.market, _asset)
-                logger_global[0].info("Stop-loss LIMIT {} order has been made : {}, exiting".format(_asset.market,
+                logger_global[0].info("{} -- Stop-loss LIMIT {} order has been made : {}, exiting".format(_asset.exchange, _asset.market,
                                                                                                     lowest_ask(
                                                                                                         _asset.market)))
                 sys.exit(0)

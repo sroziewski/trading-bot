@@ -2,7 +2,7 @@ import time
 import traceback
 import requests
 
-from library import setup_logger, TradeAsset, get_remaining_btc, adjust_buy_asset_btc_volume, start_trading
+from library import setup_logger, TradeAsset, get_remaining_btc_binance, adjust_buy_asset_btc_volume, start_trading
 
 trade_assets = [
         TradeAsset('CELR'),
@@ -16,7 +16,7 @@ logger = setup_logger("trader")
 
 while 1:
     try:
-        _btc = get_remaining_btc()
+        _btc = get_remaining_btc_binance()
         btc_value = 0.0013 if _btc > 0.0013 else _btc
         adjust_buy_asset_btc_volume(trade_assets, btc_value)
 
