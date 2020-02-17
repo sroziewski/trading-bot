@@ -1,22 +1,24 @@
-import datetime
+import configparser
 import hashlib
+import logging
+import logging.config
+import pickle
+import smtplib
+import ssl
 import sys
-import warnings
-import smtplib, ssl
-from getpass import getpass
-
-import talib
 import threading
 import time
 import traceback
+import warnings
+from datetime import datetime, timedelta
+from getpass import getpass
 
-import requests
-from binance.client import Client
 import numpy as np
-import pickle
-import configparser
-import logging
-import logging.config
+import requests
+import talib
+from binance.client import Client as BinanceClient
+from kucoin.client import Client as KucoinClient
+
 from Binance import Binance
 
 warnings.filterwarnings('error')
@@ -46,25 +48,68 @@ exclude_markets = ['DOGEBTC', 'ERDBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
                    'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
                    'TUSDBTC', 'PAXBTC', 'USDCBTC', 'BCHSVBTC']
 
+class Kline(object):
+    def __init__(self, start_time, opening, closing, highest, lowest, volume, btc_volume, time_str):
+        self.start_time = start_time
+        self.opening = opening
+        self.closing = closing
+        self.highest = highest
+        self.lowest = lowest
+        self.volume = volume
+        self.btc_volume = btc_volume
+        self.time_str = time_str
+
+
+def from_kucoin_klines(klines):
+    return list(map(lambda x: Kline(x[0], x[1], x[2], x[3], x[4], x[5], x[6], get_time(int(x[0]))), klines))
+
+
+def from_binance_klines(klines):
+    return list(
+        map(lambda x: Kline(x[0], x[1], x[4], x[2], x[3], x[5], x[7], get_time_from_binance_tmstmp(x[0])), klines))
+
+
+def get_kucoin_klines(market, ticker, start=None):
+    _data = from_kucoin_klines(kucoin_client.get_kline_data(market, ticker, start))
+    _data.reverse()
+    return _data
+
+
+def get_binance_klines(market, ticker, start=None):
+    _data = get_klines(market, ticker, start)
+    return from_binance_klines(_data)
+
+
+def ticker_to_kucoin(_ticker):
+    return _ticker.replace("m", "min").replace("h", "hour").replace("d", "day").replace("w", "week")
+
 
 class Asset(object):
-    def __init__(self, name, stop_loss_price, price_profit, profit, ticker, tight=False, barrier=False):
+    def __init__(self, exchange, name, stop_loss_price, price_profit, profit, ticker, tight=False, barrier=False):
+        stop_when_not_exchange(exchange)
+        self.exchange = exchange
         self.name = name
-        self.market = "{}BTC".format(name)
+        if exchange == "kucoin":
+            self.market = "{}-BTC".format(name)
+            self.ticker = ticker_to_kucoin(ticker)
+            self.tight = True
+        if exchange == "binance":
+            self.market = "{}BTC".format(name)
+            self.price_ticker_size = get_binance_price_tick_size(self.market)
+            self.ticker = ticker
+            self.tight = tight
         self.stop_loss_price = stop_loss_price
         self.price_profit = price_profit
         self.profit = profit  # taking profit only when it's higher than profit %
-        self.take_profit_ratio = profit*0.632  # taking profit only when it's higher than profit %
-        self.ticker = ticker
+        self.take_profit_ratio = profit * 0.632  # taking profit only when it's higher than profit %
         self.barrier = barrier
         self.buy_price = None
-        self.tight = tight
-        self.price_ticker_size = get_price_tick_size(self.market)
+
 
 
 class BuyAsset(Asset):
     def __init__(self, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
-                 ticker=Client.KLINE_INTERVAL_1MINUTE, barrier=False):
+                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, barrier=False):
         super().__init__(name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.price = price
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
@@ -74,28 +119,28 @@ class BuyAsset(Asset):
 
 
 class SellAsset(Asset):
-    def __init__(self, name, stop_loss_price, tight=False,
-                 ticker=Client.KLINE_INTERVAL_1MINUTE):
-        super().__init__(name, stop_loss_price, None, 0, ticker, tight)
+    def __init__(self, exchange, name, stop_loss_price, tight=False,
+                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE):
+        super().__init__(exchange, name, stop_loss_price, None, 0, ticker, tight)
 
 
 class ObserveAsset(Asset):
     def __init__(self, name, buy_price, stop_loss_price, price_profit, profit=5, tight=False,
-                 ticker=Client.KLINE_INTERVAL_1MINUTE,
+                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE,
                  barrier=False):
         super().__init__(name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.buy_price = buy_price
 
 
 class TradeAsset(BuyAsset):
-    def __init__(self, name, ticker=Client.KLINE_INTERVAL_1MINUTE, ratio=100, profit=8, tight=False):
+    def __init__(self, name, ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, ratio=100, profit=8, tight=False):
         super().__init__(name, None, None, None, ratio, profit, tight, ticker)
         self.trading = False
         self.running = False
 
 
 class AlertAsset(TradeAsset):
-    def __init__(self, name, ticker=Client.KLINE_INTERVAL_1MINUTE):
+    def __init__(self, name, ticker=BinanceClient.KLINE_INTERVAL_1MINUTE):
         super().__init__(name, ticker)
         self.sent = False
 
@@ -306,7 +351,10 @@ class BullishStrategy(BuyStrategy):
                     _buy_cond = self.asset.buy_price * _quantity_to_buy >= _min_notional
 
                     if not _buy_cond:
-                        logger_global[0].error("{} min notional condition NOT MET {} > {}, exiting".format(self.asset.market, _min_notional, price_to_string(self.asset.buy_price * _quantity_to_buy)))
+                        logger_global[0].error(
+                            "{} min notional condition NOT MET {} > {}, exiting".format(self.asset.market,
+                                                                                        _min_notional, price_to_string(
+                                    self.asset.buy_price * _quantity_to_buy)))
                         sys.exit(0)
 
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
@@ -323,7 +371,8 @@ class BullishStrategy(BuyStrategy):
                         logger_global[0].info(
                             "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
                                                                                                     self,
-                                                                                                    price_to_string(self.asset.buy_price),
+                                                                                                    price_to_string(
+                                                                                                        self.asset.buy_price),
                                                                                                     self.btc_value))
                         self.asset.running = False
                         save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
@@ -473,7 +522,8 @@ class BearishStrategy(BullishStrategy):
                 if _rsi_low_fresh and _rsi_low_fresh.value == 0:
                     _rsi_low_fresh = False
 
-                if not self.asset.trading and _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
+                if not self.asset.trading and _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(
+                        _bearish_trigger, 15):
                     # logger_global[0].info("{} Buy Local Bottom triggered {} ...".format(self.asset.market, self))
                     _la = lowest_ask(self.asset.market)
                     self.asset.buy_price = _la
@@ -484,7 +534,10 @@ class BearishStrategy(BullishStrategy):
                     _buy_cond = self.asset.buy_price * _quantity_to_buy >= _min_notional
 
                     if not _buy_cond:
-                        logger_global[0].error("{} min notional condition NOT MET {} > {}, exiting".format(self.asset.market, _min_notional, price_to_string(self.asset.buy_price * _quantity_to_buy)))
+                        logger_global[0].error(
+                            "{} min notional condition NOT MET {} > {}, exiting".format(self.asset.market,
+                                                                                        _min_notional, price_to_string(
+                                    self.asset.buy_price * _quantity_to_buy)))
                         sys.exit(0)
 
                     if _quantity_to_buy and is_buy_possible(self.asset, self.btc_value, self.params):
@@ -501,7 +554,8 @@ class BearishStrategy(BullishStrategy):
                         logger_global[0].info(
                             "{} Bought Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
                                                                                                     self,
-                                                                                                    price_to_string(self.asset.buy_price),
+                                                                                                    price_to_string(
+                                                                                                        self.asset.buy_price),
                                                                                                     self.btc_value))
                         self.asset.running = False
                         save_to_file(trades_logs_dir, "buy_klines_{}".format(time.time()), _klines)
@@ -529,7 +583,8 @@ class AlertsBullishStrategy(BuyStrategy):
 
     def set_alert_buy_local_bottom(self):
         _alert_buy_local_bottom_maker_ = threading.Thread(target=self.alert_buy_local_bottom,
-                                                   name='_alert_buy_local_bottom_maker_{}'.format(self.asset.name))
+                                                          name='_alert_buy_local_bottom_maker_{}'.format(
+                                                              self.asset.name))
         _alert_buy_local_bottom_maker_.start()
 
     def alert_buy_local_bottom(self):
@@ -655,9 +710,10 @@ class AlertsBullishStrategy(BuyStrategy):
                     self.asset.trading = True
                     logger_global[0].info(
                         "{} Alert Buy Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
-                                                                                                self,
-                                                                                                price_to_string(self.asset.buy_price),
-                                                                                                self.btc_value))
+                                                                                                   self,
+                                                                                                   price_to_string(
+                                                                                                       self.asset.buy_price),
+                                                                                                   self.btc_value))
                     _message = "{} Alert Buy Local Bottom {} : price : {} value : {} BTC".format(self.asset.market,
                                                                                                  self,
                                                                                                  price_to_string(
@@ -709,13 +765,15 @@ class AlertsBearishStrategy(AlertsBullishStrategy):
                 if is_fresh(self.asset.sent, _time_horizon):
                     self.asset.running = False
                     logger_global[0].info(
-                        "{} alert_buy_local_bottom {} : sent not possible, skipping, exiting".format(self.asset.market, self))
+                        "{} alert_buy_local_bottom {} : sent not possible, skipping, exiting".format(self.asset.market,
+                                                                                                     self))
                     sys.exit(0)
 
                 if not _rsi_low and not _rsi_low_fresh and is_bullish_setup(self.asset):
                     self.asset.running = False
                     logger_global[0].info(
-                        "{} alert_buy_local_bottom {} : NOT bearish setup, skipping, exiting".format(self.asset.market, self))
+                        "{} alert_buy_local_bottom {} : NOT bearish setup, skipping, exiting".format(self.asset.market,
+                                                                                                     self))
                     sys.exit(0)
 
                 _klines = get_klines(self.asset, _time_interval)
@@ -816,7 +874,8 @@ class AlertsBearishStrategy(AlertsBullishStrategy):
                 if _rsi_low_fresh and _rsi_low_fresh.value == 0:
                     _rsi_low_fresh = False
 
-                if not self.asset.trading and _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(_bearish_trigger, 15):
+                if not self.asset.trading and _close - _ma7_curr > 0 and is_fresh(_trigger, 15) and is_fresh(
+                        _bearish_trigger, 15):
                     # logger_global[0].info("{} Buy Local Bottom triggered {} ...".format(self.asset.market, self))
                     _la = lowest_ask(self.asset.market)
                     self.asset.buy_price = _la
@@ -824,13 +883,16 @@ class AlertsBearishStrategy(AlertsBullishStrategy):
                                    TimeTuple(False, 0), TimeTuple(False, 0), TimeTuple(False, 0), _slope_condition)
                     logger_global[0].info(
                         "{} Alert Buy Local Bottom {} : price : {} value : {} BTC, exiting".format(self.asset.market,
-                                                                                                self,
-                                                                                                price_to_string(self.asset.buy_price),
-                                                                                                self.btc_value))
+                                                                                                   self,
+                                                                                                   price_to_string(
+                                                                                                       self.asset.buy_price),
+                                                                                                   self.btc_value))
                     _message = "{} Alert Buy Local Bottom {} : price : {} value : {} BTC".format(self.asset.market,
-                                                                                                self,
-                                                                                                price_to_string(self.asset.buy_price),
-                                                                                                get_time(_curr_kline[0]))
+                                                                                                 self,
+                                                                                                 price_to_string(
+                                                                                                     self.asset.buy_price),
+                                                                                                 get_time(
+                                                                                                     _curr_kline[0]))
                     self.asset.sent = _curr_kline[0]
                     send_mail(_mail_title, _message, self.asset)
                     self.asset.running = False
@@ -1011,7 +1073,7 @@ def adjust_sell_price(_ma7, _open, _close):
 def wait_until_order_filled(_market, _order_id):
     _status = {'status': None}
     while _status['status'] != 'FILLED':
-        _status = client.get_order(symbol=_market, orderId=_order_id)
+        _status = binance_client.get_order(symbol=_market, orderId=_order_id)
         time.sleep(1)
     logger_global[0].info("{} OrderId : {} has been filled".format(_market, _order_id))
 
@@ -1073,10 +1135,12 @@ def get_pickled(_dir, filename):
 
 
 keys = get_pickled(key_dir, keys_filename)
+keys_b = keys['binance']
+keys_k = keys['kucoin']
+binance_client = BinanceClient(keys_b[0], keys_b[1])
+kucoin_client = KucoinClient(keys_k[0], keys_k[1], keys_k[2])
 
-client = Client(keys[0], keys[1])
-
-binance_obj = Binance(keys[0], keys[1])
+binance_obj = Binance(keys_b[0], keys_b[1])
 
 sat = 1e-8
 
@@ -1085,32 +1149,68 @@ general_fee = 0.001
 
 def get_interval_unit(_ticker):
     return {
-        Client.KLINE_INTERVAL_1MINUTE: "6 hours ago",
-        Client.KLINE_INTERVAL_3MINUTE: "18 hours ago",
-        Client.KLINE_INTERVAL_5MINUTE: "28 hours ago",
-        Client.KLINE_INTERVAL_15MINUTE: "40 hours ago",
-        Client.KLINE_INTERVAL_30MINUTE: "75 hours ago",
-        Client.KLINE_INTERVAL_1HOUR: "150 hours ago",
-        Client.KLINE_INTERVAL_2HOUR: "300 hours ago",
-        Client.KLINE_INTERVAL_4HOUR: "600 hours ago",
-        Client.KLINE_INTERVAL_6HOUR: "900 hours ago",
-        Client.KLINE_INTERVAL_8HOUR: "1200 hours ago",
-        Client.KLINE_INTERVAL_12HOUR: "75 days ago",
-        Client.KLINE_INTERVAL_1DAY: "150 days ago",
-        Client.KLINE_INTERVAL_3DAY: "350 days ago",
+        BinanceClient.KLINE_INTERVAL_1MINUTE: "6 hours ago",
+        BinanceClient.KLINE_INTERVAL_3MINUTE: "18 hours ago",
+        BinanceClient.KLINE_INTERVAL_5MINUTE: "28 hours ago",
+        BinanceClient.KLINE_INTERVAL_15MINUTE: "40 hours ago",
+        BinanceClient.KLINE_INTERVAL_30MINUTE: "75 hours ago",
+        BinanceClient.KLINE_INTERVAL_1HOUR: "150 hours ago",
+        BinanceClient.KLINE_INTERVAL_2HOUR: "300 hours ago",
+        BinanceClient.KLINE_INTERVAL_4HOUR: "600 hours ago",
+        BinanceClient.KLINE_INTERVAL_6HOUR: "900 hours ago",
+        BinanceClient.KLINE_INTERVAL_8HOUR: "1200 hours ago",
+        BinanceClient.KLINE_INTERVAL_12HOUR: "75 days ago",
+        BinanceClient.KLINE_INTERVAL_1DAY: "150 days ago",
+        BinanceClient.KLINE_INTERVAL_3DAY: "350 days ago",
     }[_ticker]
 
 
-def stop_signal(_market, _ticker, _time_interval, _stop_price, _times=4):
-    _klines = get_klines(_market, _ticker, _time_interval)
+def get_timestamp(_min, _hrs, _days, _weeks):
+    return datetime.now() - timedelta(minutes=_min, hours=_hrs, days=_days, weeks=_weeks)
+
+
+def get_kucoin_interval_unit(_ticker):
+    _multiplier = 360
+    return int({
+                   '1min': get_timestamp(1 * _multiplier, 0, 0, 0),
+                   '3min': get_timestamp(3 * _multiplier, 0, 0, 0),
+                   '5min': get_timestamp(5 * _multiplier, 0, 0, 0),
+                   '15min': get_timestamp(15 * _multiplier, 0, 0, 0),
+                   '30min': get_timestamp(30 * _multiplier, 0, 0, 0),
+                   '1hour': get_timestamp(0, 1 * _multiplier, 0, 0),
+                   '2hour': get_timestamp(0, 2 * _multiplier, 0, 0),
+                   '4hour': get_timestamp(0, 4 * _multiplier, 0, 0),
+                   '6hour': get_timestamp(0, 6 * _multiplier, 0, 0),
+                   '8hour': get_timestamp(0, 8 * _multiplier, 0, 0),
+                   '12hour': get_timestamp(0, 12 * _multiplier, 0, 0),
+                   '1day': get_timestamp(0, 0, 1 * _multiplier, 0),
+                   '1week': get_timestamp(0, 0, 0, 1 * _multiplier),
+               }[_ticker].timestamp())
+
+
+def stop_signal(_exchange, _market, _ticker, _stop_price, _times=4):
+    stop_when_not_exchange(_exchange)
+    if _exchange == 'kucoin':
+        _klines = get_kucoin_klines(_market, _ticker, get_kucoin_interval_unit(_ticker))
+    elif _exchange == "binance":
+        _klines = get_binance_klines(_market, _ticker, get_interval_unit(_ticker))
     if len(_klines) > 0:
-        _mean_close_price = np.mean(list(map(lambda x: float(x[4]), _klines[-_times:])))
+        _mean_close_price = np.mean(list(map(lambda x: float(x.closing), _klines[-_times:])))
         return True if _mean_close_price <= _stop_price else False
     return False
 
 
+def stop_when_not_exchange(_name):
+    if _name not in ['kucoin', 'binance']:
+        sys.exit("You must provide exchange parameter value: [binance, kucoin]")
+
+
+def get_time_from_binance_tmstmp(_tmstmp):
+    return get_time(datetime.fromtimestamp(_tmstmp / 1000).timestamp())
+
+
 def get_sell_price(asset):
-    _depth = client.get_order_book(symbol=asset.market)
+    _depth = binance_client.get_order_book(symbol=asset.market)
     _highest_bid = float(_depth['bids'][0][0])
     if asset.tight:
         _sell_price = _highest_bid
@@ -1120,29 +1220,52 @@ def get_sell_price(asset):
 
 
 def highest_bid(market):
-    _depth = client.get_order_book(symbol=market)
+    _depth = binance_client.get_order_book(symbol=market)
     return float(_depth['bids'][0][0])
 
 
 def lowest_ask(market):
-    _depth = client.get_order_book(symbol=market)
+    _depth = binance_client.get_order_book(symbol=market)
     return float(_depth['asks'][0][0])
 
 
-def cancel_orders(open_orders, symbol):
+def cancel_binance_orders(open_orders, symbol):
     _resp = []
     for _order in open_orders:
-        _resp.append(client.cancel_order(symbol=symbol, orderId=_order['orderId']))
+        _resp.append(binance_client.cancel_order(symbol=symbol, orderId=_order['orderId']))
     return all(_c["status"] == "CANCELED" for _c in _resp)
 
 
-def cancel_current_orders(market):
-    _open_orders = client.get_open_orders(symbol=market)
+def cancel_kucoin_orders(open_orders):
+    _resp = []
+    for _order in open_orders['items']:
+        _resp.append(kucoin_client.cancel_order(_order['id']))
+    return len(list(filter(lambda x: len(x['cancelledOrderIds']) > 0, _resp))) == open_orders['totalNum']
+
+
+def cancel_binance_current_orders(market):
+    _open_orders = binance_client.get_open_orders(symbol=market)
     logger_global[0].info("{} orders to cancel : {}".format(market, len(_open_orders)))
     _cancelled_ok = True
     if len(_open_orders) > 0:
         _cancelled_ok = False
-        _cancelled_ok = cancel_orders(_open_orders, market)
+        _cancelled_ok = cancel_binance_orders(_open_orders, market)
+    else:
+        logger_global[0].warning("{} No orders to CANCEL".format(market))
+        return
+    if _cancelled_ok:
+        logger_global[0].info("{} Orders cancelled correctly".format(market))
+    else:
+        logger_global[0].error("{} Orders not cancelled properly".format(market))
+
+
+def cancel_kucoin_current_orders(market):
+    _open_orders = kucoin_client.get_orders(symbol=market, status='active')
+    logger_global[0].info("{} orders to cancel : {}".format(market, _open_orders['totalNum']))
+    _cancelled_ok = True
+    if _open_orders['totalNum'] > 0:
+        _cancelled_ok = False
+        _cancelled_ok = cancel_kucoin_orders(_open_orders)
     else:
         logger_global[0].warning("{} No orders to CANCEL".format(market))
         return
@@ -1153,24 +1276,24 @@ def cancel_current_orders(market):
 
 
 def get_asset_quantity(asset):
-    return float(client.get_asset_balance(asset)['free'])
+    return float(binance_client.get_asset_balance(asset)['free'])
 
 
 def get_lot_size_params(market):
-    _info = list(filter(lambda f: f['filterType'] == "LOT_SIZE", client.get_symbol_info(market)['filters']))
+    _info = list(filter(lambda f: f['filterType'] == "LOT_SIZE", binance_client.get_symbol_info(market)['filters']))
     return _info[0] if len(_info) > 0 else False
 
 
 def get_filter(_market, _filter):
-    _info = list(filter(lambda f: f['filterType'] == _filter, client.get_symbol_info(_market)['filters']))
+    _info = list(filter(lambda f: f['filterType'] == _filter, binance_client.get_symbol_info(_market)['filters']))
     return _info[0] if len(_info) > 0 else False
 
 
 def get_filters(_market, _filter):
-    return client.get_symbol_info(_market)['filters']
+    return binance_client.get_symbol_info(_market)['filters']
 
 
-def get_price_tick_size(market):
+def get_binance_price_tick_size(market):
     return float(get_filter(market, "PRICE_FILTER")['tickSize'])
 
 
@@ -1198,10 +1321,10 @@ def buy_order(_asset, _quantity):
     _price_str = price_to_string(_asset.buy_price)
     logger_global[0].info(
         "{} Buy limit order to be placed: price={} BTC, quantity={} ".format(_asset.market, _price_str, _quantity))
-    _resp = client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
+    _resp = binance_client.order_limit_buy(symbol=_asset.market, quantity=_quantity, price=_price_str)
     logger_global[0].info(
         "{} Buy limit order (ID : {}) placed: price={} BTC, quantity={} DONE".format(_asset.market, _resp['orderId'],
-                                                                                 _price_str, _quantity))
+                                                                                     _price_str, _quantity))
     return _resp['orderId']
 
 
@@ -1213,13 +1336,13 @@ def _sell_order(market, _sell_price, _quantity):
     _sell_price_str = price_to_string(_sell_price)
     logger_global[0].info(
         "{} Sell limit order to be placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
-    _resp = client.order_limit_sell(symbol=market, quantity=_quantity, price=_sell_price_str)
+    _resp = binance_client.order_limit_sell(symbol=market, quantity=_quantity, price=_sell_price_str)
     logger_global[0].info(
         "{} Sell limit order placed: price={} BTC, quantity={} DONE".format(market, _sell_price_str, _quantity))
 
 
 def sell_limit(market, asset_name, price):
-    cancel_current_orders(market)
+    cancel_binance_current_orders(market)
     _quantity = get_asset_quantity(asset_name)
     _lot_size_params = get_lot_size_params(market)
     _quantity = adjust_quantity(_quantity, _lot_size_params)
@@ -1233,13 +1356,26 @@ def sell_limit(market, asset_name, price):
 
 
 def sell_limit_stop_loss(market, asset):
-    cancel_current_orders(market)
-    _quantity = get_asset_quantity(asset.name)
-    _sell_price = get_sell_price(asset)
-    _lot_size_params = get_lot_size_params(market)
-    _quantity = adjust_quantity(_quantity, _lot_size_params)
-    if _quantity:
-        _sell_order(market, _sell_price, _quantity)
+    if asset.exchange == 'binance':
+        cancel_binance_current_orders(market)
+        _quantity = get_asset_quantity(asset.name)
+        _sell_price = get_sell_price(asset)
+        _lot_size_params = get_lot_size_params(market)
+        _quantity = adjust_quantity(_quantity, _lot_size_params)
+        if _quantity:
+            _sell_order(market, _sell_price, _quantity)
+    if asset.exchange == 'kucoin':
+        cancel_kucoin_current_orders(market)
+        _account = get_or_create_kucoin_trade_account(asset.name)
+        _amount = float(_account['available'])
+        kucoin_client.create_market_order(asset.market, KucoinClient.SIDE_SELL, size=_amount)
+
+
+def get_or_create_kucoin_trade_account(_currency):
+    for _account in kucoin_client.get_accounts():
+        if _account['currency'] == _currency:
+            return _account
+    return kucoin_client.get_account(kucoin_client.create_account('trade', _currency)['id'])
 
 
 def setup_logger(symbol):
@@ -1258,7 +1394,7 @@ def setup_logger(symbol):
 
 
 def stop_loss(_asset):
-    _ticker = Client.KLINE_INTERVAL_1MINUTE
+    _ticker = BinanceClient.KLINE_INTERVAL_1MINUTE
     _time_interval = "6 hours ago"
     _stop_price = _asset.stop_loss_price
 
@@ -1310,7 +1446,7 @@ def adjust_ask_price(asset, _prev_kline, _old_price, _high_price_max, _curr_high
 
 
 def take_profit(asset):
-    _ticker = Client.KLINE_INTERVAL_1MINUTE
+    _ticker = BinanceClient.KLINE_INTERVAL_1MINUTE
     _time_interval = get_interval_unit(_ticker)
     _prev_kline = None
     _prev_rsi = TimeTuple(0, 0)
@@ -1643,7 +1779,7 @@ def get_one_of_rsi(_rsi_fresh, _rsi_):
 
 
 def get_time(_timestamp):
-    return datetime.datetime.fromtimestamp(_timestamp).strftime('%d %B %Y %H:%M:%S')
+    return datetime.fromtimestamp(_timestamp).strftime('%d %B %Y %H:%M:%S')
 
 
 def price_drop(price0, price1, _ratio):
@@ -1700,14 +1836,16 @@ def authorize():
     if _phrase != _hash:
         print('Exiting...BYE!')
         exit(0)
-    variable = _input[1:len(_input)-1]
+    variable = _input[1:len(_input) - 1]
     logger_global[0].info('Authorized : OK')
 
 
-def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _last_ma7_gt_ma100, _big_volume_sold_out,
+def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, _last_ma7_gt_ma100,
+                   _big_volume_sold_out,
                    _bearish_trigger, _slope_condition):
     logger_global[0].info(
-        "{} _prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(_market,
+        "{} _prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(
+            _market,
             _prev_rsi_high.value if _prev_rsi_high else False, _trigger.value if _trigger else False,
             _rsi_low.value if _rsi_low else False, _rsi_low_fresh.value if _rsi_low_fresh else False,
             _last_ma7_gt_ma100.value if _last_ma7_gt_ma100.value else False,
@@ -1716,7 +1854,8 @@ def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, 
             _slope_condition.value if _slope_condition.value else False
         ))
     print(
-        "{} _prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(_market,
+        "{} _prev_rsi_high: {} _trigger: {} _rsi_low: {} _rsi_low_fresh: {} _last_ma7_gt_ma100: {} _big_volume_sold_out: {} _bearish_trigger: {} _slope_condition: {}".format(
+            _market,
             _prev_rsi_high.value if _prev_rsi_high else False, _trigger.value if _trigger else False,
             _rsi_low.value if _rsi_low else False, _rsi_low_fresh.value if _rsi_low_fresh else False,
             _last_ma7_gt_ma100.value if _last_ma7_gt_ma100.value else False,
