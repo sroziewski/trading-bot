@@ -48,6 +48,7 @@ exclude_markets = ['DOGEBTC', 'ERDBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
                    'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
                    'TUSDBTC', 'PAXBTC', 'USDCBTC', 'BCHSVBTC']
 
+
 class Kline(object):
     def __init__(self, start_time, opening, closing, highest, lowest, volume, btc_volume, time_str):
         self.start_time = start_time
@@ -104,7 +105,6 @@ class Asset(object):
         self.take_profit_ratio = profit * 0.632  # taking profit only when it's higher than profit %
         self.barrier = barrier
         self.buy_price = None
-
 
 
 class BuyAsset(Asset):
@@ -1368,6 +1368,8 @@ def sell_limit_stop_loss(market, asset):
         cancel_kucoin_current_orders(market)
         _account = get_or_create_kucoin_trade_account(asset.name)
         _amount = float(_account['available'])
+        if _amount == 0.0:
+            raise AccountHoldingZero("You don't have any orders to cancel for market: {}".format(asset.market))
         kucoin_client.create_market_order(asset.market, KucoinClient.SIDE_SELL, size=_amount)
 
 
@@ -1376,6 +1378,14 @@ def get_or_create_kucoin_trade_account(_currency):
         if _account['currency'] == _currency:
             return _account
     return kucoin_client.get_account(kucoin_client.create_account('trade', _currency)['id'])
+
+
+class AccountHoldingZero(Exception):
+    def __init__(self, message):
+        super(Exception, self).__init__(message)
+
+    def __str__(self):
+        return self.args[0]
 
 
 def setup_logger(symbol):

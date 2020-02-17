@@ -4,10 +4,10 @@ import traceback
 
 import requests
 
-from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, SellAsset
+from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, SellAsset, AccountHoldingZero
 
 name = "VIDT"
-stop_price_in_satoshi = 1600
+stop_price_in_satoshi = 2600
 
 stop_price = stop_price_in_satoshi * sat
 
@@ -25,6 +25,9 @@ while 1:
             logger.info("Stop-loss LIMIT order has been made on {}, exiting".format(sell_asset_kucoin.exchange))
             sys.exit(0)
         time.sleep(40)
+    except AccountHoldingZero as warn:
+        logger.warning(warn)
+        sys.exit("Exit")
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError):
             logger.error("Connection problem...")
