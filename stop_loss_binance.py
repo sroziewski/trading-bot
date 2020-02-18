@@ -25,7 +25,7 @@ while 1:
             sys.exit(0)
         time.sleep(40)
     except Exception as err:
-        if isinstance(err, requests.exceptions.ConnectionError):
+        if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
             logger.error("Connection problem...")
         else:
             traceback.print_tb(err.__traceback__)
