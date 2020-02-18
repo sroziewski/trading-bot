@@ -1,4 +1,4 @@
-from library import setup_logger, BuyAsset, observe_lower_price_binance, price_to_string, take_profit, check_buy_assets, \
+from library import setup_logger, BuyAsset, observe_lower_price_binance, price_to_string, check_buy_assets, \
     get_remaining_btc_binance, adjust_buy_asset_btc_volume, ObserverStrategy, ObserveAsset, check_observe_assets
 
 
