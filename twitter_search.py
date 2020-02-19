@@ -27,7 +27,7 @@ import urllib.request
 req = urllib.request.Request('https://twitter.com/binance')
 with urllib.request.urlopen(req) as response:
    the_page = response.read()
-   if 'Scammers are impersonating official' in str(the_page):
+   if 'Community Coin Vote Round'.lower() in str(the_page).lower():
         i = 1
 
 # with open(tmp_file.name) as html:
