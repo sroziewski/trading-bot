@@ -24,5 +24,5 @@ _id = buy_asset.limit_hidden_order(side)
 if _id:
     time.sleep(5)
     logger.info("{} Stop-loss: {} {} @ {} BTC in progress only...".format(buy_asset.market, buy_asset.adjusted_size,
-         buy_asset, get_format_price(buy_asset.stop_loss_price).format(buy_asset.stop_loss_price)))
+         buy_asset.name, get_format_price(buy_asset.stop_loss_price).format(buy_asset.stop_loss_price)))
     logger.info("Hidden {} LIMIT order has been made, exiting.".format(side))
