@@ -117,6 +117,26 @@ class BuyAsset(Asset):
     def set_btc_asset_buy_value(self, _total_btc):
         self.btc_asset_buy_value = self.ratio / 100 * _total_btc
 
+    def limit_hidden_order(self, _side):
+        cancel_kucoin_current_orders(self.market)
+        _btc_value = get_remaining_btc_kucoin()
+        _useable_btc = (1 - kucoin_general_fee) * _btc_value
+        purchase_fund = self.ratio / 100 * _useable_btc
+        size = purchase_fund / self.price
+        self.adjusted_size = adjust_kucoin_order_size(self.market, size)
+        get_or_create_kucoin_trade_account(self.name)
+        required_size = int(get_kucoin_symbol(self.market, 'baseMinSize'))
+        _strategy = Strategy(self)
+        if self.adjusted_size >= required_size:
+            _id = kucoin_client.create_limit_order(self.market, _side, str(self.price), str(self.adjusted_size),
+                                                   hidden=True)['orderId']
+            logger_global[0].info("{} BuyAsset::limit_hidden_order : order_id : {} has been placed.".format(self.market, _id))
+            logger_global[0].info("{} BuyAsset::limit_hidden_order : {} VRA @ {} BTC.".format(self.market, self.adjusted_size, get_format_price(self.price).format(self.price)))
+            _strategy.set_stop_loss()
+            return _id
+        else:
+            logger_global[0].info("{} BuyAsset::limit_hidden_order: size too small, size: {} required_size: {}".format(self.market, self.adjusted_size, required_size))
+
 
 class SellAsset(Asset):
     def __init__(self, exchange, name, stop_loss_price, tight=False,
@@ -1114,7 +1134,8 @@ def observe_lower_price_kucoin(_assets):
                     BuyStrategy(_asset, _btc_value, _params).run()
                 else:
                     logger_global[0].warning(
-                        "{} -- {} buying not POSSIBLE, only {} BTC left".format(_asset.exchange, _asset.market, price_to_string(_btc_value)))
+                        "{} -- {} buying not POSSIBLE, only {} BTC left".format(_asset.exchange, _asset.market,
+                                                                                price_to_string(_btc_value)))
                     return
                 if len(_assets) == 0:
                     logger_global[0].info("All assets OBSERVED, exiting")
@@ -1173,6 +1194,8 @@ binance_obj = Binance(keys_b[0], keys_b[1])
 sat = 1e-8
 
 general_fee = 0.001
+kucoin_general_fee = 0.001
+
 
 
 def get_interval_unit(_ticker):
@@ -1294,6 +1317,7 @@ def cancel_kucoin_current_orders(market):
     if _open_orders['totalNum'] > 0:
         _cancelled_ok = False
         _cancelled_ok = cancel_kucoin_orders(_open_orders)
+        time.sleep(5)
     else:
         logger_global[0].warning("{} No orders to CANCEL".format(market))
         return
@@ -1327,6 +1351,16 @@ def get_filters(_market, _filter):
 
 def get_binance_price_tick_size(market):
     return float(get_filter(market, "PRICE_FILTER")['tickSize'])
+
+
+def get_kucoin_symbol(_market, _symbol):
+    _r = list(filter(lambda x: x['symbol'] == _market, kucoin_client.get_symbols()))
+    return False if len(_r) == 0 else _r[0][_symbol]
+
+
+def adjust_kucoin_order_size(_market, _value):
+    _nd = abs(int(np.log10(float(get_kucoin_symbol(_market, 'baseIncrement')))))
+    return round(_value, _nd)
 
 
 def get_buying_asset_quantity(asset, total_btc):
@@ -1435,6 +1469,17 @@ def setup_logger(symbol):
     return logger
 
 
+def get_format_price(_price):
+    return "{"+":.{}f".format(get_price_magnitude(_price))+"}"
+
+
+def get_price_magnitude(_price):
+    _m = abs(int(np.log10(_price)))
+    _l = len(str(round(_price * 10 ** _m, _m)))
+    _l = _l - 2 if _price <= 1 else _l
+    return _l + _m
+
+
 def stop_loss(_asset):
     if _asset.exchange == 'binance':
         _ticker = BinanceClient.KLINE_INTERVAL_1MINUTE
@@ -1442,24 +1487,28 @@ def stop_loss(_asset):
     if _asset.exchange == 'kucoin':
         _ticker = ticker_to_kucoin(BinanceClient.KLINE_INTERVAL_5MINUTE)
         _time_interval = get_kucoin_interval_unit(_ticker)
+
     _stop_price = _asset.stop_loss_price
 
     logger_global[0].info("{} -- Starting {} stop-loss maker".format(_asset.exchange, _asset.market))
-    logger_global[0].info("Stop price {} is set up to : {:.8f} BTC".format(_asset.market, _stop_price))
+    logger_global[0].info("Stop price {} is set up to : {} BTC".format(_asset.market, get_format_price(_stop_price).format(_stop_price)))
+
 
     while 1:
         if type(_asset) is TradeAsset:
             if not _asset.trading:
-                logger_global[0].info("{} -- {} Stop-Loss : sold, not trading, skipping, exiting".format(_asset.exchange, _asset.market))
+                logger_global[0].info(
+                    "{} -- {} Stop-Loss : sold, not trading, skipping, exiting".format(_asset.exchange, _asset.market))
                 sys.exit(0)
         try:
-            _stop_sl = stop_signal(_asset.exchange, _asset.market, _ticker, _time_interval, _stop_price, 1)
+            _stop_sl = stop_signal(_asset.exchange, _asset.market, _ticker, _stop_price, 1)
             # stop = True
             if _stop_sl:
                 sell_limit_stop_loss(_asset.market, _asset)
-                logger_global[0].info("{} -- Stop-loss LIMIT {} order has been made : {}, exiting".format(_asset.exchange, _asset.market,
-                                                                                                    lowest_ask(
-                                                                                                        _asset.market)))
+                logger_global[0].info(
+                    "{} -- Stop-loss LIMIT {} order has been made : {}, exiting".format(_asset.exchange, _asset.market,
+                                                                                        lowest_ask(
+                                                                                            _asset.market)))
                 sys.exit(0)
             time.sleep(50)
         except Exception as err:
