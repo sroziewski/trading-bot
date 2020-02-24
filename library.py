@@ -11,6 +11,7 @@ import time
 import traceback
 import warnings
 from datetime import datetime, timedelta
+from email.message import EmailMessage
 from getpass import getpass
 
 import numpy as np
@@ -1915,25 +1916,37 @@ def is_rsi_slope_condition(_rsi, _rsi_limit, _angle_limit, _start, _stop, _windo
     return _rsi_angle >= _angle_limit
 
 
-def send_mail(subject, message, asset):
+def send_mail(subject, message, asset=False):
     global variable
-    message_sent = 'Subject: {}\n\n{}'.format(subject, message)
-    smtp_server = "smtp.gmail.com"
+
+    sender = "sroziews@wp.pl"
+    receiver = "szymon.roziewski@gmail.com"
+
+    msg = EmailMessage()
+    msg['Subject'] = subject
+    msg['From'] = sender
+    msg['To'] = receiver
+    msg.set_content(message)
+
+    smtp_server = "smtp.wp.pl"
     port = 587  # For starttls
-    sender_email = "szymon.roziewski@gmail.com"
     password = variable
-    receiver_email = "szymon.roziewski@gmail.com"
+
     # Create a secure SSL context
     context = ssl.create_default_context()
     # Try to log in to server and send email
+
     try:
         server = smtplib.SMTP(smtp_server, port)
         server.ehlo()  # Can be omitted
         server.starttls(context=context)  # Secure the connection
         server.ehlo()  # Can be omitted
-        server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_email, message_sent)
-        logger_global[0].info("{} Email sent".format(asset.name))
+        server.login(sender, password)
+        server.send_message(msg)
+        if asset:
+            logger_global[0].info("{} Email sent".format(asset.name))
+        else:
+            logger_global[0].info(f"Email sent : {subject}")
     except Exception as err:
         traceback.print_tb(err.__traceback__)
         logger_global[0].exception(err.__traceback__)
