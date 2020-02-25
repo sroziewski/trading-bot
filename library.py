@@ -100,16 +100,18 @@ class Asset(object):
             self.price_ticker_size = get_binance_price_tick_size(self.market)
             self.ticker = ticker
             self.tight = tight
-        self.stop_loss_price = round(stop_loss_price, 10)
+        self.stop_loss_price = round(stop_loss_price+delta, 10)
         if price_profit is not None:
-            self.price_profit = round(price_profit, 10)
-        self.profit = round(profit, 10)  # taking profit only when it's higher than profit %
+            self.price_profit = round(price_profit+delta, 10)
+        self.profit = round(profit+delta, 10)  # taking profit only when it's higher than profit %
         self.take_profit_ratio = profit * 0.632  # taking profit only when it's higher than profit % for a high-candle-sell
         self.barrier = barrier
         self.buy_price = None
+        self.cancel = True
 
     def limit_hidden_order(self, _side):
-        cancel_kucoin_current_orders(self.market)
+        if self.cancel:
+            cancel_kucoin_current_orders(self.market)
         _btc_value = get_remaining_btc_kucoin()
         _useable_btc = (1 - kucoin_general_fee) * _btc_value
         purchase_fund = self.ratio / 100 * _useable_btc
@@ -143,11 +145,14 @@ class BuyAsset(Asset):
     def __init__(self, exchange, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
                  ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, barrier=False):
         super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
-        self.price = price
+        self.price = round(price+delta, 10)
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
     def set_btc_asset_buy_value(self, _total_btc):
         self.btc_asset_buy_value = self.ratio / 100 * _total_btc
+
+    def set_cancel(self):
+        self.cancel = False
 
     def __str__(self):
         return "BuyAsset"
@@ -157,7 +162,7 @@ class SellAsset(Asset):
     def __init__(self, exchange, name, stop_loss_price, tight=False,
                  ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False):
         super().__init__(exchange, name, stop_loss_price, None, 0, ticker, tight)
-        self.price = round(price, 10)
+        self.price = round(price+delta, 10)
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
     def __str__(self):
@@ -1212,6 +1217,7 @@ kucoin_client = KucoinClient(keys_k[0], keys_k[1], keys_k[2])
 binance_obj = Binance(keys_b[0], keys_b[1])
 
 sat = 1e-8
+delta = 1e-21
 
 general_fee = 0.001
 kucoin_general_fee = 0.001

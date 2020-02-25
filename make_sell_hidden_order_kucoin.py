@@ -9,11 +9,12 @@ exchange = 'kucoin'
 side = KucoinClient.SIDE_SELL
 logger = setup_logger("kucoin-hidden-order-{}".format(side))
 
-currency = 'COTI'
+currency = 'VRA'
+price = 12.07
+stop_loss_price = 9
+profit_price = 47.99
+ratio = 10
 
-price = 314
-stop_loss_price = 302
-ratio = 100
 
 sell_asset = SellAsset(exchange, currency, stop_loss_price * sat, price=price * sat, ratio=ratio)
 
