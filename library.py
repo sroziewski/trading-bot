@@ -151,7 +151,7 @@ class BuyAsset(Asset):
     def set_btc_asset_buy_value(self, _total_btc):
         self.btc_asset_buy_value = self.ratio / 100 * _total_btc
 
-    def set_cancel(self):
+    def keep_existing_orders(self):
         self.cancel = False
 
     def __str__(self):
