@@ -10,14 +10,14 @@ side = KucoinClient.SIDE_BUY
 logger = setup_logger("kucoin-hidden-order-{}".format(side))
 
 currency = 'VRA'
-price = 12.17
-stop_loss_price = 9
-profit_price = 47.99
+price = 8.77
+stop_loss_price = 7
+profit_price = 4700.99
 ratio = 100
 
 buy_asset = BuyAsset(exchange, currency, price * sat, stop_loss_price * sat, profit_price * sat, ratio, 15)
 
-buy_asset.keep_existing_orders()
+# buy_asset.keep_existing_orders()
 
 logger.info("Make hidden {} LIMIT order for {}".format(side, buy_asset.market))
 

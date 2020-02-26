@@ -18,7 +18,7 @@ import numpy as np
 import requests
 import talib
 from binance.client import Client as BinanceClient
-from kucoin.client import Client as KucoinClient
+from kucoin.client import Client as KucoinClient, Client
 
 from Binance import Binance
 
@@ -86,6 +86,23 @@ def ticker_to_kucoin(_ticker):
     return _ticker.replace("m", "min").replace("h", "hour").replace("d", "day").replace("w", "week")
 
 
+def check_kucoin_offer_validity(_side, _asset):
+    _exit = False
+    if _side == KucoinClient.SIDE_BUY:
+        _market_bid = float(kucoin_client.get_order_book(_asset.market)['bids'][0][0])
+        if _asset.price >= _market_bid:
+            _market_price = _market_bid
+            _exit = True
+    elif _side == KucoinClient.SIDE_SELL:
+        _market_ask = float(kucoin_client.get_order_book(_asset.market)['asks'][0][0])
+        if _asset.price <= _market_ask:
+            _market_price = _market_ask
+            _exit = True
+    if _exit:
+        logger_global[0].info(f"{_asset.market} {_side} check_kucoin_offer_validity failed: your price {get_format_price(_asset.price)} : market price : {get_format_price(_market_price)}")
+        sys.exit(-1)
+
+
 class Asset(object):
     def __init__(self, exchange, name, stop_loss_price, price_profit, profit, ticker, tight=False, barrier=False):
         stop_when_not_exchange(exchange)
@@ -100,16 +117,17 @@ class Asset(object):
             self.price_ticker_size = get_binance_price_tick_size(self.market)
             self.ticker = ticker
             self.tight = tight
-        self.stop_loss_price = round(stop_loss_price+delta, 10)
+        self.stop_loss_price = round(stop_loss_price + delta, 10)
         if price_profit is not None:
-            self.price_profit = round(price_profit+delta, 10)
-        self.profit = round(profit+delta, 10)  # taking profit only when it's higher than profit %
+            self.price_profit = round(price_profit + delta, 10)
+        self.profit = round(profit + delta, 10)  # taking profit only when it's higher than profit %
         self.take_profit_ratio = profit * 0.632  # taking profit only when it's higher than profit % for a high-candle-sell
         self.barrier = barrier
         self.buy_price = None
         self.cancel = True
 
     def limit_hidden_order(self, _side):
+        check_kucoin_offer_validity(_side, self)
         if self.cancel:
             cancel_kucoin_current_orders(self.market)
         _btc_value = get_remaining_btc_kucoin()
@@ -131,7 +149,7 @@ class Asset(object):
                 "{} {}::limit_hidden_order : order_id : {} has been placed.".format(self.market, self, _id))
             logger_global[0].info(
                 "{} {}::limit_hidden_order : {} {} @ {} BTC.".format(self.market, self, self.adjusted_size, self.name,
-                                                                     get_format_price(self.price).format(self.price)))
+                                                                     get_format_price(self.price)))
             _strategy.set_stop_loss()
             return _id
         else:
@@ -145,7 +163,7 @@ class BuyAsset(Asset):
     def __init__(self, exchange, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
                  ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, barrier=False):
         super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
-        self.price = round(price+delta, 10)
+        self.price = round(price + delta, 10)
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
     def set_btc_asset_buy_value(self, _total_btc):
@@ -162,7 +180,7 @@ class SellAsset(Asset):
     def __init__(self, exchange, name, stop_loss_price, tight=False,
                  ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False):
         super().__init__(exchange, name, stop_loss_price, None, 0, ticker, tight)
-        self.price = round(price+delta, 10)
+        self.price = round(price + delta, 10)
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
     def __str__(self):
@@ -1212,7 +1230,7 @@ keys = get_pickled(key_dir, keys_filename)
 keys_b = keys['binance']
 keys_k = keys['kucoin']
 binance_client = BinanceClient(keys_b[0], keys_b[1])
-kucoin_client = KucoinClient(keys_k[0], keys_k[1], keys_k[2])
+kucoin_client: Client = KucoinClient(keys_k[0], keys_k[1], keys_k[2])
 
 binance_obj = Binance(keys_b[0], keys_b[1])
 
@@ -1495,7 +1513,8 @@ def setup_logger(symbol):
 
 
 def get_format_price(_price):
-    return "{" + ":.{}f".format(get_price_magnitude(_price)) + "}"
+    _f = "{" + ":.{}f".format(get_price_magnitude(_price)) + "}"
+    return _f.format(_price)
 
 
 def get_price_magnitude(_price):
@@ -1517,7 +1536,7 @@ def stop_loss(_asset):
 
     logger_global[0].info("{} -- Starting {} stop-loss maker".format(_asset.exchange, _asset.market))
     logger_global[0].info(
-        "Stop price {} is set up to : {} BTC".format(_asset.market, get_format_price(_stop_price).format(_stop_price)))
+        "Stop price {} is set up to : {} BTC".format(_asset.market, get_format_price(_stop_price)))
 
     while 1:
         if type(_asset) is TradeAsset:

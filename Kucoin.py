@@ -1,7 +1,6 @@
 
 from kucoin.client import Client
 from kucoin.exceptions import KucoinAPIException, KucoinRequestException, MarketOrderException, LimitOrderException
-import pytest
 
 
 # symbol (string) – Name of symbol e.g. KCS-BTC
@@ -9,7 +8,8 @@ import pytest
 # start (int) – Start time as unix timestamp (optional) default start of day in UTC
 # end (int) – End time as unix timestamp (optional) default now in UTC
 from library import get_klines, get_kucoin_klines, get_kucoin_interval_unit, get_binance_klines, SellAsset, stop_signal, \
-    sat, cancel_kucoin_current_orders, setup_logger, get_or_create_kucoin_trade_account, sell_limit_stop_loss
+    sat, cancel_kucoin_current_orders, setup_logger, get_or_create_kucoin_trade_account, sell_limit_stop_loss, \
+    kucoin_client
 
 klines_k = get_kucoin_klines("LTC-BTC", "1hour")
 klines_b = get_binance_klines("LTCBTC", "1h", '6 hours ago')
@@ -23,6 +23,8 @@ stop_price = stop_price_in_satoshi * sat
 
 
 acc = get_or_create_kucoin_trade_account('KCS')
+
+vra = kucoin_client.get_order_book('VRA-BTC')
 
 sell_asset_binance = SellAsset("binance", "LTC", stop_price, True, '1h')
 sell_asset_kucoin = SellAsset("kucoin", "VIDT", stop_price, True, '1h')
