@@ -90,12 +90,12 @@ def check_kucoin_offer_validity(_side, _asset):
     _exit = False
     if _side == KucoinClient.SIDE_BUY:
         _market_bid = float(kucoin_client.get_order_book(_asset.market)['bids'][0][0])
-        if _asset.price - _market_bid >= 10*delta:
+        if _asset.price - _market_bid >= 0.1*sat:
             _market_price = _market_bid
             _exit = True
     elif _side == KucoinClient.SIDE_SELL:
         _market_ask = float(kucoin_client.get_order_book(_asset.market)['asks'][0][0])
-        if _asset.price - _market_ask <= 10*delta:
+        if _asset.price - _market_ask <= 0.1*sat:
             _market_price = _market_ask
             _exit = True
     if _exit:
