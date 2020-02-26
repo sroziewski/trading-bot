@@ -15,7 +15,6 @@ stop_loss_price = 9
 profit_price = 5700.99
 ratio = 1
 
-
 sell_asset = SellAsset(exchange, currency, stop_loss_price * sat, price=price * sat, ratio=ratio)
 
 logger.info("Make hidden {} LIMIT order for {}".format(side, sell_asset.market))
