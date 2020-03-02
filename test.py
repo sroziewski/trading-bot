@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import requests
 
 from library import BullishStrategy, TradeAsset, get_remaining_btc_binance, adjust_buy_asset_btc_volume, get_lot_size_params, \
-    get_interval_unit, lowest_ask, is_buy_possible, setup_logger, get_buying_asset_quantity, \
+    get_binance_interval_unit, lowest_ask, is_buy_possible, setup_logger, get_buying_asset_quantity, \
     adjust_quantity, adjust_stop_loss_price, adjust_price_profit, TimeTuple, relative_strength_index, get_closes, \
     get_max_volume, is_red_candle, is_fresh, volume_condition, binance_obj, save_to_file, trades_logs_dir, get_pickled, \
     get_last, is_fresh_test, not_equal_rsi, get_one_of_rsi, get_time, price_drop, is_bullish_setup, dump_variables, \
@@ -81,7 +81,7 @@ def buy_local_bottom_bullish_test(_klines, _i):
 
     strategy = BullishStrategy(_trade_asset, _btc_value, _params)
 
-    _time_interval = get_interval_unit(strategy.asset.ticker)
+    _time_interval = get_binance_interval_unit(strategy.asset.ticker)
     _time_frame_short = 10
     _time_frame_middle = 30
     _time_frame_rsi = 50
@@ -240,7 +240,7 @@ def buy_local_bottom_bearish_test(_klines, _i):
 
     strategy = BullishStrategy(_trade_asset, _btc_value, _params)
 
-    _time_interval = get_interval_unit(strategy.asset.ticker)
+    _time_interval = get_binance_interval_unit(strategy.asset.ticker)
     _time_frame_middle = 30
     _time_frame_rsi = 50
     _time_horizon = 60

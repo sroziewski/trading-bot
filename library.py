@@ -43,7 +43,7 @@ key_dir = config.get_parameter('key_dir')
 keys_filename = config.get_parameter('keys_filename')
 trades_logs_dir = config.get_parameter('trades_logs_dir')
 logger_global = []
-exclude_markets = ['DOGEBTC', 'ERDBTC', 'BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
+exclude_markets = ['BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
                    'SALTBTC',
                    'SUBBTC',
                    'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
@@ -296,7 +296,7 @@ class BullishStrategy(BuyStrategy):
         _sell_local_top_maker.start()
 
     def buy_local_bottom(self):
-        _time_interval = get_interval_unit(self.asset.ticker)
+        _time_interval = get_binance_interval_unit(self.asset.ticker)
         _time_frame_short = 10
         _time_frame_middle = 30
         _time_frame_rsi = 50
@@ -461,7 +461,7 @@ class BearishStrategy(BullishStrategy):
         logger_global[0].info("{} BearishStrategy object has been created".format(self.asset.market))
 
     def buy_local_bottom(self):
-        _time_interval = get_interval_unit(self.asset.ticker)
+        _time_interval = get_binance_interval_unit(self.asset.ticker)
         _time_frame_short = 10
         _time_frame_middle = 30
         _time_frame_rsi = 50
@@ -655,7 +655,7 @@ class AlertsBullishStrategy(BuyStrategy):
         _alert_buy_local_bottom_maker_.start()
 
     def alert_buy_local_bottom(self):
-        _time_interval = get_interval_unit(self.asset.ticker)
+        _time_interval = get_binance_interval_unit(self.asset.ticker)
         _time_frame_short = 10
         _time_frame_middle = 30
         _time_frame_rsi = 50
@@ -809,7 +809,7 @@ class AlertsBearishStrategy(AlertsBullishStrategy):
         logger_global[0].info("{} AlertsBearishStrategy object has been created".format(self.asset.market))
 
     def alert_buy_local_bottom(self):
-        _time_interval = get_interval_unit(self.asset.ticker)
+        _time_interval = get_binance_interval_unit(self.asset.ticker)
         _time_frame_short = 10
         _time_frame_middle = 30
         _time_frame_rsi = 50
@@ -1021,7 +1021,7 @@ def get_klines_2(_market, _ticker, _time_interval):
 
 
 def sell_local_top(asset):
-    _time_interval = get_interval_unit(asset.ticker)
+    _time_interval = get_binance_interval_unit(asset.ticker)
     _max_volume_max_rsi = -1
     _trigger = False
     _time_frame = 30
@@ -1241,7 +1241,7 @@ general_fee = 0.001
 kucoin_general_fee = 0.001
 
 
-def get_interval_unit(_ticker):
+def get_binance_interval_unit(_ticker):
     return {
         BinanceClient.KLINE_INTERVAL_1MINUTE: "6 hours ago",
         BinanceClient.KLINE_INTERVAL_3MINUTE: "18 hours ago",
@@ -1287,7 +1287,7 @@ def stop_signal(_exchange, _market, _ticker, _stop_price, _times=4):
     if _exchange == 'kucoin':
         _klines = get_kucoin_klines(_market, _ticker, get_kucoin_interval_unit(_ticker))
     elif _exchange == "binance":
-        _klines = get_binance_klines(_market, _ticker, get_interval_unit(_ticker))
+        _klines = get_binance_klines(_market, _ticker, get_binance_interval_unit(_ticker))
     if len(_klines) > 0:
         _mean_close_price = np.mean(list(map(lambda x: float(x.closing), _klines[-_times:])))
         return True if _mean_close_price <= _stop_price else False
@@ -1527,7 +1527,7 @@ def get_price_magnitude(_price):
 def stop_loss(_asset):
     if _asset.exchange == 'binance':
         _ticker = BinanceClient.KLINE_INTERVAL_1MINUTE
-        _time_interval = get_interval_unit(_ticker)
+        _time_interval = get_binance_interval_unit(_ticker)
     if _asset.exchange == 'kucoin':
         _ticker = ticker_to_kucoin(BinanceClient.KLINE_INTERVAL_5MINUTE)
         _time_interval = get_kucoin_interval_unit(_ticker)
@@ -1586,7 +1586,7 @@ def adjust_ask_price(asset, _prev_kline, _old_price, _high_price_max, _curr_high
 
 def take_profit(asset):
     _ticker = BinanceClient.KLINE_INTERVAL_1MINUTE
-    _time_interval = get_interval_unit(_ticker)
+    _time_interval = get_binance_interval_unit(_ticker)
     _prev_kline = None
     _prev_rsi = TimeTuple(0, 0)
     _time_frame = 60  # last 60 candles
@@ -1720,7 +1720,7 @@ def get_highs(_klines):
 
 
 def is_bullish_setup(asset):  # or price lower than MA100
-    _time_interval = get_interval_unit(asset.ticker)
+    _time_interval = get_binance_interval_unit(asset.ticker)
     _klines = get_klines(asset, _time_interval)
     # _klines = get_pickled('/juno/', "klines")
     _stop = -1  # -5*60-30-16-10

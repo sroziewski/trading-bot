@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import talib
 from binance.client import Client
 
-from library import binance_obj, get_interval_unit, AssetTicker, highest_bid, get_pickled, \
-    exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file, get_klines, lowest_ask, get_time
+from library import binance_obj, get_binance_interval_unit, AssetTicker, highest_bid, get_pickled, \
+    exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir
 
 warnings.filterwarnings('error')
 
@@ -166,7 +166,7 @@ def get_opens(_klines):
 
 
 def get_tradeable_assets(_markets, _ticker):
-    _time_interval = get_interval_unit(_ticker)
+    _time_interval = get_binance_interval_unit(_ticker)
     _tradeable_assets = []
     for _market in _markets:
         _asset = _market.split("BTC")[0]
@@ -186,7 +186,7 @@ def get_tradeable_assets(_markets, _ticker):
 
 
 def get_tradeable_and_bullish_assets(_markets, _ticker):
-    _time_interval = get_interval_unit(_ticker)
+    _time_interval = get_binance_interval_unit(_ticker)
     _assets = []
     for _market in _markets:
         _asset = _market.split("BTC")[0]
@@ -224,7 +224,7 @@ def get_tradeable_and_bullish_assets(_markets, _ticker):
 
 
 def get_bullish_assets(_markets, _ticker):
-    _time_interval = get_interval_unit(_ticker)
+    _time_interval = get_binance_interval_unit(_ticker)
     _bullish_assets = []
     for _market in _markets:
         try:
@@ -263,6 +263,10 @@ def sort_assets(_assets):
 
 def get_avg_last(_values, _stop, _window=1):
     return np.mean(_values[_stop - _window:])
+
+
+def get_std_last(_values, _stop, _window=1):
+    return np.std(_values[_stop - _window:])
 
 
 def get_last(_values, _stop, _window=1):
@@ -427,8 +431,41 @@ def analyze_markets():
 # ticker = Client.KLINE_INTERVAL_12HOUR
 # tradeable_assets_12h = get_tradeable_assets(markets, ticker)
 
+
+def is_magnitude_gt(_val, _m):
+    return np.log10(_val) > _m
+
+
+def get_most_volatile_market():
+    _exclude_markets = get_pickled(key_dir, "exclude-markets")
+    _ticker = Client.KLINE_INTERVAL_3MINUTE
+    _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
+    _volatile_markets = {}
+    _exclude_markets = {}
+    _window = "3 days ago"
+    for _market in _markets:
+        try:
+            _klines = get_klines(_market, _ticker, _window)
+            _closes = get_closes(_klines)
+            if _market=='COCOSBTC':
+                i = 1
+            if is_magnitude_gt(_closes[-1], -7.5):
+                _std = get_std_last(_closes, 1)
+                _volatile_markets[_market] = _std / _closes[-1]
+        except Exception:
+            print(f"No data for market : {_market}")
+            if _ticker in _exclude_markets:
+                _exclude_markets[_ticker].append(_market)
+            else:
+                _exclude_markets[_ticker]=[_market]
+    sorted(_volatile_markets, key=_volatile_markets.get, reverse=True)
+    save_to_file(key_dir, "exclude-markets", _exclude_markets)
+    i = 1
+
+
 def main():
-    analyze_markets()
+    # analyze_markets()
+    get_most_volatile_market()
 
     asset = "CELR"
     market = "{}BTC".format(asset)

@@ -4,7 +4,7 @@ import traceback
 
 import requests
 
-from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, SellAsset, get_interval_unit
+from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, SellAsset, get_binance_interval_unit
 
 name = "HOT"
 stop_price_in_satoshi = 2975
