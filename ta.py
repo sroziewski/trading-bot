@@ -1,6 +1,7 @@
 import time
 import traceback
 import warnings
+from os import path
 
 import numpy as np
 
@@ -437,19 +438,23 @@ def is_magnitude_gt(_val, _m):
 
 
 def get_most_volatile_market():
-    _exclude_markets = get_pickled(key_dir, "exclude-markets")
+    _filename = "exclude-markets"
     _ticker = Client.KLINE_INTERVAL_3MINUTE
-    _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
     _volatile_markets = {}
     _exclude_markets = {}
-    _window = "3 days ago"
+    if path.isfile(key_dir+_filename+".pkl"):
+        _exclude_markets = get_pickled(key_dir, _filename)
+    else:
+        _exclude_markets[_ticker] = exclude_markets
+    _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
+    _window = "1 day ago"
     for _market in _markets:
         try:
             _klines = get_klines(_market, _ticker, _window)
             _closes = get_closes(_klines)
             if _market=='COCOSBTC':
                 i = 1
-            if is_magnitude_gt(_closes[-1], -7.5):
+            if is_magnitude_gt(_closes[-1], -6.5):
                 _std = get_std_last(_closes, 1)
                 _volatile_markets[_market] = _std / _closes[-1]
         except Exception:
