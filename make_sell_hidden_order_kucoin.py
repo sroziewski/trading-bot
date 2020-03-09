@@ -10,16 +10,17 @@ side = KucoinClient.SIDE_SELL
 logger = setup_logger("kucoin-hidden-order-{}".format(side))
 
 currency = 'VRA'
-price = 14.44
+price = 10.61
 stop_loss_price = 9
 profit_price = 5700.99
 ratio = 1
 
-sell_asset = SellAsset(exchange, currency, stop_loss_price * sat, price=price * sat, ratio=ratio)
+sell_asset = SellAsset(exchange, currency, stop_loss_price * sat, tight=True, price=price * sat, ratio=ratio, kucoin_side=side)
 
 logger.info("Make hidden {} LIMIT order for {}".format(side, sell_asset.market))
 
-_id = sell_asset.limit_hidden_order(side)
+# _id = sell_asset.keep_highest_ask(1e4)
+_id = sell_asset.limit_hidden_order()
 
 if _id:
     time.sleep(5)

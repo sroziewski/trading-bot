@@ -86,20 +86,20 @@ def ticker_to_kucoin(_ticker):
     return _ticker.replace("m", "min").replace("h", "hour").replace("d", "day").replace("w", "week")
 
 
-def check_kucoin_offer_validity(_side, _asset):
+def check_kucoin_offer_validity(_asset):
     _exit = False
-    if _side == KucoinClient.SIDE_BUY:
+    if _asset.kucoin_side == KucoinClient.SIDE_BUY:
         _market_bid = float(kucoin_client.get_order_book(_asset.market)['bids'][0][0])
         if _asset.price - _market_bid >= 0.1*sat:
             _market_price = _market_bid
             _exit = True
-    elif _side == KucoinClient.SIDE_SELL:
+    elif _asset.kucoin_side == KucoinClient.SIDE_SELL:
         _market_ask = float(kucoin_client.get_order_book(_asset.market)['asks'][0][0])
         if _asset.price - _market_ask <= 0.1*sat:
             _market_price = _market_ask
             _exit = True
     if _exit:
-        logger_global[0].info(f"{_asset.market} {_side} check_kucoin_offer_validity failed: your price {get_format_price(_asset.price)} : market price : {get_format_price(_market_price)}")
+        logger_global[0].info(f"{_asset.market} {_asset.kucoin_side} check_kucoin_offer_validity failed: your price {get_format_price(_asset.price)} : market price : {get_format_price(_market_price)}")
         sys.exit(-1)
 
 
@@ -111,13 +111,12 @@ class Asset(object):
         if exchange == "kucoin":
             self.market = "{}-BTC".format(name)
             self.ticker = ticker_to_kucoin(ticker)
-            self.tight = True
         if exchange == "binance":
             self.market = "{}BTC".format(name)
             self.price_ticker_size = get_binance_price_tick_size(self.market)
             self.ticker = ticker
-            self.tight = tight
         self.stop_loss_price = round(stop_loss_price + delta, 10)
+        self.tight = tight
         if price_profit is not None:
             self.price_profit = round(price_profit + delta, 10)
         self.profit = round(profit + delta, 10)  # taking profit only when it's higher than profit %
@@ -126,24 +125,56 @@ class Asset(object):
         self.buy_price = None
         self.cancel = True
 
-    def limit_hidden_order(self, _side):
-        check_kucoin_offer_validity(_side, self)
+    def set_tight(self):
+        self.tight = True
+
+    def keep_highest_ask(self, _tolerance):
+        # _asks = kucoin_client.get_order_book(self.market)['asks']
+        _asks = get_pickled(key_dir, "market-asks")
+        _market_ask = _asks[0]
+        # save_to_file(key_dir, "market-asks", _asks)
+
+        _market_ask_price = float(_market_ask[0])
+        _market_ask_vol = float(_market_ask[1])
+        _asks_value = 0
+        _cut_value = _prev_ask = 0
+        _asks = kucoin_client.get_order_book(self.market)['asks']
+        if _market_ask_price < self.price and _market_ask_vol > _tolerance:
+
+            i = 1
+        for _ask in _asks:
+            if _asks_value > _tolerance:
+                _cut_value = _prev_ask[0]
+            if float(_ask[0]) < self.price:
+                _asks_value += float(_ask[1])
+            else:
+                break
+            _prev_ask = _ask
+        if self.price > _market_ask_price or _asks_value > _tolerance:
+            cancel_kucoin_current_orders(self.market)
+            self.price = _cut_value
+
+        # i = 1
+
+    def limit_hidden_order(self):
+        if not self.tight:
+            check_kucoin_offer_validity(self)
         if self.cancel:
             cancel_kucoin_current_orders(self.market)
         _btc_value = get_remaining_btc_kucoin()
         _useable_btc = (1 - kucoin_general_fee) * _btc_value
         purchase_fund = self.ratio / 100 * _useable_btc
-        if _side == KucoinClient.SIDE_BUY:
+        if self.kucoin_side == KucoinClient.SIDE_BUY:
             size = purchase_fund / self.price
             get_or_create_kucoin_trade_account(self.name)
-        elif _side == KucoinClient.SIDE_SELL:
+        elif self.kucoin_side == KucoinClient.SIDE_SELL:
             size = float(get_or_create_kucoin_trade_account(self.name)['available'])
 
         self.adjusted_size = adjust_kucoin_order_size(self.market, size)
         required_size = int(get_kucoin_symbol(self.market, 'baseMinSize'))
         _strategy = Strategy(self)
         if self.adjusted_size >= required_size:
-            _id = kucoin_client.create_limit_order(self.market, _side, str(self.price), str(self.adjusted_size),
+            _id = kucoin_client.create_limit_order(self.market, self.kucoin_side, str(self.price), str(self.adjusted_size),
                                                    hidden=True)['orderId']
             logger_global[0].info(
                 "{} {}::limit_hidden_order : order_id : {} has been placed.".format(self.market, self, _id))
@@ -178,9 +209,10 @@ class BuyAsset(Asset):
 
 class SellAsset(Asset):
     def __init__(self, exchange, name, stop_loss_price, tight=False,
-                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False):
-        super().__init__(exchange, name, stop_loss_price, None, 0, ticker, tight)
+                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False, kucoin_side=False):
+        super().__init__(exchange, name, stop_loss_price, None, 0, ticker, tight=tight)
         self.price = round(price + delta, 10)
+        self.kucoin_side = kucoin_side
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
     def __str__(self):
@@ -1402,8 +1434,12 @@ def get_kucoin_symbol(_market, _symbol):
 
 
 def adjust_kucoin_order_size(_market, _value):
-    _nd = abs(int(np.log10(float(get_kucoin_symbol(_market, 'baseIncrement')))))
-    return round(_value, _nd)
+    _increment = float(get_kucoin_symbol(_market, 'baseIncrement'))
+    _nd = abs(int(np.log10(_increment)))
+    _out = round(_value, _nd)
+    if _value - round(_value, _nd) < 0:
+        _out -= _increment
+    return _out
 
 
 def get_buying_asset_quantity(asset, total_btc):
