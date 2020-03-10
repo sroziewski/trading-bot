@@ -145,11 +145,11 @@ class Asset(object):
             self.keep_lowest_ask_process(_tolerance)
             time.sleep(30)
 
-    def keep_lowest_ask_process(self, _tolerance):
+    def keep_highest_bid_process(self, _tolerance):
         self.price = self.original_price
-        # _asks = kucoin_client.get_order_book(self.market)['asks']
-        # save_to_file(key_dir, "market-asks", _asks)
-        _asks = get_pickled(key_dir, "market-asks")
+        _asks = kucoin_client.get_order_book(self.market)['bids']
+        save_to_file(key_dir, "market-bids", _asks)
+        _asks = get_pickled(key_dir, "market-bids")
         _market_ask = _asks[0]
 
         _market_ask_price = float(_market_ask[0])
@@ -158,6 +158,38 @@ class Asset(object):
         _cut_value = _prev_ask = 0
         _to_increment = False
         # _asks = kucoin_client.get_order_book(self.market)['asks']
+        if _market_ask_price >= self.price and _market_ask_vol >= _tolerance:
+            self.price = price_increment(_market_ask[0], self.kucoin_increment)
+            cancel_kucoin_current_orders(self.market)
+            self.limit_hidden_order()
+        else:
+            for _ask in _asks:
+                if float(_ask[0]) > self.price and _asks_value < _tolerance:
+                    _asks_value += float(_ask[1])
+                else:
+                    if 0 < _asks_value < _tolerance:
+                        _to_increment = True
+                    if _prev_ask != 0:
+                        _cut_value = float(_prev_ask[0])
+                        break
+                _prev_ask = _ask
+            if self.price < _market_ask_price or _asks_value > _tolerance:
+                if _to_increment:
+                    self.price = price_decrement(_cut_value, self.kucoin_increment)
+                else:
+                    self.price = price_increment(_cut_value, self.kucoin_increment)
+                cancel_kucoin_current_orders(self.market)
+                self.limit_hidden_order()
+
+    def keep_lowest_ask_process(self, _tolerance):
+        self.price = self.original_price
+        _asks = kucoin_client.get_order_book(self.market)['asks']
+        _market_ask = _asks[0]
+        _market_ask_price = float(_market_ask[0])
+        _market_ask_vol = float(_market_ask[1])
+        _asks_value = 0
+        _cut_value = _prev_ask = 0
+        _to_increment = False
         if _market_ask_price <= self.price and _market_ask_vol >= _tolerance:
             self.price = price_decrement(_market_ask[0], self.kucoin_increment)
             cancel_kucoin_current_orders(self.market)
@@ -180,8 +212,6 @@ class Asset(object):
                     self.price = price_decrement(_cut_value, self.kucoin_increment)
                 cancel_kucoin_current_orders(self.market)
                 self.limit_hidden_order()
-
-        i = 1
 
     def limit_hidden_order(self):
         if not self.tight:
