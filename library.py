@@ -236,8 +236,8 @@ class Asset(object):
             logger_global[0].info(
                 "{} {}::limit_hidden_order : order_id : {} has been placed.".format(self.market, self, _id))
             logger_global[0].info(
-                "{} {}::limit_hidden_order : {} {} @ {} BTC.".format(self.market, self, self.adjusted_size, self.name,
-                                                                     get_format_price(self.price)))
+                "{} {}::limit_hidden_order : {} {} @ {} BTC : {} BTC".format(self.market, self, self.adjusted_size, self.name,
+                                                                     get_format_price(self.price), get_format_price(self.adjusted_size*self.price)))
             _strategy.set_stop_loss()
             return _id
         else:
