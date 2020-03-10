@@ -442,6 +442,7 @@ def get_most_volatile_market():
     _ticker = Client.KLINE_INTERVAL_3MINUTE
     _volatile_markets = {}
     _exclude_markets = {}
+    _window = "1 days ago"
     if path.isfile(key_dir+_filename+".pkl"):
         _exclude_markets = get_pickled(key_dir, _filename)
     else:
@@ -452,7 +453,7 @@ def get_most_volatile_market():
         try:
             _klines = get_klines(_market, _ticker, _window)
             _closes = get_closes(_klines)
-            if _market=='COCOSBTC':
+            if _market == 'COCOSBTC':
                 i = 1
             if is_magnitude_gt(_closes[-1], -6.5):
                 _std = get_std_last(_closes, 1)
@@ -462,7 +463,7 @@ def get_most_volatile_market():
             if _ticker in _exclude_markets:
                 _exclude_markets[_ticker].append(_market)
             else:
-                _exclude_markets[_ticker]=[_market]
+                _exclude_markets[_ticker] = [_market]
     sorted(_volatile_markets, key=_volatile_markets.get, reverse=True)
     save_to_file(key_dir, "exclude-markets", _exclude_markets)
     i = 1
@@ -545,7 +546,6 @@ def main():
     plt.show()
 
     i = 1
-
 
     ba = BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 1)
     take_profit(ba)
