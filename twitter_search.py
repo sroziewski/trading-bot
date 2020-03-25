@@ -23,7 +23,7 @@ while 1:
             send_mail("QQQ Community Coin Vote Round FOUND!!!", url)
             logger.info("Community Coin Vote Round -- found")
             time.sleep(t1)
-            if cnt > 3:
+            if cnt == 3:
                 t1 *= 6
                 cnt = 0
                 cycle += 1
