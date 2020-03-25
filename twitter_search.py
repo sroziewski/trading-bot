@@ -9,12 +9,13 @@ authorize()
 url = 'https://twitter.com/binance'
 req = urllib.request.Request(url)
 
-pattern = re.compile('Community\\s+Coin\\s+Vote\\s+Round', re.IGNORECASE)
+pattern_s = re.compile('\\s+')
 
 while 1:
     with urllib.request.urlopen(req) as response:
         _page_content = response.read()
-        if pattern.search(str(_page_content)):
+        _content = pattern_s.sub(" ", str(_page_content).lower())
+        if 'community coin vote round' in _content:
             send_mail("QQQ Community Coin Vote Round FOUND!!!", url)
             logger.info("Community Coin Vote Round -- found")
             time.sleep(600)
