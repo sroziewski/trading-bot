@@ -4,7 +4,7 @@ import urllib.request
 from library import authorize, send_mail, setup_logger
 
 logger = setup_logger("binance-twitter-observer")
-# authorize()
+authorize()
 
 url_twitter = 'https://twitter.com/binance'
 req_twitter = urllib.request.Request(url_twitter)
