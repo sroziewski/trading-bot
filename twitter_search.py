@@ -42,5 +42,5 @@ while 1:
             cycle = 0
             cnt = 0
             t1 = 600
-            time.sleep(432000)  # 5 days of sleeping, and we start from the beginning
+            time.sleep(604800)  # 7 days of sleeping, and we start from the beginning
     time.sleep(60)
