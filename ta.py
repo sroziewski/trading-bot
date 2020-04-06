@@ -381,14 +381,15 @@ def print_assets(_assets):
 def analyze_markets():
     markets = binance_obj.get_all_btc_currencies(exclude_markets)
 
-    tickers = [Client.KLINE_INTERVAL_3MINUTE, Client.KLINE_INTERVAL_5MINUTE,
-               Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
-               Client.KLINE_INTERVAL_2HOUR,
-               Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
-               Client.KLINE_INTERVAL_12HOUR,
-               Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
+    # tickers = [Client.KLINE_INTERVAL_3MINUTE, Client.KLINE_INTERVAL_5MINUTE,
+    #            Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE, Client.KLINE_INTERVAL_1HOUR,
+    #            Client.KLINE_INTERVAL_2HOUR,
+    #            Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
+    #            Client.KLINE_INTERVAL_12HOUR,
+    #            Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
 
-    # tickers = [Client.KLINE_INTERVAL_3MINUTE, Client.KLINE_INTERVAL_5MINUTE, Client.KLINE_INTERVAL_15MINUTE, Client.KLINE_INTERVAL_30MINUTE]
+
+    tickers = [Client.KLINE_INTERVAL_12HOUR]
 
     print("bullish & tradeable assets")
     bullish_tradeable_map = {}
@@ -464,14 +465,14 @@ def get_most_volatile_market():
                 _exclude_markets[_ticker].append(_market)
             else:
                 _exclude_markets[_ticker] = [_market]
-    sorted(_volatile_markets, key=_volatile_markets.get, reverse=True)
+    _s = sorted(_volatile_markets, key=_volatile_markets.get, reverse=True)
     save_to_file(key_dir, "exclude-markets", _exclude_markets)
     i = 1
 
 
 def main():
-    # analyze_markets()
-    get_most_volatile_market()
+    analyze_markets()
+    # get_most_volatile_market()
 
     asset = "CELR"
     market = "{}BTC".format(asset)

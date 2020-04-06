@@ -249,11 +249,12 @@ class Asset(object):
 
 
 class BuyAsset(Asset):
-    def __init__(self, exchange, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
+    def __init__(self, exchange, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False, kucoin_side=False,
                  ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, barrier=False):
         super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.price = round(price + delta, 10)
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
+        self.kucoin_side = kucoin_side
 
     def set_btc_asset_buy_value(self, _total_btc):
         self.btc_asset_buy_value = self.ratio / 100 * _total_btc
@@ -1493,14 +1494,14 @@ def get_kucoin_symbol(_market, _symbol):
 
 
 def round_float_price(_value, _increment):
-    _val_magnitude = abs(int(np.log10(_value)))
-    _value_cp =  _value * np.power(10, _val_magnitude)
+    # _val_magnitude = abs(int(np.log10(_value)))
+    # _value_cp = _value * np.power(10, _val_magnitude)
     _nd = abs(int(np.log10(_increment)))
-    _out = round(_value_cp, _nd)
-    if _value - round(_value_cp, _nd) < 0:
+    _out = round(_value, _nd)
+    if _value - round(_value, _nd) < 0:
         _out -= _increment
-    _out = round(_out / np.power(10, _val_magnitude), 12)
-    return _out
+    # _out = round(_out / np.power(10, _val_magnitude), 12)
+    return round(_out, _nd)
 
 
 def adjust_kucoin_order_size(_asset, _value):
