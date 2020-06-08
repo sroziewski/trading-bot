@@ -13,6 +13,7 @@ import warnings
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 from getpass import getpass
+from os import path
 
 import numpy as np
 import requests
@@ -90,16 +91,17 @@ def check_kucoin_offer_validity(_asset):
     _exit = False
     if _asset.kucoin_side == KucoinClient.SIDE_BUY:
         _market_bid = float(kucoin_client.get_order_book(_asset.market)['bids'][0][0])
-        if _asset.price - _market_bid >= 0.01*sat:
+        if _asset.price - _market_bid >= 0.01 * sat:
             _market_price = _market_bid
             _exit = True
     elif _asset.kucoin_side == KucoinClient.SIDE_SELL:
         _market_ask = float(kucoin_client.get_order_book(_asset.market)['asks'][0][0])
-        if _asset.price - _market_ask <= 0.01*sat:
+        if _asset.price - _market_ask <= 0.01 * sat:
             _market_price = _market_ask
             _exit = True
     if _exit:
-        logger_global[0].info(f"{_asset.market} {_asset.kucoin_side} check_kucoin_offer_validity failed: your price {get_format_price(_asset.price)} : market price : {get_format_price(_market_price)}")
+        logger_global[0].info(
+            f"{_asset.market} {_asset.kucoin_side} check_kucoin_offer_validity failed: your price {get_format_price(_asset.price)} : market price : {get_format_price(_market_price)}")
         sys.exit(-1)
 
 
@@ -109,12 +111,13 @@ def price_increment(_price, _increment):
 
 
 def price_decrement(_price, _increment):
-    _dp = 1/np.power(10, len(get_format_price(_price).split(".")[1]))
+    _dp = 1 / np.power(10, len(get_format_price(_price).split(".")[1]))
     return round_float_price(float(_price) - _dp, float(_increment))
 
 
 class Asset(object):
-    def __init__(self, exchange, name, stop_loss_price, price_profit, profit, ticker, tight=False, barrier=False):
+    def __init__(self, exchange, name, stop_loss_price=False, price_profit=False, profit=False, ticker=False,
+                 tight=False, barrier=False):
         stop_when_not_exchange(exchange)
         self.exchange = exchange
         self.name = name
@@ -231,25 +234,32 @@ class Asset(object):
         required_size = int(get_kucoin_symbol(self.market, 'baseMinSize'))
         _strategy = Strategy(self)
         if self.adjusted_size >= required_size:
-            _id = kucoin_client.create_limit_order(self.market, self.kucoin_side, str(self.price), str(self.adjusted_size),
-                                                   hidden=True)['orderId']
+            _id = \
+                kucoin_client.create_limit_order(self.market, self.kucoin_side, str(self.price),
+                                                 str(self.adjusted_size),
+                                                 hidden=True)['orderId']
             logger_global[0].info(
                 "{} {}::limit_hidden_order : order_id : {} has been placed.".format(self.market, self, _id))
             logger_global[0].info(
-                "{} {}::limit_hidden_order : {} {} @ {} BTC : {} BTC".format(self.market, self, self.adjusted_size, self.name,
-                                                                     get_format_price(self.price), get_format_price(self.adjusted_size*self.price)))
+                "{} {}::limit_hidden_order : {} {} @ {} BTC : {} BTC".format(self.market, self, self.adjusted_size,
+                                                                             self.name,
+                                                                             get_format_price(self.price),
+                                                                             get_format_price(
+                                                                                 self.adjusted_size * self.price)))
             _strategy.set_stop_loss()
             return _id
         else:
             logger_global[0].info(
                 "{} {}::limit_hidden_order: size too small, size: {} required_size: {}".format(self.market, self,
-                                                                                               get_format_price(self.adjusted_size),
+                                                                                               get_format_price(
+                                                                                                   self.adjusted_size),
                                                                                                required_size))
             sys.exit(-1)
 
 
 class BuyAsset(Asset):
-    def __init__(self, exchange, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False, kucoin_side=False,
+    def __init__(self, exchange, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
+                 kucoin_side=False,
                  ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, barrier=False):
         super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.price = round(price + delta, 10)
@@ -1780,7 +1790,7 @@ def get_rsi_local_max_value(_closes, _prev_rsi, _window=10, _asset=None):
     _start = 33
     _stop = -1
     _rsi = relative_strength_index(_closes, _prev_rsi, 14, _asset)
-    _rsi_max_val, _rsi_reversed_max_ind = find_maximum(_rsi[_start:_stop:1], _window)
+    _rsi_max_val, _rsi_reversed_max_ind = find_first_maximum(_rsi[_start:_stop:1], _window)
     return _rsi_max_val
 
 
@@ -1963,16 +1973,16 @@ def adjust_buy_asset_btc_volume(_buy_assets, _btc_value):
     list(map(lambda x: x.set_btc_asset_buy_value(_btc_value), _buy_assets))
 
 
-def find_maximum(values, window):
-    _range = int(len(values) / window)
+def find_first_maximum(_values, _window):  # find the first maximum
+    _range = int(len(_values) / _window)
     _max_val = -1
     _min_stop_level = 0.9
     _activate_stop = False
     _max_ind = -1
     for _i in range(0, _range - 1):
-        _i_max = np.max(values[len(values) - (_i + 1) * window - 1:len(values) - _i * window - 1])
-        _tmp = list(values[len(values) - (_i + 1) * window - 1:len(values) - _i * window - 1])
-        _index = window - _tmp.index(max(_tmp)) + _i * window + 1
+        _i_max = np.max(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
+        _tmp = list(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
+        _index = _window - _tmp.index(max(_tmp)) + _i * _window + 1
         if _i_max > _max_val:
             _max_val = _i_max
             _max_ind = _index
@@ -1981,6 +1991,69 @@ def find_maximum(values, window):
         if _activate_stop and _i_max < _min_stop_level * _max_val:
             return _max_val, _max_ind
     return _max_val, _max_ind
+
+
+def find_first_minimum(_values, _window):  # find the first maximum
+    _range = int(len(_values) / _window)
+    _min_val = 1000
+    _min_stop_level = 0.9
+    _activate_stop = False
+    _min_ind = -1
+    for _i in range(0, _range - 1):
+        _i_min = np.min(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
+        _tmp = list(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
+        _index = _window - _tmp.index(min(_tmp)) + _i * _window + 1
+        if _i_min < _min_val:
+            _min_val = _i_min
+            _min_ind = _index
+            if _min_val < 1000:
+                _activate_stop = True
+        if _activate_stop and _i_min > _min_stop_level * _min_val:
+            return _min_val, _min_ind
+    return _min_val, _min_ind
+
+
+def find_maximum_2(_values, _window):  # find the first maximum
+    _range = int(len(_values) / _window)
+    _max_val = -1
+    _min_stop_level = 0.9
+    _activate_stop = False
+    _max_ind = -1
+    for _i in range(0, _range - 1):
+        _i_max = np.max(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
+        _tmp = list(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
+        _index = _window - _tmp.index(max(_tmp)) + _i * _window + 1
+        if _i_max > _max_val:
+            _max_val = _i_max
+            _max_ind = _index
+    return _max_val, _max_ind
+
+
+def find_minimum_2(_values, _window):
+    _range = int(len(_values) / _window)
+    _min_val = 1000
+    _min_stop_level = 0.9
+    _activate_stop = False
+    _min_ind = -1
+    for _i in range(0, _range - 1):
+        _i_min = np.min(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
+        _tmp = list(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
+        _index = _window - _tmp.index(min(_tmp)) + _i * _window + 1
+        if _i_min < _min_val:
+            _min_val = _i_min
+            _min_ind = _index
+    return _min_val, _min_ind
+
+
+def find_local_maximum(_values, _window, _i=0):
+    _max = find_first_maximum(_values, _window)
+    _range = int(len(_values) / _window)
+    if _range * _window - _max[1] < _window <= len(_values):
+        return find_local_maximum(_values[_window:], _window, _i + 1)
+    elif _window <= len(_values):
+        return _max[0], _max[1]
+    else:
+        return -1, -1
 
 
 def find_minimum(values):
@@ -2035,7 +2108,7 @@ def get_green_candles(_klines):
 def is_rsi_slope_condition(_rsi, _rsi_limit, _angle_limit, _start, _stop, _window=10):
     if (_rsi[_stop] + _rsi[_stop - 1]) / 2 > _rsi_limit:
         return False
-    _rsi_max_val, _rsi_reversed_max_ind = find_maximum(_rsi[_start:_stop:1], _window)
+    _rsi_max_val, _rsi_reversed_max_ind = find_first_maximum(_rsi[_start:_stop:1], _window)
     _rsi_magnitude = get_magnitude(_rsi_reversed_max_ind, _rsi_max_val)
     if _rsi_magnitude == -1:
         return False
@@ -2117,3 +2190,54 @@ def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, 
             _bearish_trigger.value if _bearish_trigger.value else False,
             _slope_condition.value if _slope_condition.value else False
         ))
+
+
+def is_second_golden_cross(_closes):
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+    _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
+    _min_200 = find_minimum_2(_ma200, 200)  # first a long-period minimum
+    _max_200_1 = find_first_maximum(_ma200, 5)  # second lower max
+    _min_200_1 = find_first_minimum(_ma200, 25)  # first higher minimum
+
+    _max_50 = find_local_maximum(_ma50, 200)  # first a long-period maximum
+    _min_50 = find_minimum_2(_ma50, 200)  # first a long-period minimum
+    _max_50_1 = find_first_maximum(_ma50, 10)  # second lower max
+    _min_50_1 = find_first_minimum(_ma50, 25)  # first higher minimum
+
+    HL_ma50_reversal_cond = _min_50[0] < _min_50_1[0] < _max_50_1[0] < _max_50[0] and _max_50[1] > _min_50[1] > \
+                            _max_50_1[1] > _min_50_1[1]
+    min_after_max_low_variance = _min_200[0] < _max_200[0] and _max_200[1] > _min_200[1] and np.std(
+        _ma200[-200:]) / np.mean(_ma200[-200:]) < 0.02
+    before_second_golden_cross_cond = _min_50[0] < _ma200[-_min_50[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and \
+                                      _max_50_1[0] > _ma200[
+                                          -_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]
+
+    return HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond
+
+
+def analyze_golden_cross():
+    _filename = "exclude-markets"
+    _ticker = Client.KLINE_INTERVAL_1HOUR
+    _time_interval = "1600 hours ago"
+    _golden_cross_markets = {}
+    _exclude_markets = {}
+    if path.isfile(key_dir + _filename + ".pkl"):
+        _exclude_markets = get_pickled(key_dir, _filename)
+    else:
+        _exclude_markets[_ticker] = exclude_markets
+    _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
+    for _market in _markets:
+        try:
+            _klines = get_klines(_market, _ticker, _time_interval)
+            _closes = get_closes(_klines)
+            if is_second_golden_cross(_closes):
+                _golden_cross_markets.append(_market)
+        except Exception:
+            print(f"No data for market : {_market}")
+            if _ticker in _exclude_markets:
+                _exclude_markets[_ticker].append(_market)
+            else:
+                _exclude_markets[_ticker] = [_market]
+    logger_global[0].info('--'.join(_golden_cross_markets))
+    save_to_file(key_dir, "exclude-markets", _exclude_markets)

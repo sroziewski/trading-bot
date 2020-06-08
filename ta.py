@@ -10,7 +10,11 @@ import talib
 from binance.client import Client
 
 from library import binance_obj, get_binance_interval_unit, AssetTicker, highest_bid, get_pickled, \
-    exclude_markets, take_profit, BuyAsset, find_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir
+    exclude_markets, take_profit, BuyAsset, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
+    is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
+    is_second_golden_cross
+
+from binance.client import Client as BinanceClient
 
 warnings.filterwarnings('error')
 
@@ -82,8 +86,8 @@ def get_angle(p1, p2):
 
 def is_signal_divergence_ratio(_macd, _macdsignal, _ratio, _start, _stop):
     _diff = _macd - _macdsignal
-    _diff_max_val, _diff_reversed_max_ind = find_maximum(_diff[_start:_stop:1], 10)
-    _diff_max_val2, _diff_reversed_max_ind2 = find_maximum(-_diff[_start:_stop:1], 10)
+    _diff_max_val, _diff_reversed_max_ind = find_first_maximum(_diff[_start:_stop:1], 10)
+    _diff_max_val2, _diff_reversed_max_ind2 = find_first_maximum(-_diff[_start:_stop:1], 10)
     if _diff_max_val2 > _diff_max_val:
         _diff_max_val = _diff_max_val2
     return np.abs((_diff[_stop] + _diff[_stop - 1]) / 2) / _diff_max_val <= _ratio
@@ -92,7 +96,7 @@ def is_signal_divergence_ratio(_macd, _macdsignal, _ratio, _start, _stop):
 def is_rsi_slope_condition(_rsi, _rsi_limit, _angle_limit, _start, _stop, _window=10):
     if (_rsi[_stop] + _rsi[_stop - 1]) / 2 > _rsi_limit:
         return False
-    _rsi_max_val, _rsi_reversed_max_ind = find_maximum(_rsi[_start:_stop:1], _window)
+    _rsi_max_val, _rsi_reversed_max_ind = find_first_maximum(_rsi[_start:_stop:1], _window)
     _rsi_magnitude = get_magnitude(_rsi_reversed_max_ind, _rsi_max_val)
     if _rsi_magnitude == -1:
         return False
@@ -102,8 +106,8 @@ def is_rsi_slope_condition(_rsi, _rsi_limit, _angle_limit, _start, _stop, _windo
 
 
 def is_macd_condition(_macd, _angle_limit, _start, _stop, _window=10):
-    _macd_max_val, _macd_reversed_max_ind = find_maximum(_macd[_start:_stop:1], _window)
-    _macd_max_val2, _macd_reversed_max_ind2 = find_maximum(-_macd[_start:_stop:1], _window)
+    _macd_max_val, _macd_reversed_max_ind = find_first_maximum(_macd[_start:_stop:1], _window)
+    _macd_max_val2, _macd_reversed_max_ind2 = find_first_maximum(-_macd[_start:_stop:1], _window)
     if _macd_reversed_max_ind2 < _macd_reversed_max_ind:
         _current_macd = (_macd[_stop] + _macd[_stop - 1]) / 2
         _local_min_ratio = (_macd_max_val2 - np.abs(_current_macd)) / _macd_max_val2
@@ -120,7 +124,7 @@ def is_macd_condition(_macd, _angle_limit, _start, _stop, _window=10):
 
 def is_higher_low(_values, _limit, _start, _stop, _window=10):
     _flipped_values = np.max(_values[_start:_stop:1]) - _values
-    _max_val, _reversed_max_ind = find_maximum(_flipped_values[_start:_stop:1], _window)
+    _max_val, _reversed_max_ind = find_first_maximum(_flipped_values[_start:_stop:1], _window)
     _first_local_min = _values[_stop - _reversed_max_ind]
     if _reversed_max_ind == -1 or _first_local_min > _limit:  # 1. there is no local minimum 2. RSI value for minimum is too high
         return False
@@ -375,7 +379,9 @@ def post_proc(_map):
 
 def print_assets(_assets):
     for _a in _assets:
-        print(_a.name + " : " + ' '.join(_a.tickers) + " ask price : " + "{:.8f} time : {}".format(_a.ask_price, get_time(_a.timestamp)))
+        print(_a.name + " : " + ' '.join(_a.tickers) + " ask price : " + "{:.8f} time : {}".format(_a.ask_price,
+                                                                                                   get_time(
+                                                                                                       _a.timestamp)))
 
 
 def analyze_markets():
@@ -387,7 +393,6 @@ def analyze_markets():
     #            Client.KLINE_INTERVAL_4HOUR, Client.KLINE_INTERVAL_6HOUR, Client.KLINE_INTERVAL_8HOUR,
     #            Client.KLINE_INTERVAL_12HOUR,
     #            Client.KLINE_INTERVAL_1DAY, Client.KLINE_INTERVAL_3DAY]
-
 
     tickers = [Client.KLINE_INTERVAL_12HOUR]
 
@@ -444,7 +449,7 @@ def get_most_volatile_market():
     _volatile_markets = {}
     _exclude_markets = {}
     _window = "1 days ago"
-    if path.isfile(key_dir+_filename+".pkl"):
+    if path.isfile(key_dir + _filename + ".pkl"):
         _exclude_markets = get_pickled(key_dir, _filename)
     else:
         _exclude_markets[_ticker] = exclude_markets
@@ -471,17 +476,19 @@ def get_most_volatile_market():
 
 
 def main():
-    analyze_markets()
+    # asset = Asset(exchange="binance", name="LINK", ticker=BinanceClient.KLINE_INTERVAL_1HOUR)
+    # is_bullish_setup(asset)
+    # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "CELR"
+    asset = "LINK"
     market = "{}BTC".format(asset)
-    ticker = Client.KLINE_INTERVAL_1MINUTE
-    time_interval = "16 hours ago"
+    ticker = BinanceClient.KLINE_INTERVAL_1HOUR
+    time_interval = "1600 hours ago"
 
     _klines = get_klines(market, ticker, time_interval)
 
-    save_to_file("/juno/", "klines", _klines)
+    save_to_file("C:/apps/bot/", "klines", _klines)
     # _klines = get_pickled('/juno/', "klines")
 
     r = relative_strength_index(get_closes(_klines))
@@ -497,16 +504,19 @@ def main():
 
     #
     start = 33
-    stop = -5*60-30-32
+    # stop = -5*60-30-32
     # stop = -1
+    stop = -450
 
-    t = is_tradeable(_closes, r, macd, macdsignal)
+    out = is_second_golden_cross(_closes[:stop])
 
-    rsi_normal_cond = is_rsi_slope_condition(r, 45, 30, start, stop)
-    rsi_normal_tight = is_rsi_slope_condition(r, 30, 20, start, stop)
-    macd_normal_cond = is_macd_condition(macd, 45, start, stop)
-    divergence_ratio = is_signal_divergence_ratio(macd, macdsignal, 0.1, start, stop)
-    is_hl = is_higher_low(r, 45, start, stop)
+    # t = is_tradeable(_closes, r, macd, macdsignal)
+
+    # rsi_normal_cond = is_rsi_slope_condition(r, 45, 30, start, stop)
+    # rsi_normal_tight = is_rsi_slope_condition(r, 30, 20, start, stop)
+    # macd_normal_cond = is_macd_condition(macd, 45, start, stop)
+    # divergence_ratio = is_signal_divergence_ratio(macd, macdsignal, 0.1, start, stop)
+    # is_hl = is_higher_low(r, 45, start, stop)
 
     plt.subplot2grid((3, 1), (0, 0))
     plt.plot(macd[start:stop:1], 'blue', lw=1)
@@ -522,34 +532,101 @@ def main():
     plt.subplot2grid((3, 1), (1, 0))
     plt.plot(r[start:stop:1], 'red', lw=1)
 
-    # ma200 = talib.MA(_closes, timeperiod=200)
-    ma100 = talib.MA(_closes, timeperiod=100)
+    ma200 = talib.MA(_closes, timeperiod=200)
+    # ma100 = talib.MA(_closes, timeperiod=100)
     ma50 = talib.MA(_closes, timeperiod=50)
-    ma20 = talib.MA(_closes, timeperiod=20)
-    ma7 = talib.MA(_closes, timeperiod=7)
+    # ma20 = talib.MA(_closes, timeperiod=20)
+    # ma7 = talib.MA(_closes, timeperiod=7)
+
+    _ma200 = ma200[start:stop:1]
+    _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
+    _min_200 = find_minimum_2(_ma200, 200)  # first a long-period minimum
+    _max_200_1 = find_first_maximum(_ma200, 5)  # second lower max
+    _min_200_1 = find_first_minimum(_ma200, 25)  # first higher minimum
+
+    # _max = find_maximum(_ma200, 10)
+    # _min = find_minimum(_ma200[-_max[1]:])
+
+    # _ma200[:-_max[1] + 1] # first n elements until max element
+
+    # _max_b = find_local_maximum(_ma200[-_max[1]:_min[1]], 10)
+
+    _ma50 = ma50[start:stop:1]
+
+    _max_50 = find_local_maximum(_ma50, 200)  # first a long-period maximum
+    _min_50 = find_minimum_2(_ma50, 200)  # first a long-period minimum
+    _max_50_1 = find_first_maximum(_ma50, 10)  # second lower max
+    _min_50_1 = find_first_minimum(_ma50, 25)  # first higher minimum
+
+    if _min_50[0] < _min_50_1[0] < _max_50_1[0] < _max_50[0] and _max_50[1] > _min_50[1] > _max_50_1[1] > _min_50_1[1]:
+        aja = 1
+
+    HL_ma50_reversal_cond = _min_50[0] < _min_50_1[0] < _max_50_1[0] < _max_50[0] and _max_50[1] > _min_50[1] > _max_50_1[1] > _min_50_1[1]
+    min_after_max_low_variance = _min_200[0] < _max_200[0] and _max_200[1] > _min_200[1] and np.std(ma200[-200:]) / np.mean(ma200[-200:]) < 0.02
+    before_second_golden_cross_cond = _min_50[0] < _ma200[-_min_50[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and _max_50_1[0] > _ma200[
+        -_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]
+
+
+    # if _min_200[0] < _max_200[0] and _max_200[1] > _min_200[1] and np.std(ma200[-200:])/np.mean(ma200[-200:]) < 0.02:
+    #     aja = 1
+    #
+    # if _min_50[0] < _ma200[-_min_50[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]:
+    #     asd = 1
+
+    if HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond:
+        asd = 1
+
+    # _ma200[:-_max[1] + 1] # first n elements until max element
+
+    # _max_b_50 = find_local_maximum(_ma50[-_max_50[1]:_min_50[1]], 10)
 
     _curr_rsi = get_avg_last_2(r, stop)
 
     _curr_ma_50 = get_avg_last(ma50, stop)
-    _curr_ma_20 = get_avg_last(ma20, stop)
-    _curr_ma_7 = get_avg_last(ma7, stop)
-    _curr_ma_7_2 = get_avg_last_2(ma7, stop)
+    # _curr_ma_20 = get_avg_last(ma20, stop)
+    # _curr_ma_7 = get_avg_last(ma7, stop)
+    # _curr_ma_7_2 = get_avg_last_2(ma7, stop)
 
-    l1 = get_last(ma7, stop)
-    l2 = get_last_2(ma7, stop)
+    # l1 = get_last(ma7, stop)
+    # l2 = get_last_2(ma7, stop)
 
-    b = bullishness_2(_opens, _closes, ma100, ma50, ma20, stop)
+    # b = bullishness_2(_opens, _closes, ma100, ma50, ma20, stop)
 
     plt.subplot2grid((3, 1), (2, 0))
-    plt.plot(ma100[start:stop:1], 'green', lw=1)
-    plt.plot(ma50[start:stop:1], 'red', lw=1)
-    plt.plot(ma20[start:stop:1], 'blue', lw=1)
+    # plt.plot(ma200[start:stop:1], 'green', lw=1)
+    # plt.plot(ma50[start:stop:1], 'red', lw=1)
+
+
+    plt.plot(_ma200, 'black', lw=1)
+    plt.plot(_ma200[:-_min_200[1] + 1], 'green', lw=1)
+    plt.hlines(_min_200[0], 0, len(_ma200[:-_min_200[1] + 1]), 'black', lw=1)
+    plt.hlines(_max_200[0], 0, len(_ma200[:-_max_200[1] + 1]), 'black', lw=1)
+    plt.hlines(_max_200_1[0], 0, len(_ma200[:-_max_200_1[1] + 1]), 'black', lw=1)
+    plt.vlines(len(_ma200) - _min_200[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black', lw=1)
+    plt.vlines(len(_ma200) - _max_200_1[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black',
+               lw=1)
+    plt.vlines(len(_ma200) - _max_200[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black', lw=1)
+    plt.plot(_ma200[:-_max_200[1] + 1], 'yellow', lw=1)
+
+    # plt.plot(_ma50, 'black', lw=1)
+    # plt.plot(_ma50[:-_min_50[1] + 1], 'green', lw=1)
+    # plt.hlines(_min_50[0], 0, len(_ma50[:-_min_50[1] + 1]), 'black', lw=1)
+    # plt.hlines(_max_50[0], 0, len(_ma50[:-_max_50[1] + 1]), 'black', lw=1)
+    # plt.hlines(_max_50_1[0], 0, len(_ma50[:-_max_50_1[1] + 1]), 'black', lw=1)
+    # plt.vlines(len(_ma50) - _min_50[1], np.min(_ma50[~np.isnan(_ma50)]), np.max(_ma50[~np.isnan(_ma50)]), 'black', lw=1)
+    # plt.vlines(len(_ma50) - _max_50_1[1], np.min(_ma50[~np.isnan(_ma50)]), np.max(_ma50[~np.isnan(_ma50)]), 'black',
+    #            lw=1)
+    # plt.vlines(len(_ma50) - _max_50[1], np.min(_ma50[~np.isnan(_ma50)]), np.max(_ma50[~np.isnan(_ma50)]), 'black', lw=1)
+    # plt.plot(_ma50[:-_max_50[1] + 1], 'yellow', lw=1)
+
+    # plt.plot(_ma50[:-_max_50_1[1] + 1], 'red', lw=1)
+    # plt.plot(ma20[start:stop:1], 'blue ', lw=1)
     plt.show()
 
     i = 1
 
-    ba = BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 1)
-    take_profit(ba)
+    # ba = BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 1)
+    # take_profit(ba)
     i = 1
 
 

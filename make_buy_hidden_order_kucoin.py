@@ -10,7 +10,7 @@ side = KucoinClient.SIDE_BUY
 logger = setup_logger("kucoin-hidden-order-{}".format(side))
 
 currency = 'VRA'
-price = 7.21
+price = 5.54
 stop_loss_price = 2
 profit_price = 4700.99
 ratio = 100
