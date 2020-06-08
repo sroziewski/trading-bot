@@ -11,7 +11,7 @@ logger.info("Starting Golden-Cross-Binance...")
 while 1:
     try:
         analyze_golden_cross()
-        time.sleep(3600)
+        time.sleep(3500)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
             logger.error("Connection problem...")
