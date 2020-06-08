@@ -2218,7 +2218,7 @@ def is_second_golden_cross(_closes):
 
 def analyze_golden_cross():
     _filename = "exclude-markets"
-    _ticker = Client.KLINE_INTERVAL_1HOUR
+    _ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     _time_interval = "1600 hours ago"
     _golden_cross_markets = {}
     _exclude_markets = {}
@@ -2226,7 +2226,10 @@ def analyze_golden_cross():
         _exclude_markets = get_pickled(key_dir, _filename)
     else:
         _exclude_markets[_ticker] = exclude_markets
-    _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
+    if _ticker in _exclude_markets:
+        _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
+    else:
+        _markets = binance_obj.get_all_btc_currencies()
     for _market in _markets:
         try:
             _klines = get_klines(_market, _ticker, _time_interval)
