@@ -2244,3 +2244,4 @@ def analyze_golden_cross():
                 _exclude_markets[_ticker] = [_market]
     logger_global[0].info('--'.join(_golden_cross_markets))
     save_to_file(key_dir, "exclude-markets", _exclude_markets)
+    return _golden_cross_markets

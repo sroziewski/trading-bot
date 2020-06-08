@@ -3,14 +3,18 @@ import traceback
 
 import requests
 
-from library import setup_logger, analyze_golden_cross
+from library import setup_logger, analyze_golden_cross, authorize, send_mail
 
 logger = setup_logger("gc-binance")
 logger.info("Starting Golden-Cross-Binance...")
 
+authorize()
+
 while 1:
     try:
-        analyze_golden_cross()
+        golden_cross_markets = analyze_golden_cross()
+        if len(golden_cross_markets) > 0:
+            send_mail("WWW Second Golden Cross Found WWW", ' '.join(golden_cross_markets))
         time.sleep(3500)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
