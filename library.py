@@ -2220,7 +2220,7 @@ def analyze_golden_cross():
     _filename = "exclude-markets"
     _ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     _time_interval = "1600 hours ago"
-    _golden_cross_markets = {}
+    _golden_cross_markets = []
     _exclude_markets = {}
     if path.isfile(key_dir + _filename + ".pkl"):
         _exclude_markets = get_pickled(key_dir, _filename)
