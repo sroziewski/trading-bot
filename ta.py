@@ -475,6 +475,15 @@ def get_most_volatile_market():
     i = 1
 
 
+def find_first_golden_cross(__ma50, __ma200, _offset=0):
+
+    for i in range(_offset, len(__ma200)):
+        _index = len(__ma200) - i - 1
+        if __ma200[_index] > __ma50[_index]:
+            return _index, __ma200[_index], __ma50[_index]
+    return -1, -1
+
+
 def main():
     # asset = Asset(exchange="binance", name="LINK", ticker=BinanceClient.KLINE_INTERVAL_1HOUR)
     # is_bullish_setup(asset)
@@ -541,9 +550,12 @@ def main():
     # ma20 = talib.MA(_closes, timeperiod=20)
     # ma7 = talib.MA(_closes, timeperiod=7)
 
-
     _ma200 = ma200[start:stop:1]
     _ma50 = ma50[start:stop:1]
+
+    out = find_first_golden_cross(_ma50, _ma200, 50)
+
+    k = 1
     # _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
     # _min_200 = find_minimum_2(_ma200, 200)  # first a long-period minimum
     # _max_200_1 = find_first_maximum(_ma200, 5)  # second lower max
