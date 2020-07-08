@@ -12,7 +12,7 @@ from binance.client import Client
 from library import binance_obj, get_binance_interval_unit, AssetTicker, highest_bid, get_pickled, \
     exclude_markets, take_profit, BuyAsset, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
     is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
-    is_second_golden_cross
+    is_second_golden_cross, is_first_golden_cross
 
 from binance.client import Client as BinanceClient
 
@@ -481,15 +481,17 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "LINK"
+    asset = "THETA"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
-    time_interval = "1600 hours ago"
+    time_interval = "3200 hours ago"
 
-    _klines = get_klines(market, ticker, time_interval)
+    # _klines = get_klines(market, ticker, time_interval)
 
-    save_to_file("C:/apps/bot/", "klines", _klines)
-    # _klines = get_pickled('/juno/', "klines")
+    # save_to_file("C:/apps/bot/", "klines", _klines)
+    _klines = get_pickled('/juno/', "klines-theta")
+
+    res = is_first_golden_cross(_klines)
 
     r = relative_strength_index(get_closes(_klines))
 
@@ -505,8 +507,9 @@ def main():
     #
     start = 33
     # stop = -5*60-30-32
-    # stop = -1
-    stop = -450
+    stop = -1
+    # stop = -2650
+    # save_to_file("/juno/", "klines-theta", _klines[start:stop:1])
 
     out = is_second_golden_cross(_closes[:stop])
 
@@ -538,18 +541,44 @@ def main():
     # ma20 = talib.MA(_closes, timeperiod=20)
     # ma7 = talib.MA(_closes, timeperiod=7)
 
+
     _ma200 = ma200[start:stop:1]
+    _ma50 = ma50[start:stop:1]
     _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
     _min_200 = find_minimum_2(_ma200, 200)  # first a long-period minimum
     _max_200_1 = find_first_maximum(_ma200, 5)  # second lower max
     _min_200_1 = find_first_minimum(_ma200, 25)  # first higher minimum
 
-    # _max = find_maximum(_ma200, 10)
-    # _min = find_minimum(_ma200[-_max[1]:])
 
+    fall = (np.max(_high[-500:])-np.min(_low[-500:]))/np.max(_high[-500:])  # > 22%
+
+    # _max_200_1 = find_first_maximum(_ma200, 5)
+
+    _max = find_first_maximum(_ma50, 10)
+    _min = find_minimum(_ma50[-_max[1]:])
+
+    _max_g = find_local_maximum(_ma50, 50)
+    _max_l = find_local_maximum(_ma50[-_max_g[1]:], 50)
+    _min_l = find_minimum(_ma50[-_max_g[1]:-_max_l[1]])
+    _min_low_l = find_minimum(_low[-_max_g[1]:-_max_l[1]])
+
+    _min_l_ind = -_max_l[1] + _min_l[1]
+    _min_low_l_ind = -_max_l[1] + _min_low_l[1]
+    _max_l_ind = - _max_l[1]
+
+    _max_high_l = find_local_maximum(_high[_min_l_ind:-_max_l[1]], 10)
+    _min_before_local_max = find_minimum(_low[_max_l_ind:])
+    rise = (_max_high_l[0]-_min_low_l[0])/_min_low_l[0] # > 15%
+    drop = (_max_high_l[0] - _min_before_local_max[0]) / _max_high_l[0] # > 10%
+    # _ma50[-_max_l[1] - 44] - _min_l[0]
     # _ma200[:-_max[1] + 1] # first n elements until max element
 
     # _max_b = find_local_maximum(_ma200[-_max[1]:_min[1]], 10)
+
+    # 43, 36, 20 %
+
+    if fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > 50:
+        i = 7
 
     _ma50 = ma50[start:stop:1]
 
@@ -598,15 +627,16 @@ def main():
 
 
     plt.plot(_ma200, 'black', lw=1)
-    plt.plot(_ma200[:-_min_200[1] + 1], 'green', lw=1)
-    plt.hlines(_min_200[0], 0, len(_ma200[:-_min_200[1] + 1]), 'black', lw=1)
-    plt.hlines(_max_200[0], 0, len(_ma200[:-_max_200[1] + 1]), 'black', lw=1)
-    plt.hlines(_max_200_1[0], 0, len(_ma200[:-_max_200_1[1] + 1]), 'black', lw=1)
-    plt.vlines(len(_ma200) - _min_200[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black', lw=1)
-    plt.vlines(len(_ma200) - _max_200_1[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black',
-               lw=1)
-    plt.vlines(len(_ma200) - _max_200[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black', lw=1)
-    plt.plot(_ma200[:-_max_200[1] + 1], 'yellow', lw=1)
+    plt.plot(_ma50, 'red', lw=1)
+    # plt.plot(_ma200[:-_min_200[1] + 1], 'green', lw=1)
+    # plt.hlines(_min_200[0], 0, len(_ma200[:-_min_200[1] + 1]), 'black', lw=1)
+    # plt.hlines(_max_200[0], 0, len(_ma200[:-_max_200[1] + 1]), 'black', lw=1)
+    # plt.hlines(_max_200_1[0], 0, len(_ma200[:-_max_200_1[1] + 1]), 'black', lw=1)
+    # plt.vlines(len(_ma200) - _min_200[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black', lw=1)
+    # plt.vlines(len(_ma200) - _max_200_1[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black',
+    #            lw=1)
+    # plt.vlines(len(_ma200) - _max_200[1], np.min(_ma200[~np.isnan(_ma200)]), np.max(_ma200[~np.isnan(_ma200)]), 'black', lw=1)
+    # plt.plot(_ma200[:-_max_200[1] + 1], 'yellow', lw=1)
 
     # plt.plot(_ma50, 'black', lw=1)
     # plt.plot(_ma50[:-_min_50[1] + 1], 'green', lw=1)

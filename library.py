@@ -2192,6 +2192,36 @@ def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, 
         ))
 
 
+def is_first_golden_cross(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
+    _high = list(map(lambda _x: float(_x[2]), _klines))
+    _low = list(map(lambda _x: float(_x[3]), _klines))
+
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+
+    fall = (np.max(_high[-500:])-np.min(_low[-500:]))/np.max(_high[-500:])  # > 22%
+
+    _max_g = find_local_maximum(_ma50, 50)
+    _max_l = find_local_maximum(_ma50[-_max_g[1]:], 50)
+    _min_l = find_minimum(_ma50[-_max_g[1]:-_max_l[1]])
+    _min_low_l = find_minimum(_low[-_max_g[1]:-_max_l[1]])
+
+    _min_l_ind = -_max_l[1] + _min_l[1]
+    _min_low_l_ind = -_max_l[1] + _min_low_l[1]
+    _max_l_ind = - _max_l[1]
+
+    _max_high_l = find_local_maximum(_high[_min_l_ind:-_max_l[1]], 10)
+    _min_before_local_max = find_minimum(_low[_max_l_ind:])
+    rise = (_max_high_l[0]-_min_low_l[0])/_min_low_l[0] # > 15%
+    drop = (_max_high_l[0] - _min_before_local_max[0]) / _max_high_l[0] # > 10%
+
+    # 43, 36, 20 % -- these are another numbers to try...
+    hours_after_local_max_ma50 = 50
+
+    return fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50
+
+
 def is_second_golden_cross(_closes):
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
@@ -2234,7 +2264,7 @@ def analyze_golden_cross():
         try:
             _klines = get_klines(_market, _ticker, _time_interval)
             _closes = get_closes(_klines)
-            if is_second_golden_cross(_closes):
+            if is_second_golden_cross(_closes) or is_first_golden_cross(_klines):
                 _golden_cross_markets.append(_market)
         except Exception:
             print(f"No data for market : {_market}")
