@@ -481,15 +481,15 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "THETA"
+    asset = "RDN"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
-    time_interval = "3200 hours ago"
+    time_interval = "1600 hours ago"
 
-    # _klines = get_klines(market, ticker, time_interval)
+    _klines = get_klines(market, ticker, time_interval)
 
     # save_to_file("C:/apps/bot/", "klines", _klines)
-    _klines = get_pickled('/juno/', "klines-theta")
+    # _klines = get_pickled('/juno/', "klines-theta")
 
     res = is_first_golden_cross(_klines)
 
@@ -507,7 +507,7 @@ def main():
     #
     start = 33
     # stop = -5*60-30-32
-    stop = -1
+    stop = -510
     # stop = -2650
     # save_to_file("/juno/", "klines-theta", _klines[start:stop:1])
 
@@ -544,32 +544,32 @@ def main():
 
     _ma200 = ma200[start:stop:1]
     _ma50 = ma50[start:stop:1]
-    _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
-    _min_200 = find_minimum_2(_ma200, 200)  # first a long-period minimum
-    _max_200_1 = find_first_maximum(_ma200, 5)  # second lower max
-    _min_200_1 = find_first_minimum(_ma200, 25)  # first higher minimum
-
-
-    fall = (np.max(_high[-500:])-np.min(_low[-500:]))/np.max(_high[-500:])  # > 22%
-
-    # _max_200_1 = find_first_maximum(_ma200, 5)
-
-    _max = find_first_maximum(_ma50, 10)
-    _min = find_minimum(_ma50[-_max[1]:])
-
-    _max_g = find_local_maximum(_ma50, 50)
-    _max_l = find_local_maximum(_ma50[-_max_g[1]:], 50)
-    _min_l = find_minimum(_ma50[-_max_g[1]:-_max_l[1]])
-    _min_low_l = find_minimum(_low[-_max_g[1]:-_max_l[1]])
-
-    _min_l_ind = -_max_l[1] + _min_l[1]
-    _min_low_l_ind = -_max_l[1] + _min_low_l[1]
-    _max_l_ind = - _max_l[1]
-
-    _max_high_l = find_local_maximum(_high[_min_l_ind:-_max_l[1]], 10)
-    _min_before_local_max = find_minimum(_low[_max_l_ind:])
-    rise = (_max_high_l[0]-_min_low_l[0])/_min_low_l[0] # > 15%
-    drop = (_max_high_l[0] - _min_before_local_max[0]) / _max_high_l[0] # > 10%
+    # _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
+    # _min_200 = find_minimum_2(_ma200, 200)  # first a long-period minimum
+    # _max_200_1 = find_first_maximum(_ma200, 5)  # second lower max
+    # _min_200_1 = find_first_minimum(_ma200, 25)  # first higher minimum
+    #
+    #
+    # fall = (np.max(_high[-500:])-np.min(_low[-500:]))/np.max(_high[-500:])  # > 22%
+    #
+    # # _max_200_1 = find_first_maximum(_ma200, 5)
+    #
+    # _max = find_first_maximum(_ma50, 10)
+    # _min = find_minimum(_ma50[-_max[1]:])
+    #
+    # _max_g = find_local_maximum(_ma50, 50)
+    # _max_l = find_local_maximum(_ma50[-_max_g[1]:], 50)
+    # _min_l = find_minimum(_ma50[-_max_g[1]:-_max_l[1]])
+    # _min_low_l = find_minimum(_low[-_max_g[1]:-_max_l[1]])
+    #
+    # _min_l_ind = -_max_l[1] + _min_l[1]
+    # _min_low_l_ind = -_max_l[1] + _min_low_l[1]
+    # _max_l_ind = - _max_l[1]
+    #
+    # _max_high_l = find_local_maximum(_high[_min_l_ind:-_max_l[1]], 10)
+    # _min_before_local_max = find_minimum(_low[_max_l_ind:])
+    # rise = (_max_high_l[0]-_min_low_l[0])/_min_low_l[0] # > 15%
+    # drop = (_max_high_l[0] - _min_before_local_max[0]) / _max_high_l[0] # > 10%
     # _ma50[-_max_l[1] - 44] - _min_l[0]
     # _ma200[:-_max[1] + 1] # first n elements until max element
 
@@ -577,8 +577,8 @@ def main():
 
     # 43, 36, 20 %
 
-    if fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > 50:
-        i = 7
+    # if fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > 50:
+    #     i = 7
 
     _ma50 = ma50[start:stop:1]
 
@@ -590,10 +590,10 @@ def main():
     if _min_50[0] < _min_50_1[0] < _max_50_1[0] < _max_50[0] and _max_50[1] > _min_50[1] > _max_50_1[1] > _min_50_1[1]:
         aja = 1
 
-    HL_ma50_reversal_cond = _min_50[0] < _min_50_1[0] < _max_50_1[0] < _max_50[0] and _max_50[1] > _min_50[1] > _max_50_1[1] > _min_50_1[1]
-    min_after_max_low_variance = _min_200[0] < _max_200[0] and _max_200[1] > _min_200[1] and np.std(ma200[-200:]) / np.mean(ma200[-200:]) < 0.02
-    before_second_golden_cross_cond = _min_50[0] < _ma200[-_min_50[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and _max_50_1[0] > _ma200[
-        -_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]
+    # HL_ma50_reversal_cond = _min_50[0] < _min_50_1[0] < _max_50_1[0] < _max_50[0] and _max_50[1] > _min_50[1] > _max_50_1[1] > _min_50_1[1]
+    # min_after_max_low_variance = _min_200[0] < _max_200[0] and _max_200[1] > _min_200[1] and np.std(ma200[-200:]) / np.mean(ma200[-200:]) < 0.02
+    # before_second_golden_cross_cond = _min_50[0] < _ma200[-_min_50[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and _max_50_1[0] > _ma200[
+    #     -_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]
 
 
     # if _min_200[0] < _max_200[0] and _max_200[1] > _min_200[1] and np.std(ma200[-200:])/np.mean(ma200[-200:]) < 0.02:
@@ -602,8 +602,8 @@ def main():
     # if _min_50[0] < _ma200[-_min_50[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]:
     #     asd = 1
 
-    if HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond:
-        asd = 1
+    # if HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond:
+    #     asd = 1
 
     # _ma200[:-_max[1] + 1] # first n elements until max element
 
