@@ -476,11 +476,18 @@ def get_most_volatile_market():
 
 
 def find_first_golden_cross(__ma50, __ma200, _offset=0):
-
     for i in range(_offset, len(__ma200)):
         _index = len(__ma200) - i - 1
         if __ma200[_index] > __ma50[_index]:
-            return _index, __ma200[_index], __ma50[_index]
+            return __ma200[_index], i
+    return -1, -1
+
+
+def find_first_drop_below_ma(_ma, _candles):
+    for i in range(len(_ma)):
+        if _ma[i] > _candles[i]:
+            _index = len(_ma) - i - 1
+            return _candles[i], _index
     return -1, -1
 
 
@@ -495,12 +502,12 @@ def main():
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
 
-    _klines = get_klines(market, ticker, time_interval)
+    # _klines = get_klines(market, ticker, time_interval)
 
     # save_to_file("C:/apps/bot/", "klines", _klines)
-    # _klines = get_pickled('/juno/', "klines-theta")
+    _klines = get_pickled('/juno/', "klines-rdn")
 
-    res = is_first_golden_cross(_klines)
+    # res = is_first_golden_cross(_klines)
 
     r = relative_strength_index(get_closes(_klines))
 
@@ -516,7 +523,7 @@ def main():
     #
     start = 33
     # stop = -5*60-30-32
-    stop = -510
+    stop = -1
     # stop = -2650
     # save_to_file("/juno/", "klines-theta", _klines[start:stop:1])
 
@@ -553,7 +560,12 @@ def main():
     _ma200 = ma200[start:stop:1]
     _ma50 = ma50[start:stop:1]
 
-    out = find_first_golden_cross(_ma50, _ma200, 50)
+    _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
+
+    drop_below_ma = find_first_drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:])
+
+    _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
+    rally = (_max_high[0] - _first_gc[0]) / _first_gc[0] # 48, 82 %
 
     k = 1
     # _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
@@ -639,6 +651,7 @@ def main():
 
 
     plt.plot(_ma200, 'black', lw=1)
+    plt.plot(_ma200[-_first_gc[1]:], 'green', lw=1)
     plt.plot(_ma50, 'red', lw=1)
     # plt.plot(_ma200[:-_min_200[1] + 1], 'green', lw=1)
     # plt.hlines(_min_200[0], 0, len(_ma200[:-_min_200[1] + 1]), 'black', lw=1)
