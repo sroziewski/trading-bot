@@ -2219,7 +2219,7 @@ def is_first_golden_cross(_klines):
     # 43, 36, 20 % -- these are another numbers to try...
     hours_after_local_max_ma50 = 50
 
-    return fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50
+    return fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[-1] < _ma50[-1]
 
 
 def is_second_golden_cross(_closes):
