@@ -2312,7 +2312,4 @@ def analyze_golden_cross():
 
 
 def format_found_markets(_markets_tuple):
-    _r = []
-    for _market, _reason in _markets_tuple:
-        _r.append(f"{_market} : {_reason}")
-    return _r
+    return [f"{x[0]} : {x[1]}" for x in _markets_tuple]
