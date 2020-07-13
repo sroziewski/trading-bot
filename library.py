@@ -2222,6 +2222,35 @@ def is_first_golden_cross(_klines):
     return fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[-1] < _ma50[-1]
 
 
+def drop_below_ma200_after_rally(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
+    _high = list(map(lambda _x: float(_x[2]), _klines))
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+    _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
+    drop_below_ma = find_first_drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:])
+    _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
+    rally = (_max_high[0] - _first_gc[0]) / _first_gc[0]  # 48, 82 %
+
+    return rally > 0.5 and drop_below_ma[1] > 0
+
+
+def find_first_golden_cross(__ma50, __ma200, _offset=0):
+    for i in range(_offset, len(__ma200)):
+        _index = len(__ma200) - i - 1
+        if __ma200[_index] > __ma50[_index]:
+            return __ma200[_index], i
+    return -1, -1
+
+
+def find_first_drop_below_ma(_ma, _candles):
+    for i in range(len(_ma)):
+        if _ma[i] > _candles[i]:
+            _index = len(_ma) - i - 1
+            return _candles[i], _index
+    return -1, -1
+
+
 def is_second_golden_cross(_closes):
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
@@ -2264,14 +2293,26 @@ def analyze_golden_cross():
         try:
             _klines = get_klines(_market, _ticker, _time_interval)
             _closes = get_closes(_klines)
-            if is_second_golden_cross(_closes) or is_first_golden_cross(_klines):
-                _golden_cross_markets.append(_market)
+            if is_second_golden_cross(_closes):
+                _golden_cross_markets.append((_market, "is_second_golden_cross"))
+            if is_first_golden_cross(_klines):
+                _golden_cross_markets.append((_market, "is_first_golden_cross"))
+            if drop_below_ma200_after_rally(_klines):
+                _golden_cross_markets.append((_market, "drop_below_ma200_after_rally"))
+
         except Exception:
             print(f"No data for market : {_market}")
             if _ticker in _exclude_markets:
                 _exclude_markets[_ticker].append(_market)
             else:
                 _exclude_markets[_ticker] = [_market]
-    logger_global[0].info('--'.join(_golden_cross_markets))
+    logger_global[0].info(' '.join(format_found_markets(_golden_cross_markets)))
     save_to_file(key_dir, "exclude-markets", _exclude_markets)
     return _golden_cross_markets
+
+
+def format_found_markets(_markets_tuple):
+    _r = []
+    for _market, _reason in _markets_tuple:
+        _r.append(f"{_market} : {_reason}")
+    return _r

@@ -12,7 +12,7 @@ from binance.client import Client
 from library import binance_obj, get_binance_interval_unit, AssetTicker, highest_bid, get_pickled, \
     exclude_markets, take_profit, BuyAsset, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
     is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
-    is_second_golden_cross, is_first_golden_cross
+    is_second_golden_cross, is_first_golden_cross, get_time_from_binance_tmstmp
 
 from binance.client import Client as BinanceClient
 
@@ -475,22 +475,6 @@ def get_most_volatile_market():
     i = 1
 
 
-def find_first_golden_cross(__ma50, __ma200, _offset=0):
-    for i in range(_offset, len(__ma200)):
-        _index = len(__ma200) - i - 1
-        if __ma200[_index] > __ma50[_index]:
-            return __ma200[_index], i
-    return -1, -1
-
-
-def find_first_drop_below_ma(_ma, _candles):
-    for i in range(len(_ma)):
-        if _ma[i] > _candles[i]:
-            _index = len(_ma) - i - 1
-            return _candles[i], _index
-    return -1, -1
-
-
 def main():
     # asset = Asset(exchange="binance", name="LINK", ticker=BinanceClient.KLINE_INTERVAL_1HOUR)
     # is_bullish_setup(asset)
@@ -505,7 +489,7 @@ def main():
     # _klines = get_klines(market, ticker, time_interval)
 
     # save_to_file("C:/apps/bot/", "klines", _klines)
-    _klines = get_pickled('/juno/', "klines-rdn")
+    _klines = get_pickled('E:\\bin\\data\\', "klines-rdn")
 
     # res = is_first_golden_cross(_klines)
 
@@ -566,6 +550,9 @@ def main():
 
     _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
     rally = (_max_high[0] - _first_gc[0]) / _first_gc[0] # 48, 82 %
+
+    if rally > 0.5 and drop_below_ma[1] > 0:
+        i = 1
 
     k = 1
     # _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
@@ -677,7 +664,7 @@ def main():
     # plt.plot(_ma50[:-_max_50_1[1] + 1], 'red', lw=1)
     # plt.plot(ma20[start:stop:1], 'blue ', lw=1)
     plt.show()
-
+    t = get_time_from_binance_tmstmp(_klines[-1][0])
     i = 1
 
     # ba = BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 1)
