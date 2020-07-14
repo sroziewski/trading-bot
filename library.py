@@ -2348,7 +2348,7 @@ def process_setups(_setup_tuples):
         _setup = _setup_tuple[0]
         _exchange = _setup_tuple[1]
         if len(_setup) > 0:
-            _mail_content += f"<BR/><B>{_exchange}</B>"
+            _mail_content += f"<BR/><B>{_exchange}</B><BR/>"
             _mail_content += ' '.join(format_found_markets(_setup))
     if len(_mail_content) > 0:
         send_mail("WWW Market Setup Found WWW", _mail_content)
