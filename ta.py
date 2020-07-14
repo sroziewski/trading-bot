@@ -13,7 +13,7 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, highest
     exclude_markets, take_profit, BuyAsset, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
     is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
     is_second_golden_cross, is_first_golden_cross, get_time_from_binance_tmstmp, get_binance_klines, \
-    find_first_golden_cross, find_first_drop_below_ma
+    find_first_golden_cross, find_first_drop_below_ma, get_kucoin_klines, get_kucoin_interval_unit
 
 from binance.client import Client as BinanceClient
 
@@ -488,7 +488,9 @@ def main():
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
 
-    _klines = get_binance_klines(market, ticker, time_interval)
+    # _klines = get_binance_klines(market, ticker, time_interval)
+    _kucoin_ticker = "1hour"
+    _klines = get_kucoin_klines("UTK-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 1600))
 
     # _klines = get_klines(market, ticker, time_interval)
 

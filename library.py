@@ -2340,3 +2340,15 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
 
 def format_found_markets(_markets_tuple):
     return [f"{x[0]} : {x[1]}" for x in _markets_tuple]
+
+
+def process_setups(_setup_tuples):
+    _mail_content = ''
+    for _setup_tuple in _setup_tuples:
+        _setup = _setup_tuple[0]
+        _exchange = _setup_tuple[1]
+        if len(_setup) > 0:
+            _mail_content += f"<BR/><B>{_exchange}</B>"
+            _mail_content += ' '.join(format_found_markets(_setup))
+    if len(_mail_content) > 0:
+        send_mail("WWW Market Setup Found WWW", _mail_content)
