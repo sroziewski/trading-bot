@@ -13,6 +13,7 @@ import warnings
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 from getpass import getpass
 from os import path
 
@@ -2129,7 +2130,7 @@ def send_mail(subject, message, asset=False):
     msg['To'] = receiver
     # msg.set_content(message)
 
-    msg.attach(message)
+    msg.attach(MIMEText(message, 'html'))
 
     smtp_server = "smtp.wp.pl"
     port = 587  # For starttls
