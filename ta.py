@@ -12,7 +12,8 @@ from binance.client import Client
 from library import binance_obj, get_binance_interval_unit, AssetTicker, highest_bid, get_pickled, \
     exclude_markets, take_profit, BuyAsset, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
     is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
-    is_second_golden_cross, is_first_golden_cross, get_time_from_binance_tmstmp
+    is_second_golden_cross, is_first_golden_cross, get_time_from_binance_tmstmp, get_binance_klines, \
+    find_first_golden_cross, find_first_drop_below_ma
 
 from binance.client import Client as BinanceClient
 
@@ -481,24 +482,33 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
+
     asset = "RDN"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
 
+    _klines = get_binance_klines(market, ticker, time_interval)
+
     # _klines = get_klines(market, ticker, time_interval)
 
     # save_to_file("C:/apps/bot/", "klines", _klines)
-    _klines = get_pickled('E:\\bin\\data\\', "klines-rdn")
+    # _klines = get_pickled('/juno/', "klines-rdn")
 
     # res = is_first_golden_cross(_klines)
 
-    r = relative_strength_index(get_closes(_klines))
 
-    _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
-    _opens = np.array(list(map(lambda _x: float(_x[1]), _klines)))
-    _high = list(map(lambda _x: float(_x[2]), _klines))
-    _low = list(map(lambda _x: float(_x[3]), _klines))
+    # _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
+    # _opens = np.array(list(map(lambda _x: float(_x[1]), _klines)))
+    # _high = list(map(lambda _x: float(_x[2]), _klines))
+    # _low = list(map(lambda _x: float(_x[3]), _klines))
+
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    _opens = np.array(list(map(lambda _x: float(_x.opening), _klines)))
+    _high = list(map(lambda _x: float(_x.highest), _klines))
+    _low = list(map(lambda _x: float(_x.lowest), _klines))
+
+    r = relative_strength_index(_closes)
 
     ## MACD
 

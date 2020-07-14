@@ -1365,8 +1365,7 @@ def get_timestamp(_min, _hrs, _days, _weeks):
     return datetime.now() - timedelta(minutes=_min, hours=_hrs, days=_days, weeks=_weeks)
 
 
-def get_kucoin_interval_unit(_ticker):
-    _multiplier = 360
+def get_kucoin_interval_unit(_ticker, _multiplier=360):
     return int({
                    '1min': get_timestamp(1 * _multiplier, 0, 0, 0),
                    '3min': get_timestamp(3 * _multiplier, 0, 0, 0),
@@ -2193,38 +2192,50 @@ def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, 
 
 
 def is_first_golden_cross(_klines):
-    _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
-    _high = list(map(lambda _x: float(_x[2]), _klines))
-    _low = list(map(lambda _x: float(_x[3]), _klines))
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    _high = list(map(lambda _x: float(_x.highest), _klines))
+    _low = list(map(lambda _x: float(_x.lowest), _klines))
 
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
 
-    fall = (np.max(_high[-500:])-np.min(_low[-500:]))/np.max(_high[-500:])  # > 22%
+    fall = (np.max(_high[-500:]) - np.min(_low[-500:])) / np.max(_high[-500:])  # > 22%
 
     _max_g = find_local_maximum(_ma50, 50)
+    if check_extremum(_max_g):
+        return False
     _max_l = find_local_maximum(_ma50[-_max_g[1]:], 50)
+    if check_extremum(_max_l):
+        return False
     _min_l = find_minimum(_ma50[-_max_g[1]:-_max_l[1]])
+    if check_extremum(_min_l):
+        return False
     _min_low_l = find_minimum(_low[-_max_g[1]:-_max_l[1]])
-
+    if check_extremum(_min_low_l):
+        return False
     _min_l_ind = -_max_l[1] + _min_l[1]
     _min_low_l_ind = -_max_l[1] + _min_low_l[1]
     _max_l_ind = - _max_l[1]
 
     _max_high_l = find_local_maximum(_high[_min_l_ind:-_max_l[1]], 10)
     _min_before_local_max = find_minimum(_low[_max_l_ind:])
-    rise = (_max_high_l[0]-_min_low_l[0])/_min_low_l[0] # > 15%
-    drop = (_max_high_l[0] - _min_before_local_max[0]) / _max_high_l[0] # > 10%
+    rise = (_max_high_l[0] - _min_low_l[0]) / _min_low_l[0]  # > 15%
+    drop = (_max_high_l[0] - _min_before_local_max[0]) / _max_high_l[0]  # > 10%
 
     # 43, 36, 20 % -- these are another numbers to try...
     hours_after_local_max_ma50 = 50
 
-    return fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[-1] < _ma50[-1]
+    return fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[
+        -1] < _ma50[-1]
+
+
+def check_extremum(_data):
+    return _data[1] == -1
 
 
 def drop_below_ma200_after_rally(_klines):
-    _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
-    _high = list(map(lambda _x: float(_x[2]), _klines))
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    _high = list(map(lambda _x: float(_x.highest), _klines))
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
     _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
@@ -2275,39 +2286,55 @@ def is_second_golden_cross(_closes):
     return HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond
 
 
-def analyze_golden_cross():
-    _filename = "exclude-markets"
-    _ticker = BinanceClient.KLINE_INTERVAL_1HOUR
-    _time_interval = "1600 hours ago"
+def get_markets(_exchange, _ticker=False, _exclude_markets=False):
+    if _exclude_markets:
+        if _exchange == "binance":
+            _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
+        elif _exchange == "kucoin":
+            _markets = list(filter(lambda y: y not in _exclude_markets[_ticker], map(lambda x: x['currency'], kucoin_client.get_currencies())))
+    else:
+        if _exchange == "binance":
+            _markets = binance_obj.get_all_btc_currencies()
+        elif _exchange == "kucoin":
+            _markets = list(map(lambda x: x['currency'], kucoin_client.get_currencies()))
+    return _markets
+
+
+def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
+    logger_global[0].info(_exchange)
     _golden_cross_markets = []
     _exclude_markets = {}
     if path.isfile(key_dir + _filename + ".pkl"):
         _exclude_markets = get_pickled(key_dir, _filename)
     else:
-        _exclude_markets[_ticker] = exclude_markets
+        _exclude_markets[_ticker] = []
     if _ticker in _exclude_markets:
-        _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
+        _markets = get_markets(_exchange, _ticker, _exclude_markets)
     else:
-        _markets = binance_obj.get_all_btc_currencies()
+        _markets = get_markets(_exchange)
     for _market in _markets:
         try:
-            _klines = get_klines(_market, _ticker, _time_interval)
-            _closes = get_closes(_klines)
+            if _exchange == 'kucoin':
+                _klines = get_kucoin_klines(f"{_market}-BTC", _ticker, _time_interval)
+            elif _exchange == "binance":
+                _klines = get_binance_klines(_market, _ticker, _time_interval)
+
+            _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
             if is_second_golden_cross(_closes):
                 _golden_cross_markets.append((_market, "is_second_golden_cross"))
             if is_first_golden_cross(_klines):
                 _golden_cross_markets.append((_market, "is_first_golden_cross"))
             if drop_below_ma200_after_rally(_klines):
                 _golden_cross_markets.append((_market, "drop_below_ma200_after_rally"))
-
-        except Exception:
+        except Exception as e:
+            logger_global[0].warning(e)
             print(f"No data for market : {_market}")
             if _ticker in _exclude_markets:
                 _exclude_markets[_ticker].append(_market)
             else:
                 _exclude_markets[_ticker] = [_market]
     logger_global[0].info(' '.join(format_found_markets(_golden_cross_markets)))
-    save_to_file(key_dir, "exclude-markets", _exclude_markets)
+    save_to_file(key_dir, _filename, _exclude_markets)
     return _golden_cross_markets
 
 
