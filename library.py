@@ -2128,7 +2128,6 @@ def send_mail(subject, message, asset=False):
     msg['Subject'] = subject
     msg['From'] = sender
     msg['To'] = receiver
-    # msg.set_content(message)
 
     msg.attach(MIMEText(message, 'html'))
 
