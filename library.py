@@ -12,6 +12,7 @@ import traceback
 import warnings
 from datetime import datetime, timedelta
 from email.message import EmailMessage
+from email.mime.multipart import MIMEMultipart
 from getpass import getpass
 from os import path
 
@@ -2122,11 +2123,13 @@ def send_mail(subject, message, asset=False):
     sender = "sroziews@wp.pl"
     receiver = "szymon.roziewski@gmail.com"
 
-    msg = EmailMessage()
+    msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
     msg['From'] = sender
     msg['To'] = receiver
-    msg.set_content(message)
+    # msg.set_content(message)
+
+    msg.attach(message)
 
     smtp_server = "smtp.wp.pl"
     port = 587  # For starttls
