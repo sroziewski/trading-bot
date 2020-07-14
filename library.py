@@ -2242,7 +2242,7 @@ def drop_below_ma200_after_rally(_klines):
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
     _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
-    drop_below_ma = find_first_drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:])
+    drop_below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:])
     _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
     rally = (_max_high[0] - _first_gc[0]) / _first_gc[0]  # 48, 82 %
 
@@ -2257,11 +2257,14 @@ def find_first_golden_cross(__ma50, __ma200, _offset=0):
     return -1, -1
 
 
-def find_first_drop_below_ma(_ma, _candles):
+def drop_below_ma(_ma, _candles, _window):
     for i in range(len(_ma)):
         if _ma[i] > _candles[i]:
             _index = len(_ma) - i - 1
-            return _candles[i], _index
+            if _index > _window:
+                return drop_below_ma(_ma[-_index:], _candles[-_index:], _window)
+            else:
+                return _candles[i], _index
     return -1, -1
 
 

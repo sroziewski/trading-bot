@@ -13,7 +13,7 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, highest
     exclude_markets, take_profit, BuyAsset, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
     is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
     is_second_golden_cross, is_first_golden_cross, get_time_from_binance_tmstmp, get_binance_klines, \
-    find_first_golden_cross, find_first_drop_below_ma, get_kucoin_klines, get_kucoin_interval_unit
+    find_first_golden_cross, drop_below_ma, get_kucoin_klines, get_kucoin_interval_unit
 
 from binance.client import Client as BinanceClient
 
@@ -497,7 +497,7 @@ def main():
     # save_to_file("C:/apps/bot/", "klines", _klines)
     # _klines = get_pickled('/juno/', "klines-rdn")
 
-    # res = is_first_golden_cross(_klines)
+    res = is_first_golden_cross(_klines)
 
 
     # _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
@@ -558,12 +558,12 @@ def main():
 
     _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
 
-    drop_below_ma = find_first_drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:])
+    below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:], 5)
 
     _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
     rally = (_max_high[0] - _first_gc[0]) / _first_gc[0] # 48, 82 %
 
-    if rally > 0.5 and drop_below_ma[1] > 0:
+    if rally > 0.5 and below_ma[1] > 0:
         i = 1
 
     k = 1
