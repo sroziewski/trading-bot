@@ -2194,7 +2194,7 @@ def dump_variables(_market, _prev_rsi_high, _trigger, _rsi_low, _rsi_low_fresh, 
         ))
 
 
-def is_first_golden_cross(_klines):
+def is_first_golden_cross_challenge(_klines):
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _high = list(map(lambda _x: float(_x.highest), _klines))
     _low = list(map(lambda _x: float(_x.lowest), _klines))
@@ -2230,6 +2230,50 @@ def is_first_golden_cross(_klines):
 
     return fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[
         -1] < _ma50[-1]
+
+
+def is_first_golden_cross(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    _high = list(map(lambda _x: float(_x.highest), _klines))
+    _low = list(map(lambda _x: float(_x.lowest), _klines))
+
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+
+    fall = (np.max(_high[-500:]) - np.min(_low[-500:])) / np.max(_high[-500:])  # > 22%
+
+    _max_g = find_local_maximum(_ma50, 50)
+    if check_extremum(_max_g):
+        return False
+    _max_l = find_local_maximum(_ma50[-_max_g[1]:], 50)
+    if check_extremum(_max_l):
+        return False
+    _min_l = find_minimum(_ma50[-_max_g[1]:-_max_l[1]])
+    if check_extremum(_min_l):
+        return False
+    _min_low_l = find_minimum(_low[-_max_g[1]:-_max_l[1]])
+    if check_extremum(_min_low_l):
+        return False
+    _min_l_ind = -_max_l[1] + _min_l[1]
+    _min_low_l_ind = -_max_l[1] + _min_low_l[1]
+    _max_l_ind = - _max_l[1]
+
+    _max_high_l = find_local_maximum(_high[_min_l_ind:-_max_l[1]], 10)
+    _max_high_l_ind = -_max_high_l[1] + _max_l_ind
+    _min_before_local_max = find_minimum(_low[_max_l_ind:])
+    rise = (_max_high_l[0] - _min_low_l[0]) / _min_low_l[0]  # > 15%
+    drop = (_max_high_l[0] - _min_before_local_max[0]) / _max_high_l[0]  # > 10%
+
+    # 43, 36, 20 % -- these are another numbers to try...
+    hours_after_local_max_ma50 = 50
+
+    _not_elder_than_global_max = _max_g[1] < 500 and _max_l_ind < 500
+    # _max_high_l_after_min_before_local_max = np.abs(_min_before_local_max[1]) > np.abs(_max_high_l_ind)
+
+    _about_one_week_old = np.abs(_min_low_l_ind) - np.abs(_min_before_local_max[1]) < 150 and np.abs(_max_high_l_ind) - np.abs(_min_before_local_max[1]) < 150
+
+    return _not_elder_than_global_max and fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[
+        -1] < _ma50[-1] and _about_one_week_old
 
 
 def check_extremum(_data):

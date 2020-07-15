@@ -483,19 +483,19 @@ def main():
     # get_most_volatile_market()
 
 
-    asset = "RDN"
+    asset = "ENG"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
 
     # _klines = get_binance_klines(market, ticker, time_interval)
-    _kucoin_ticker = "1hour"
-    _klines = get_kucoin_klines("UTK-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 1600))
+    # _kucoin_ticker = "1hour"
+    # _klines = get_kucoin_klines("UTK-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 1600))
 
     # _klines = get_klines(market, ticker, time_interval)
 
     # save_to_file("C:/apps/bot/", "klines", _klines)
-    # _klines = get_pickled('/juno/', "klines-rdn")
+    _klines = get_pickled('e://bin/data//', "klines-eng")
 
     res = is_first_golden_cross(_klines)
 
@@ -517,7 +517,7 @@ def main():
     macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
 
     #
-    start = 33
+    start = 0
     # stop = -5*60-30-32
     stop = -1
     # stop = -2650
@@ -676,7 +676,7 @@ def main():
     # plt.plot(_ma50[:-_max_50_1[1] + 1], 'red', lw=1)
     # plt.plot(ma20[start:stop:1], 'blue ', lw=1)
     plt.show()
-    t = get_time_from_binance_tmstmp(_klines[-1][0])
+    # t = get_time_from_binance_tmstmp(_klines[-1][0])
     i = 1
 
     # ba = BuyAsset('ZRX', 0.00002520, 0.00002420, 0.00005520, 1)
