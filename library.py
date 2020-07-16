@@ -2298,17 +2298,21 @@ def check_extremum(_data):
     return _data[1] == -1
 
 
-def drop_below_ma200_after_rally(_klines):
+def is_drop_below_ma200_after_rally(_klines):
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _high = list(map(lambda _x: float(_x.highest), _klines))
+    _low = list(map(lambda _x: float(_x.lowest), _klines))
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
     _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
     below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:])
     _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
+
+    _min_l = find_minimum(_low[-_max_high[1]:])
+    _drop = (_max_high[0] - _min_l[0]) / _max_high[0]
     rally = (_max_high[0] - _first_gc[0]) / _first_gc[0]  # 48, 82 %
 
-    return rally > 0.5 and below_ma[1] > 0
+    return _drop > 0.15 and rally > 0.5 and below_ma[1] > 0
 
 
 def find_first_golden_cross(__ma50, __ma200, _offset=0):
@@ -2319,10 +2323,12 @@ def find_first_golden_cross(__ma50, __ma200, _offset=0):
     return -1, -1
 
 
-def drop_below_ma(_ma, _candles, _window=5):
+def drop_below_ma(_ma, _candles, _window=5, _max_window=100):
     for i in range(len(_ma)):
         if _ma[i] > _candles[i]:
             _index = len(_ma) - i - 1
+            if _index > _max_window:
+                return -1, -1
             if _index > _window:
                 return drop_below_ma(_ma[-_index:], _candles[-_index:], _window)
             else:
@@ -2392,7 +2398,7 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
                 _golden_cross_markets.append((_market, "is_second_golden_cross"))
             if is_first_golden_cross(_klines):
                 _golden_cross_markets.append((_market, "is_first_golden_cross"))
-            if drop_below_ma200_after_rally(_klines):
+            if is_drop_below_ma200_after_rally(_klines):
                 _golden_cross_markets.append((_market, "drop_below_ma200_after_rally"))
         except Exception as e:
             logger_global[0].warning(e)
