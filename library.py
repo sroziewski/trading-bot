@@ -2242,6 +2242,10 @@ def is_first_golden_cross(_klines):
 
     fall = (np.max(_high[-500:]) - np.min(_low[-500:])) / np.max(_high[-500:])  # > 22%
 
+    _min_ind, _max_ind = find_global_max_min_ind(_low, _high)
+
+    _is_fall = _min_ind < _max_ind
+
     _max_g = find_local_maximum(_ma50, 50)
     if check_extremum(_max_g):
         return False
@@ -2272,8 +2276,22 @@ def is_first_golden_cross(_klines):
 
     _about_one_week_old = np.abs(_min_low_l_ind) - np.abs(_min_before_local_max[1]) < 150 and np.abs(_max_high_l_ind) - np.abs(_min_before_local_max[1]) < 150
 
-    return _not_elder_than_global_max and fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[
+    return _is_fall and _not_elder_than_global_max and fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[
         -1] < _ma50[-1] and _about_one_week_old
+
+
+def find_global_max_min_ind(_low, _high):
+    _max = np.max(_high[-500:])
+    _min = np.min(_low[-500:])
+    _i_max = -1
+    _i_min = -1
+    for _i in range(len(_high)):
+        if _high[len(_high) - _i - 1] == _max:
+            _i_max = _i
+    for _i in range(len(_low)):
+        if _low[len(_low) - _i - 1] == _min:
+            _i_min = _i
+    return _i_min, _i_max
 
 
 def check_extremum(_data):

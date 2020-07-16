@@ -483,7 +483,7 @@ def main():
     # get_most_volatile_market()
 
 
-    asset = "ENG"
+    asset = "REN"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
@@ -494,8 +494,8 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("C:/apps/bot/", "klines", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-eng")
+    # save_to_file("e://bin//data//", "klines-ren", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-ren")
 
     res = is_first_golden_cross(_klines)
 
