@@ -25,7 +25,7 @@ class DecimalCodec(TypeCodec):
 
 logger = setup_logger("Kline Crawl Manager")
 
-db = mongo_client.crypto
+db = mongo_client.klines
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
