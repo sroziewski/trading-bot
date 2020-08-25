@@ -12,7 +12,6 @@ import time
 import traceback
 import warnings
 from datetime import datetime, timedelta
-from decimal import Decimal
 from email.message import EmailMessage
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -66,22 +65,14 @@ class Kline(object):
         self.btc_volume = btc_volume
         self.time_str = time_str
 
-    def to_json(self):
-        return json.dumps(self)
-
 
 def from_kucoin_klines(klines):
     return list(map(lambda x: Kline(x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5]), float(x[6]), get_time(int(x[0]))), klines))
 
 
-def from_binance_klines(klines, _mongo=None):
-    if _mongo:
-        return list(
-            map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]), get_time_from_binance_tmstmp(x[0])), klines))
-    else:
-        return list(
-            map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]),
-                                get_time_from_binance_tmstmp(x[0])), klines))
+def from_binance_klines(klines):
+    return list(
+        map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]), get_time_from_binance_tmstmp(x[0])), klines))
 
 
 def get_kucoin_klines(market, ticker, start=None):
@@ -90,9 +81,9 @@ def get_kucoin_klines(market, ticker, start=None):
     return _data
 
 
-def get_binance_klines(market, ticker, start=None, _mongo=None):
+def get_binance_klines(market, ticker, start=None):
     _data = get_klines(market, ticker, start)
-    return from_binance_klines(_data, _mongo=None)
+    return from_binance_klines(_data)
 
 
 def ticker_to_kucoin(_ticker):

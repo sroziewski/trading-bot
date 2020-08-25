@@ -1,5 +1,8 @@
+import threading
 from decimal import Decimal
 from json import JSONEncoder
+from random import randrange
+from time import sleep
 
 from binance.client import Client as BinanceClient
 from bson import CodecOptions, Decimal128
@@ -60,6 +63,7 @@ def filter_current_klines(_klines, _collection_name, _collection):
         _out = list(filter(lambda x: x.start_time > _last_record['timestamp'], _klines))
     else:
         _out = _klines
+        logger.info("{} : first kline : {} ".format(_collection_name, _out[0].time_str if _out else "None"))
     return _out
 
 
@@ -76,18 +80,27 @@ class Schedule(object):
 
 
 def manage_crawling(_schedules):
-    for schedule in schedules:
-        market = schedule.market
-        ticker = schedule.ticker
-        klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker), _mongo=True)
-        collection_name = schedule.ticker
-        collection = db.get_collection(collection_name, codec_options=codec_options)
+    for _schedule in _schedules:
+        _scheduler = threading.Thread(target=do_schedule, args=(_schedule,), name='_do_schedule : {}'.format(_schedule.collection_name))
+        _scheduler.start()
+
+
+def do_schedule(_schedule):
+    market = _schedule.market
+    ticker = _schedule.ticker
+    collection_name = _schedule.collection_name
+    collection = db.get_collection(collection_name, codec_options=codec_options)
+    while True:
+        sleep(randrange(20))
+        klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
         logger.info("Crawling to collection {} ".format(collection_name))
         current_klines = filter_current_klines(klines, collection_name, collection)
         persist_klines(current_klines, collection)
+        sleep(_schedule.sleep)
 
 
-schedules = [Schedule("ZRXBTC", 'zrx1d', BinanceClient.KLINE_INTERVAL_1DAY, 60 * 60 * 23),
+schedules = [
+             Schedule("ZRXBTC", 'zrx1d', BinanceClient.KLINE_INTERVAL_1DAY, 60 * 60 * 23),
              Schedule("ZRXBTC", 'zrx12h', BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11),
              Schedule("ZRXBTC", 'zrx8h', BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7),
              Schedule("ZRXBTC", 'zrx4h', BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3),
@@ -98,15 +111,4 @@ schedules = [Schedule("ZRXBTC", 'zrx1d', BinanceClient.KLINE_INTERVAL_1DAY, 60 *
 
 manage_crawling(schedules)
 
-# thebytes = pickle.dumps(_klines[0])
-# serverStatusResult = collection.command("serverStatus")
-# _klines[0].time_str=_klines[0].time_str.encode('utf-8', 'strict')
-# mp_rec1 = {
-#         "kline":_klines[0],
-#         "timestamp":_klines[0].time_str
-#         }
-# arr = []
-# arr.append(mp_rec1)
-# rec_id1 = collection.insert_many(arr)
 
-i = 1
