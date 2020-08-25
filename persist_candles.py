@@ -90,7 +90,10 @@ def do_schedule(_schedule):
     collection_name = _schedule.collection_name
     collection = db.get_collection(collection_name, codec_options=codec_options)
     while True:
-        sleep(randrange(20))
+        if ticker == BinanceClient.KLINE_INTERVAL_30MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
+            sleep(randrange(20))
+        else:
+            sleep(randrange(200))
         klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
         logger.info("Crawling to collection {} ".format(collection_name))
         current_klines = filter_current_klines(klines, collection_name, collection)
@@ -98,15 +101,19 @@ def do_schedule(_schedule):
         sleep(_schedule.sleep)
 
 
-schedules = [
-             Schedule("ZRXBTC", 'zrx1d', BinanceClient.KLINE_INTERVAL_1DAY, 60 * 60 * 23),
-             Schedule("ZRXBTC", 'zrx12h', BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11),
-             Schedule("ZRXBTC", 'zrx8h', BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7),
-             Schedule("ZRXBTC", 'zrx4h', BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3),
-             Schedule("ZRXBTC", 'zrx1h', BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15)),
-             Schedule("ZRXBTC", 'zrx30m', BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20)),
-             Schedule("ZRXBTC", 'zrx15m', BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5)),
-             ]
+def get_schedules(_asset):
+    return [
+        Schedule("{}BTC".format(_asset.upper()), '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY, 60 * 60 * 23),
+        Schedule("{}BTC".format(_asset.upper()), '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11),
+        Schedule("{}BTC".format(_asset.upper()), '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7),
+        Schedule("{}BTC".format(_asset.upper()), '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3),
+        Schedule("{}BTC".format(_asset.upper()), '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15)),
+        Schedule("{}BTC".format(_asset.upper()), '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20)),
+        Schedule("{}BTC".format(_asset.upper()), '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5)),
+    ]
+
+
+schedules = get_schedules("coti")
 
 manage_crawling(schedules)
 
