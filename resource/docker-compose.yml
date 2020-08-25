@@ -3,8 +3,8 @@ services:
   mongodb:
     image: mongo:3.6
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=user
-      - MONGO_INITDB_ROOT_PASSWORD=password
+      - MONGO_INITDB_ROOT_USERNAME=Crypt0
+      - MONGO_INITDB_ROOT_PASSWORD=1qaz@WSX
       - MONGO_INITDB_DATABASE=collection
     ports:
       - 27017:27017
