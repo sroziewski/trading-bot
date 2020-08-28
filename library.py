@@ -65,6 +65,12 @@ class Kline(object):
         self.btc_volume = btc_volume
         self.time_str = time_str
 
+    def add_buy_depth(self, _bd):
+        self.bid_depth = _bd
+
+    def add_sell_depth(self, _sd):
+        self.ask_depth = _sd
+
 
 def from_kucoin_klines(klines):
     return list(map(lambda x: Kline(x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5]), float(x[6]), get_time(int(x[0]))), klines))
@@ -234,7 +240,7 @@ class Asset(object):
             size = float(get_or_create_kucoin_trade_account(self.name)['available'])
 
         self.adjusted_size = adjust_kucoin_order_size(self, size)
-        required_size = int(get_kucoin_symbol(self.market, 'baseMinSize'))
+        required_size = float(get_kucoin_symbol(self.market, 'baseMinSize'))
         _strategy = Strategy(self)
         if self.adjusted_size >= required_size:
             _id = \

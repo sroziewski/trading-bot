@@ -9,13 +9,15 @@ exchange = 'kucoin'
 side = KucoinClient.SIDE_BUY
 logger = setup_logger("kucoin-hidden-order-{}".format(side))
 
-currency = 'VRA'
-price = 5.54
+currency = 'DOT'
+price = 53907
+# currency = 'DOCK'
+# price = 246
 stop_loss_price = 2
 profit_price = 4700.99
 ratio = 100
 
-buy_asset = BuyAsset(exchange, currency, price * sat, stop_loss_price * sat, profit_price * sat, ratio, 15, kucoin_side=side, tight=True,)
+buy_asset = BuyAsset(exchange, currency, price * sat, stop_loss_price * sat, profit_price * sat, ratio, 15, kucoin_side=side, tight=True)
 
 # buy_asset.keep_existing_orders()
 
