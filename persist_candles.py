@@ -7,6 +7,7 @@ from time import sleep
 from binance.client import Client as BinanceClient
 from bson import CodecOptions, Decimal128
 from bson.codec_options import TypeRegistry, TypeCodec
+from pymongo import DESCENDING
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
     get_kucoin_interval_unit, binance_obj
@@ -42,7 +43,23 @@ def to_mongo(_kline):
         'lowest': _kline.lowest,
         'volume': _kline.volume,
         'btc_volume': _kline.btc_volume,
-        'time_str': _kline.time_str
+        'time_str': _kline.time_str,
+        'depths': {
+            'p5':_kline.bid_depth.p5,
+            'p10':_kline.bid_depth.p10,
+            'p15':_kline.bid_depth.p15,
+            'p20':_kline.bid_depth.p20,
+            'p25':_kline.bid_depth.p25,
+            'p30':_kline.bid_depth.p30,
+            'p35':_kline.bid_depth.p35,
+            'p40':_kline.bid_depth.p40,
+            'p45':_kline.bid_depth.p45,
+            'p50':_kline.bid_depth.p50,
+            'p55':_kline.bid_depth.p55,
+            'p60':_kline.bid_depth.p60,
+            'p65':_kline.bid_depth.p65,
+            'p70':_kline.bid_depth.p70
+        }
     }
 
 
@@ -51,8 +68,8 @@ def persist_kline(_kline, _collection):
 
 
 def get_last_db_record(_collection):
-    # return collection.find_one(sort=[('_id', DESCENDING)])
-    return _collection.find_one({"timestamp": 1594368000000})
+    return _collection.find_one(sort=[('_id', DESCENDING)])
+    # return _collection.find_one({"timestamp": 1594368000000})
 
 
 def filter_current_klines(_klines, _collection_name, _collection):
@@ -218,7 +235,7 @@ def get_average_depths(_dc, _number_of_elements):
     if len(_dc.buy_depth) < _number_of_elements:
         _number_of_elements = len(_dc.buy_depth)
     if _number_of_elements == 1:
-        return _dc.buy_depth[0], _dc.sell_depth[0]
+        return divide_dc(_dc.buy_depth[0], 1), divide_dc(_dc.sell_depth[0], 1)
     _bd = add_dc(_dc.buy_depth[-_number_of_elements:][0], _dc.buy_depth[-_number_of_elements:][1])
     for _i in range(2, _number_of_elements):
         _bd = add_dc(_bd, _dc.buy_depth[-_number_of_elements:][_i])
@@ -230,21 +247,21 @@ def get_average_depths(_dc, _number_of_elements):
 
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
-        return BuyDepth((_dc.p5[0] / _by, _dc.p5[1] / _by), (_dc.p10[0] / _by, _dc.p10[1] / _by),
-                        (_dc.p15[0] / _by, _dc.p15[1] / _by), (_dc.p20[0] / _by, _dc.p20[1] / _by),
-                        (_dc.p25[0] / _by, _dc.p25[1] / _by), (_dc.p30[0] / _by, _dc.p30[1] / _by),
-                        (_dc.p35[0] / _by, _dc.p35[1] / _by), (_dc.p40[0] / _by, _dc.p40[1] / _by),
-                        (_dc.p45[0] / _by, _dc.p45[1] / _by), (_dc.p50[0] / _by, _dc.p50[1] / _by),
-                        (_dc.p55[0] / _by, _dc.p55[1] / _by), (_dc.p60[0] / _by, _dc.p60[1] / _by),
-                        (_dc.p65[0] / _by, _dc.p65[1] / _by), (_dc.p70[0] / _by, _dc.p70[1] / _by))
+        return BuyDepth((round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)), (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
+                        (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)), (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
+                        (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)), (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
+                        (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)), (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
+                        (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)), (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
+                        (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)), (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
+                        (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)), (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
     elif isinstance(_dc, SellDepth):
-        return SellDepth((_dc.p5[0] / _by, _dc.p5[1] / _by), (_dc.p10[0] / _by, _dc.p10[1] / _by),
-                         (_dc.p15[0] / _by, _dc.p15[1] / _by), (_dc.p20[0] / _by, _dc.p20[1] / _by),
-                         (_dc.p25[0] / _by, _dc.p25[1] / _by), (_dc.p30[0] / _by, _dc.p30[1] / _by),
-                         (_dc.p35[0] / _by, _dc.p35[1] / _by), (_dc.p40[0] / _by, _dc.p40[1] / _by),
-                         (_dc.p45[0] / _by, _dc.p45[1] / _by), (_dc.p50[0] / _by, _dc.p50[1] / _by),
-                         (_dc.p55[0] / _by, _dc.p55[1] / _by), (_dc.p60[0] / _by, _dc.p60[1] / _by),
-                         (_dc.p65[0] / _by, _dc.p65[1] / _by), (_dc.p70[0] / _by, _dc.p70[1] / _by))
+        return SellDepth((round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)), (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
+                         (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)), (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
+                         (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)), (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
+                         (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)), (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
+                         (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)), (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
+                         (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)), (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
+                         (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)), (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
 
 
 def add_dc(_dc1, _dc2):
@@ -312,15 +329,15 @@ def get_binance_schedules(_asset):
     _dc = DepthCrawl(_asset)
     manage_depth_crawling(_dc)
     return [
-        Schedule("{}BTC".format(_asset.upper()), '{} : 1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
+        Schedule("{}BTC".format(_asset.upper()), '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
                  60 * 60 * 23, "binance", _dc, 20*24),
                  # 30, "binance", _dc, 5),
-        Schedule("{}BTC".format(_asset.upper()), '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, "binance", _dc, 20*12),
-        Schedule("{}BTC".format(_asset.upper()), '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, "binance", _dc, 20*8),
-        Schedule("{}BTC".format(_asset.upper()), '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3, "binance", _dc, 20*4),
-        Schedule("{}BTC".format(_asset.upper()), '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), "binance", _dc, 20),
-        Schedule("{}BTC".format(_asset.upper()), '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), "binance", _dc, 10),
-        Schedule("{}BTC".format(_asset.upper()), '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), "binance", _dc, 5),
+        # Schedule("{}BTC".format(_asset.upper()), '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, "binance", _dc, 20*12),
+        # Schedule("{}BTC".format(_asset.upper()), '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, "binance", _dc, 20*8),
+        # Schedule("{}BTC".format(_asset.upper()), '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3, "binance", _dc, 20*4),
+        # Schedule("{}BTC".format(_asset.upper()), '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), "binance", _dc, 20),
+        # Schedule("{}BTC".format(_asset.upper()), '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), "binance", _dc, 10),
+        # Schedule("{}BTC".format(_asset.upper()), '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), "binance", _dc, 5),
     ]
 
 
