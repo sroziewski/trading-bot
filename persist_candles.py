@@ -286,12 +286,16 @@ def _do_schedule(_schedule):
     collection_name = _schedule.collection_name
     collection = db.get_collection(collection_name, codec_options=codec_options)
     while True:
-        if ticker == BinanceClient.KLINE_INTERVAL_30MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
-            sleep(randrange(20))
+        if ticker == BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
+            sleep(randrange(30))
         else:
             sleep(randrange(200))
         if _schedule.exchange == "binance":
-            klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
+            try:
+                klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
+            except TypeError:
+                sleep(randrange(30))
+                klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
         elif _schedule.exchange == "kucoin":
             klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         logger.info("Storing to collection {} ".format(collection_name))
