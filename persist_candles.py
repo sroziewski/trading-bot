@@ -332,12 +332,12 @@ def get_binance_schedules(_asset):
         Schedule("{}BTC".format(_asset.upper()), '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
                  60 * 60 * 23, "binance", _dc, 20*24),
                  # 30, "binance", _dc, 5),
-        # Schedule("{}BTC".format(_asset.upper()), '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, "binance", _dc, 20*12),
-        # Schedule("{}BTC".format(_asset.upper()), '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, "binance", _dc, 20*8),
-        # Schedule("{}BTC".format(_asset.upper()), '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3, "binance", _dc, 20*4),
-        # Schedule("{}BTC".format(_asset.upper()), '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), "binance", _dc, 20),
-        # Schedule("{}BTC".format(_asset.upper()), '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), "binance", _dc, 10),
-        # Schedule("{}BTC".format(_asset.upper()), '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), "binance", _dc, 5),
+        Schedule("{}BTC".format(_asset.upper()), '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, "binance", _dc, 20*12),
+        Schedule("{}BTC".format(_asset.upper()), '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, "binance", _dc, 20*8),
+        Schedule("{}BTC".format(_asset.upper()), '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3, "binance", _dc, 20*4),
+        Schedule("{}BTC".format(_asset.upper()), '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), "binance", _dc, 20),
+        Schedule("{}BTC".format(_asset.upper()), '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), "binance", _dc, 10),
+        Schedule("{}BTC".format(_asset.upper()), '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), "binance", _dc, 5),
     ]
 
 
