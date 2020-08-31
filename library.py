@@ -71,6 +71,9 @@ class Kline(object):
     def add_sell_depth(self, _sd):
         self.ask_depth = _sd
 
+    def add_market(self, _market):
+        self.market = _market
+
 
 def from_kucoin_klines(klines):
     return list(map(lambda x: Kline(x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5]), float(x[6]), get_time(int(x[0]))), klines))

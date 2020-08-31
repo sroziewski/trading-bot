@@ -8,9 +8,10 @@ from binance.client import Client as BinanceClient
 from bson import CodecOptions, Decimal128
 from bson.codec_options import TypeRegistry, TypeCodec
 from pymongo import DESCENDING
+from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj
+    get_kucoin_interval_unit, binance_obj, kucoin_client
 from mongodb import mongo_client
 
 
@@ -39,36 +40,61 @@ def to_mongo(_kline):
         'start_time': _kline.start_time,
         'opening': _kline.opening,
         'closing': _kline.closing,
-        'highest': _kline.highest,
         'lowest': _kline.lowest,
+        'highest': _kline.highest,
         'volume': _kline.volume,
         'btc_volume': _kline.btc_volume,
         'time_str': _kline.time_str,
-        'depths': {
-            'p5':_kline.bid_depth.p5,
-            'p10':_kline.bid_depth.p10,
-            'p15':_kline.bid_depth.p15,
-            'p20':_kline.bid_depth.p20,
-            'p25':_kline.bid_depth.p25,
-            'p30':_kline.bid_depth.p30,
-            'p35':_kline.bid_depth.p35,
-            'p40':_kline.bid_depth.p40,
-            'p45':_kline.bid_depth.p45,
-            'p50':_kline.bid_depth.p50,
-            'p55':_kline.bid_depth.p55,
-            'p60':_kline.bid_depth.p60,
-            'p65':_kline.bid_depth.p65,
-            'p70':_kline.bid_depth.p70
+        'market': _kline.market,
+        'bid_depth': {
+            'p5': _kline.bid_depth.p5,
+            'p10': _kline.bid_depth.p10,
+            'p15': _kline.bid_depth.p15,
+            'p20': _kline.bid_depth.p20,
+            'p25': _kline.bid_depth.p25,
+            'p30': _kline.bid_depth.p30,
+            'p35': _kline.bid_depth.p35,
+            'p40': _kline.bid_depth.p40,
+            'p45': _kline.bid_depth.p45,
+            'p50': _kline.bid_depth.p50,
+            'p55': _kline.bid_depth.p55,
+            'p60': _kline.bid_depth.p60,
+            'p65': _kline.bid_depth.p65,
+            'p70': _kline.bid_depth.p70
+        },
+        'ask_depth': {
+            'p5': _kline.ask_depth.p5,
+            'p10': _kline.ask_depth.p10,
+            'p15': _kline.ask_depth.p15,
+            'p20': _kline.ask_depth.p20,
+            'p25': _kline.ask_depth.p25,
+            'p30': _kline.ask_depth.p30,
+            'p35': _kline.ask_depth.p35,
+            'p40': _kline.ask_depth.p40,
+            'p45': _kline.ask_depth.p45,
+            'p50': _kline.ask_depth.p50,
+            'p55': _kline.ask_depth.p55,
+            'p60': _kline.ask_depth.p60,
+            'p65': _kline.ask_depth.p65,
+            'p70': _kline.ask_depth.p70
         }
     }
 
 
 def persist_kline(_kline, _collection):
-    _collection.insert_one({'kline': to_mongo(_kline), 'timestamp': _kline.start_time})
+    try:
+        _collection.insert_one({'kline': to_mongo(_kline), 'timestamp': _kline.start_time})
+    except PyMongoError:
+        sleep(5)
+        persist_kline(_kline, _collection)
 
 
 def get_last_db_record(_collection):
-    return _collection.find_one(sort=[('_id', DESCENDING)])
+    try:
+        return _collection.find_one(sort=[('_id', DESCENDING)])
+    except PyMongoError:
+        sleep(5)
+        get_last_db_record(_collection)
     # return _collection.find_one({"timestamp": 1594368000000})
 
 
@@ -130,15 +156,20 @@ class BuyDepth(MarketDepth):
 
 
 def manage_crawling(_schedules):
+    sleep(5)
     for _schedule in _schedules:
-        _scheduler = threading.Thread(target=_do_schedule, args=(_schedule,),
-                                      name='_do_schedule : {}'.format(_schedule.collection_name))
+        try:
+            _scheduler = threading.Thread(target=_do_schedule, args=(_schedule,),
+                                          name='_do_schedule : {}'.format(_schedule.collection_name))
+        except AttributeError:
+            i = 1
         _scheduler.start()
 
 
 class DepthCrawl(object):
-    def __init__(self, _asset):
-        self.market = "{}BTC".format(_asset.upper())
+    def __init__(self, _market, _exchange):
+        self.market = _market
+        self.exchange = _exchange
         self.sell_depth = []
         self.buy_depth = []
 
@@ -154,12 +185,17 @@ class DepthCrawl(object):
 
 def _do_depth_crawl(_dc):
     while True:
-        # sleep(randrange(10))
-        _order = binance_obj.client.get_order_book(symbol=_dc.market, limit=1000)
+        sleep(randrange(10))
+        if _dc.exchange == "binance":
+            _order = binance_obj.client.get_order_book(symbol=_dc.market, limit=1000)
+        elif _dc.exchange == "kucoin":
+            _order = kucoin_client.get_full_order_book(_dc.market)
         _bd = compute_depth_percentages(_order['bids'], "bids")
+        if _dc.exchange == "kucoin":
+            _order['asks'].reverse()
         _sd = compute_depth_percentages(_order['asks'], "asks")
         _dc.add_depths(_bd, _sd)
-        sleep(3*60)
+        sleep(3 * 60)
 
 
 def manage_depth_crawling(_dc):
@@ -184,6 +220,10 @@ def compute_depth_percentages(_depth, _type):
     _60p_d = (0, 0)
     _65p_d = (0, 0)
     _70p_d = (0, 0)
+    if _start_price > 5000: # we assume we have BTC here ;)
+        _divisor = 100.0
+    else:
+        _divisor = 1.0
 
     for _price, _amount in _depth:
         _price = float(_price)
@@ -192,33 +232,33 @@ def compute_depth_percentages(_depth, _type):
             _ratio = (_start_price - _price) / _start_price
         elif _type == "asks":
             _ratio = (_price - _start_price) / _start_price
-        if _ratio < 0.05:
+        if _ratio < 0.05/_divisor:
             _5p_d = (_5p_d[0] + _amount, _5p_d[1] + _amount * _price)
-        if _ratio < 0.10:
+        if _ratio < 0.10/_divisor:
             _10p_d = (_10p_d[0] + _amount, _10p_d[1] + _amount * _price)
-        if _ratio < 0.15:
+        if _ratio < 0.15/_divisor:
             _15p_d = (_15p_d[0] + _amount, _15p_d[1] + _amount * _price)
-        if _ratio < 0.20:
+        if _ratio < 0.20/_divisor:
             _20p_d = (_20p_d[0] + _amount, _20p_d[1] + _amount * _price)
-        if _ratio < 0.25:
+        if _ratio < 0.25/_divisor:
             _25p_d = (_25p_d[0] + _amount, _25p_d[1] + _amount * _price)
-        if _ratio < 0.30:
+        if _ratio < 0.30/_divisor:
             _30p_d = (_30p_d[0] + _amount, _30p_d[1] + _amount * _price)
-        if _ratio < 0.35:
+        if _ratio < 0.35/_divisor:
             _35p_d = (_35p_d[0] + _amount, _35p_d[1] + _amount * _price)
-        if _ratio < 0.40:
+        if _ratio < 0.40/_divisor:
             _40p_d = (_40p_d[0] + _amount, _40p_d[1] + _amount * _price)
-        if _ratio < 0.45:
+        if _ratio < 0.45/_divisor:
             _45p_d = (_45p_d[0] + _amount, _45p_d[1] + _amount * _price)
-        if _ratio < 0.5:
+        if _ratio < 0.5/_divisor:
             _50p_d = (_50p_d[0] + _amount, _50p_d[1] + _amount * _price)
-        if _ratio < 0.55:
+        if _ratio < 0.55/_divisor:
             _55p_d = (_55p_d[0] + _amount, _55p_d[1] + _amount * _price)
-        if _ratio < 0.6:
+        if _ratio < 0.6/_divisor:
             _60p_d = (_60p_d[0] + _amount, _60p_d[1] + _amount * _price)
-        if _ratio < 0.65:
+        if _ratio < 0.65/_divisor:
             _65p_d = (_65p_d[0] + _amount, _65p_d[1] + _amount * _price)
-        if _ratio < 0.7:
+        if _ratio < 0.7/_divisor:
             _70p_d = (_70p_d[0] + _amount, _70p_d[1] + _amount * _price)
     if _type == "bids":
         _md = BuyDepth(_5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d, _55p_d, _60p_d,
@@ -247,21 +287,35 @@ def get_average_depths(_dc, _number_of_elements):
 
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
-        return BuyDepth((round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)), (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
-                        (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)), (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
-                        (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)), (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
-                        (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)), (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
-                        (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)), (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
-                        (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)), (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
-                        (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)), (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
+        return BuyDepth((round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
+                        (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
+                        (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
+                        (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
+                        (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)),
+                        (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
+                        (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)),
+                        (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
+                        (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)),
+                        (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
+                        (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)),
+                        (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
+                        (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
+                        (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
     elif isinstance(_dc, SellDepth):
-        return SellDepth((round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)), (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
-                         (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)), (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
-                         (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)), (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
-                         (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)), (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
-                         (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)), (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
-                         (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)), (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
-                         (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)), (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
+        return SellDepth((round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
+                         (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
+                         (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
+                         (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
+                         (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)),
+                         (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
+                         (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)),
+                         (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
+                         (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)),
+                         (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
+                         (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)),
+                         (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
+                         (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
+                         (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
 
 
 def add_dc(_dc1, _dc2):
@@ -315,44 +369,100 @@ def _do_schedule(_schedule):
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
         elif _schedule.exchange == "kucoin":
             klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
-        logger.info("Storing to collection {} ".format(collection_name))
+        logger.info("Storing to collection : {} : {} ".format(_schedule.exchange, collection_name))
         klines = [klines[-1]]
         current_klines = filter_current_klines(klines, collection_name, collection)
+        sleep(5)
         bd, sd = get_average_depths(_schedule.depth_crawl, _schedule.no_depths)
         list(map(lambda x: x.add_buy_depth(bd), current_klines))
         list(map(lambda x: x.add_sell_depth(sd), current_klines))
+        list(map(lambda x: x.add_market(market), current_klines))
         persist_klines(current_klines, collection)
         sleep(_schedule.sleep)
 
 
 def get_binance_schedules(_asset):
-    _dc = DepthCrawl(_asset)
+    _exchange = "binance"
+    if _asset == "btc":
+        _market = "BTCUSDT"
+    else:
+        _market = "{}BTC".format(_asset.upper())
+    _dc = DepthCrawl(_market, _exchange)
     manage_depth_crawling(_dc)
     return [
-        Schedule("{}BTC".format(_asset.upper()), '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
-                 60 * 60 * 23, "binance", _dc, 20*24),
-                 # 30, "binance", _dc, 5),
-        Schedule("{}BTC".format(_asset.upper()), '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, "binance", _dc, 20*12),
-        Schedule("{}BTC".format(_asset.upper()), '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, "binance", _dc, 20*8),
-        Schedule("{}BTC".format(_asset.upper()), '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3, "binance", _dc, 20*4),
-        Schedule("{}BTC".format(_asset.upper()), '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), "binance", _dc, 20),
-        Schedule("{}BTC".format(_asset.upper()), '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), "binance", _dc, 10),
-        Schedule("{}BTC".format(_asset.upper()), '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), "binance", _dc, 5),
+        Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
+                 60 * 60 * 23, _exchange, _dc, 20 * 24),
+        # 30, _exchange, _dc, 5),
+        Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, _exchange, _dc,
+                 20 * 12),
+        Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, _exchange, _dc,
+                 20 * 8),
+        Schedule(_market, '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3, _exchange, _dc,
+                 20 * 4),
+        Schedule(_market, '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), _exchange, _dc,
+                 20),
+        Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), _exchange, _dc,
+                 10),
+        Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), _exchange, _dc,
+                 5),
     ]
 
 
 def get_kucoin_schedules(_asset):
+    _exchange = "kucoin"
+    _market = "{}-BTC".format(_asset.upper())
+    _dc = DepthCrawl(_market, _exchange)
+    manage_depth_crawling(_dc)
     return [
-        # Schedule("{}BTC".format(_asset.upper()), '{} : 1d'.format(_asset), '1day', 60 * 60 * 23, "kucoin"),
-        # Schedule("{}-BTC".format(_asset.upper()), '{}12h'.format(_asset), '12hour', 60 * 60 * 11, "kucoin"),
-        # Schedule("{}-BTC".format(_asset.upper()), '{}8h'.format(_asset), '8hour', 60 * 60 * 7, "kucoin"),
-        # Schedule("{}-BTC".format(_asset.upper()), '{}4h'.format(_asset), '4hour', 60 * 60 * 3, "kucoin"),
-        # Schedule("{}BTC".format(_asset.upper()), '{}1h'.format(_asset), '1hour', 60 * (60 - 15), "kucoin"),
-        # Schedule("{}BTC".format(_asset.upper()), '{}30m'.format(_asset), '30min', 60 * (30 - 20), "kucoin"),
-        # Schedule("{}BTC".format(_asset.upper()), '{}15m'.format(_asset), '15min', 60 * (15 - 5), "kucoin"),
+        Schedule(_market, '{}1d'.format(_asset), '1day', 60 * 60 * 23, _exchange, _dc, 20 * 24),
+        Schedule(_market, '{}12h'.format(_asset), '12hour', 60 * 60 * 11, _exchange, _dc, 20 * 12),
+        Schedule(_market, '{}8h'.format(_asset), '8hour', 60 * 60 * 7, _exchange, _dc, 20 * 8),
+        Schedule(_market, '{}4h'.format(_asset), '4hour', 60 * 60 * 3, _exchange, _dc, 20 * 4),
+        Schedule(_market, '{}1h'.format(_asset), '1hour', 60 * (60 - 15), _exchange, _dc, 20),
+        Schedule(_market, '{}30m'.format(_asset), '30min', 60 * (30 - 20), _exchange, _dc, 10),
+        Schedule(_market, '{}15m'.format(_asset), '15min', 60 * (15 - 5), _exchange, _dc, 5),
     ]
 
 
-schedules = get_binance_schedules("coti")
+schedules = get_binance_schedules("btc")
+schedules.extend(get_binance_schedules("coti"))
+schedules.extend(get_binance_schedules("vet"))
+schedules.extend(get_binance_schedules("sxp"))
+schedules.extend(get_binance_schedules("dot"))
+schedules.extend(get_binance_schedules("xem"))
+schedules.extend(get_binance_schedules("bzrx"))
+schedules.extend(get_binance_schedules("omg"))
+schedules.extend(get_binance_schedules("ftm"))
+schedules.extend(get_binance_schedules("bnb"))
+schedules.extend(get_binance_schedules("ltc"))
+schedules.extend(get_binance_schedules("wnxm"))
+schedules.extend(get_binance_schedules("trx"))
+schedules.extend(get_binance_schedules("srm"))
+schedules.extend(get_binance_schedules("crv"))
+schedules.extend(get_binance_schedules("band"))
+schedules.extend(get_binance_schedules("trb"))
+schedules.extend(get_binance_schedules("neo"))
+schedules.extend(get_binance_schedules("xtz"))
+schedules.extend(get_binance_schedules("zil"))
+schedules.extend(get_binance_schedules("ren"))
+schedules.extend(get_binance_schedules("fet"))
+schedules.extend(get_binance_schedules("ocean"))
+schedules.extend(get_binance_schedules("sc"))
+schedules.extend(get_binance_schedules("rune"))
+schedules.extend(get_binance_schedules("eth"))
+schedules.extend(get_binance_schedules("theta"))
+schedules.extend(get_binance_schedules("tomo"))
+schedules.extend(get_binance_schedules("dgb"))
+
+schedules.extend(get_kucoin_schedules("bepro"))
+schedules.extend(get_kucoin_schedules("vidt"))
+schedules.extend(get_kucoin_schedules("chr"))
+schedules.extend(get_kucoin_schedules("dag"))
+schedules.extend(get_kucoin_schedules("vra"))
+schedules.extend(get_kucoin_schedules("loki"))
+schedules.extend(get_kucoin_schedules("tel"))
+schedules.extend(get_kucoin_schedules("soul"))
+schedules.extend(get_kucoin_schedules("ankr"))
+schedules.extend(get_kucoin_schedules("utk"))
 
 manage_crawling(schedules)
