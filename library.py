@@ -2136,8 +2136,8 @@ def is_rsi_slope_condition(_rsi, _rsi_limit, _angle_limit, _start, _stop, _windo
 def send_mail(subject, message, asset=False):
     global variable
 
-    sender = "sroziews@wp.pl"
-    receiver = "szymon.roziewski@gmail.com"
+    sender = config.get_parameter('sender')
+    receiver = config.get_parameter('receiver')
 
     msg = MIMEMultipart('alternative')
     msg['Subject'] = subject
@@ -2437,10 +2437,10 @@ def format_found_markets(_markets_tuple):
     return [f"{x[0]} : {x[1]}" for x in _markets_tuple]
 
 
-def process_setups(_setup_tuples, _collection):
+def process_setups(_setup_tuples, _collection, _ticker):
     _mail_content = ''
-    process_setup_tuples(_setup_tuples[0], _collection)
-    process_setup_tuples(_setup_tuples[1], _collection)
+    process_setup_tuples(_setup_tuples[0], _collection, _ticker)
+    process_setup_tuples(_setup_tuples[1], _collection, _ticker)
 
     for _setup_tuple in _setup_tuples:
         _setup = _setup_tuple[0]
@@ -2452,14 +2452,14 @@ def process_setups(_setup_tuples, _collection):
         send_mail("WWW Market Setup Found WWW", _mail_content)
 
 
-def process_setup_tuples(_setup_tuples, _collection):
+def process_setup_tuples(_setup_tuples, _collection, _ticker):
     _assets = _setup_tuples[0]
     _exchange = _setup_tuples[1]
     for _st in _assets:
-        persist_setup((_st, _exchange), _collection)
+        persist_setup((_st, _exchange), _collection, _ticker)
 
 
-def setup_to_mongo(_setup_tuple):
+def setup_to_mongo(_setup_tuple, _ticker):
     _setup = _setup_tuple[0]
     _exchange = _setup_tuple[1]
     _timestamp = datetime.datetime.now().timestamp()
@@ -2470,11 +2470,12 @@ def setup_to_mongo(_setup_tuple):
         'type': _setup[1],
         'market': _setup[0],
         'exchange': _exchange,
+        'ticker': _ticker,
         'times': [_timestamp]
     }
 
 
-def persist_setup(_setup_tuple, _collection):
+def persist_setup(_setup_tuple, _collection, _ticker):
     try:
         _setup = _setup_tuple[0]
         _exchange = _setup_tuple[1]
@@ -2488,11 +2489,10 @@ def persist_setup(_setup_tuple, _collection):
             if _diff_in_days < 5.0:
                 _found['setup']['times'].append(_now)
                 _collection.update_one({'_id': _found['_id']}, {'$set': {'setup': _found['setup']}})
-                pass
             else:
-                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple)})
+                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
         else:
-            _collection.insert_one({'setup': setup_to_mongo(_setup_tuple)})
+            _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
     except PyMongoError:
         time.sleep(5)
         persist_setup(_setup_tuple, _collection)

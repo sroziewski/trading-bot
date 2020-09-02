@@ -22,12 +22,13 @@ manage_verifying_setup(collection)
 
 while 1:
     try:
-        market_setups_binance = analyze_golden_cross("exclude-markets-binance", "1h", "1600 hours ago", "binance")
+        _ticker = "1h"
+        market_setups_binance = analyze_golden_cross("exclude-markets-binance", _ticker, "1600 hours ago", "binance")
         _kucoin_ticker = "1hour"
         market_setups_kucoin = analyze_golden_cross("exclude-markets-kucoin", _kucoin_ticker,
                                                     get_kucoin_interval_unit(_kucoin_ticker, 1600), "kucoin")
         setup_tuples = [(market_setups_binance, "binance"), (market_setups_kucoin, "kucoin")]
-        process_setups(setup_tuples, collection)
+        process_setups(setup_tuples, collection, _ticker)
         time.sleep(3500)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
