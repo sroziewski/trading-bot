@@ -2518,68 +2518,83 @@ def manage_verifying_setup(_collection):
 
 
 def _verify_setup(_collection):
-    _now = datetime.datetime.now().timestamp()
-    _verified = []
-    for _object in _collection.find({'verified': {'$exists': True}}):
-        _last_update = _object['setup']['times'][-1]
-        _diff_in_days = (_now - _last_update) / 60 / 60 / 24
-        if _diff_in_days > .0:
-            _close_price = _object['setup']['close_price']
-            _start_time = _object['setup']['start_time']
-            _market = _object['setup']['market']
-            _exchange = _object['setup']['exchange']
-            _hours_gap = int((_now - _start_time) / 60 / 60)
-            if _exchange == "binance":
-                _klines = get_binance_klines(_market, BinanceClient.KLINE_INTERVAL_1HOUR,
-                                             "{} hours ago".format(_hours_gap))
-            elif _exchange == "kucoin":
-                _klines = get_kucoin_klines("{}-BTC".format(_market), "1hour", round(_start_time))
+    while True:
+        _now = datetime.datetime.now().timestamp()
+        _verified = []
+        for _object in _collection.find({'verified': {'$exists': False}}):
+            _last_update = _object['setup']['times'][-1]
+            _diff_in_days = (_now - _last_update) / 60 / 60 / 24
+            if _diff_in_days > 6.0:
+                _close_price = _object['setup']['close_price']
+                _start_time = _object['setup']['start_time']
+                _market = _object['setup']['market']
+                _exchange = _object['setup']['exchange']
+                _hours_gap = int((_now - _start_time) / 60 / 60)
+                if _exchange == "binance":
+                    _klines = get_binance_klines(_market, BinanceClient.KLINE_INTERVAL_1HOUR,
+                                                 "{} hours ago".format(_hours_gap))
+                elif _exchange == "kucoin":
+                    _klines = get_kucoin_klines("{}-BTC".format(_market), "1hour", round(_start_time))
 
-            _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-            _min = np.min(_closes)
-            _max = np.max(_closes)
-            _mean = round(np.mean(_closes), 10)
-            _median = np.median(_closes)
-            _max_up = round((_max - _close_price) / _close_price * 100, 4)
-            _max_down = round((_close_price - _min) / _close_price * 100, 4)
+                _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+                _min = np.min(_closes)
+                _max = np.max(_closes)
+                _mean = round(np.mean(_closes), 10)
+                _median = np.median(_closes)
+                _max_up = round((_max - _close_price) / _close_price * 100, 4)
+                _max_down = round((_close_price - _min) / _close_price * 100, 4)
 
-            _max_kline = max(_klines, key=attrgetter('closing'))
-            _min_kline = min(_klines, key=attrgetter('closing'))
+                _max_kline = max(_klines, key=attrgetter('closing'))
+                _min_kline = min(_klines, key=attrgetter('closing'))
 
-            _object['verified'] = {
-                'max_up': _max_up,
-                'max_down': _max_down,
-                'min': _min,
-                'max': _max,
-                'mean': _mean,
-                'median': _median,
-                'time_str': get_time(_now),
-                'max_kline': to_mongo_dict(_max_kline),
-                'min_kline': to_mongo_dict(_min_kline)
-            }
-            _verified.append({
-                'exchange': _exchange,
-                'market': _market,
-                'max_up': _max_up,
-                'max_down': _max_down,
-                'close_price': _object['setup']['close_price'],
-                'start_time': _object['setup']['start_time_str']
-            })
-            _collection.update_one({'_id': _object['_id']}, {'$set': {'verified': _object['verified']}})
-    _mail_content = ''
-    if len(_verified) > 0:
-        _binance = list(filter(lambda elem: elem['exchange'] == "binance", _verified))
-        _kucoin = list(filter(lambda elem: elem['exchange'] == "kucoin", _verified))
+                _object['verified'] = {
+                    'max_up': _max_up,
+                    'max_down': _max_down,
+                    'min': _min,
+                    'max': _max,
+                    'mean': _mean,
+                    'median': _median,
+                    'time_str': get_time(_now),
+                    'max_kline': to_mongo_dict(_max_kline),
+                    'min_kline': to_mongo_dict(_min_kline)
+                }
+                _verified.append({
+                    'exchange': _exchange,
+                    'strategy': _object['setup']['type'],
+                    'market': _market,
+                    'max_up': _max_up,
+                    'max_down': _max_down,
+                    'close_price': _object['setup']['close_price'],
+                    'start_time': _object['setup']['start_time_str']
+                })
+                _collection.update_one({'_id': _object['_id']}, {'$set': {'verified': _object['verified']}})
+        _mail_content = ''
+        if len(_verified) > 0:
+            _binance = list(filter(lambda elem: elem['exchange'] == "binance", _verified))
+            _kucoin = list(filter(lambda elem: elem['exchange'] == "kucoin", _verified))
 
-        _mail_content = add_mail_content_for_exchange(_mail_content, _binance, "binance")
-        _mail_content = add_mail_content_for_exchange(_mail_content, _kucoin, "kucoin")
+            _mail_content = add_mail_content_for_exchange(_mail_content, _binance, "binance")
+            _mail_content = add_mail_content_for_exchange(_mail_content, _kucoin, "kucoin")
 
-    if len(_mail_content) > 0:
-        send_mail("YYY Verified YYY", _mail_content)
+        if len(_mail_content) > 0:
+            send_mail("YYY Verified YYY", _mail_content)
+    time.sleep(60 * 60 * 24)  # once a day
 
 
 def add_mail_content_for_exchange(_mail_content, _data_list, _exchange):
     _mail_content += f"<BR/><B>{_exchange}</B><BR/>"
-    for _v in _data_list:
-        _mail_content += f"<BR/>{_v['market']} : max up : {_v['max_up']} max down : {_v['max_down']} close price : {_v['close_price']} start_time : {_v['start_time']} <BR/>"
+    _is_first = list(filter(lambda elem: elem['strategy'] == "is_first_golden_cross", _data_list))
+    _is_second = list(filter(lambda elem: elem['strategy'] == "is_second_golden_cross", _data_list))
+    _drop_below = list(filter(lambda elem: elem['strategy'] == "drop_below_ma200_after_rally", _data_list))
+    _mail_content = handle_verification_mailing(_is_first, _mail_content)
+    _mail_content = handle_verification_mailing(_is_second, _mail_content)
+    _mail_content = handle_verification_mailing(_drop_below, _mail_content)
     return _mail_content
+
+
+def handle_verification_mailing(_data_list, _mail_content):
+    if _data_list:
+        _mail_content += f"<BR/><B>{_data_list[0]['strategy']}</B><BR/>"
+        for _v in _data_list:
+            _mail_content += f"<BR/>{_v['market']} : max up : {_v['max_up']} max down : {_v['max_down']} close price : {_v['close_price']} start_time : {_v['start_time']} <BR/>"
+        return _mail_content
