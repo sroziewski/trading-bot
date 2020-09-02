@@ -1,31 +1,17 @@
 import datetime
 import threading
-from decimal import Decimal
 from random import randrange
 from time import sleep
 
 from binance.client import Client as BinanceClient
-from bson import CodecOptions, Decimal128
-from bson.codec_options import TypeRegistry, TypeCodec
+from bson import CodecOptions
+from bson.codec_options import TypeRegistry
 from pymongo import DESCENDING
 from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client
+    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec
 from mongodb import mongo_client
-
-
-class DecimalCodec(TypeCodec):
-    python_type = Decimal  # the Python type acted upon by this type codec
-    bson_type = Decimal128  # the BSON type acted upon by this type codec
-
-    def transform_python(self, value):
-        return Decimal128(value)
-
-    def transform_bson(self, value):
-        """Function that transforms a vanilla BSON type value into our custom type."""
-        return value.to_decimal()
-
 
 logger = setup_logger("Kline Crawl Manager")
 

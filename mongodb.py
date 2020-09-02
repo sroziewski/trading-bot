@@ -1,8 +1,6 @@
-from pprint import pprint
-
 from pymongo import MongoClient
 
-from library import config
+from config import config
 
 mongo_user = config.get_parameter('mongo_user')
 mongo_pass = config.get_parameter('mongo_pass')

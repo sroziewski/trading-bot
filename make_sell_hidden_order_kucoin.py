@@ -10,7 +10,7 @@ side = KucoinClient.SIDE_SELL
 logger = setup_logger("kucoin-hidden-order-{}".format(side))
 
 currency = 'DOT'
-price = 54200
+price = 60529
 stop_loss_price = 2
 profit_price = 5700.99
 ratio = 1

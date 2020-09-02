@@ -1,6 +1,5 @@
-import configparser
+import datetime
 import hashlib
-import json
 import logging
 import logging.config
 import pickle
@@ -11,37 +10,29 @@ import threading
 import time
 import traceback
 import warnings
-from datetime import datetime, timedelta
-from email.message import EmailMessage
+from datetime import timedelta
+from decimal import Decimal
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from getpass import getpass
+from operator import attrgetter
 from os import path
 
 import numpy as np
 import requests
 import talib
 from binance.client import Client as BinanceClient
+from bson import Decimal128
+from bson.codec_options import TypeCodec
 from kucoin.client import Client as KucoinClient, Client
+from pymongo import DESCENDING
+from pymongo.errors import PyMongoError
 
 from Binance import Binance
+from config import config
 
 warnings.filterwarnings('error')
 
-
-class Config(object):
-    def __init__(self, section='local', name='resource/config.properties'):
-        config = configparser.RawConfigParser()
-        config.read(name)
-        self.config = dict(config.items(section))
-
-    def get_parameter(self, parameter):
-        if parameter in self.config:
-            return self.config[parameter]
-        raise Exception("There is no such a key in config!")
-
-
-config = Config()
 variable = ''
 key_dir = config.get_parameter('key_dir')
 keys_filename = config.get_parameter('keys_filename')
@@ -52,6 +43,18 @@ exclude_markets = ['BCCBTC', 'PHXBTC', 'BTCUSDT', 'HSRBTC',
                    'SUBBTC',
                    'ICNBTC', 'MODBTC', 'VENBTC', 'WINGSBTC', 'TRIGBTC', 'CHATBTC', 'RPXBTC', 'CLOAKBTC', 'BCNBTC',
                    'TUSDBTC', 'PAXBTC', 'USDCBTC', 'BCHSVBTC']
+
+
+class DecimalCodec(TypeCodec):
+    python_type = Decimal  # the Python type acted upon by this type codec
+    bson_type = Decimal128  # the BSON type acted upon by this type codec
+
+    def transform_python(self, value):
+        return Decimal128(value)
+
+    def transform_bson(self, value):
+        """Function that transforms a vanilla BSON type value into our custom type."""
+        return value.to_decimal()
 
 
 class Kline(object):
@@ -76,12 +79,14 @@ class Kline(object):
 
 
 def from_kucoin_klines(klines):
-    return list(map(lambda x: Kline(x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5]), float(x[6]), get_time(int(x[0]))), klines))
+    return list(map(lambda x: Kline(x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5]), float(x[6]),
+                                    get_time(int(x[0]))), klines))
 
 
 def from_binance_klines(klines):
     return list(
-        map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]), get_time_from_binance_tmstmp(x[0])), klines))
+        map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]),
+                            get_time_from_binance_tmstmp(x[0])), klines))
 
 
 def get_kucoin_klines(market, ticker, start=None):
@@ -1374,7 +1379,7 @@ def get_binance_interval_unit(_ticker):
 
 
 def get_timestamp(_min, _hrs, _days, _weeks):
-    return datetime.now() - timedelta(minutes=_min, hours=_hrs, days=_days, weeks=_weeks)
+    return datetime.datetime.now() - timedelta(minutes=_min, hours=_hrs, days=_days, weeks=_weeks)
 
 
 def get_kucoin_interval_unit(_ticker, _multiplier=360):
@@ -1413,7 +1418,7 @@ def stop_when_not_exchange(_name):
 
 
 def get_time_from_binance_tmstmp(_tmstmp):
-    return get_time(datetime.fromtimestamp(_tmstmp / 1000).timestamp())
+    return get_time(datetime.datetime.fromtimestamp(_tmstmp / 1000).timestamp())
 
 
 def get_sell_price(asset):
@@ -2105,7 +2110,7 @@ def get_one_of_rsi(_rsi_fresh, _rsi_):
 
 
 def get_time(_timestamp):
-    return datetime.fromtimestamp(_timestamp).strftime('%d %B %Y %H:%M:%S')
+    return datetime.datetime.fromtimestamp(_timestamp).strftime('%d %B %Y %H:%M:%S')
 
 
 def price_drop(price0, price1, _ratio):
@@ -2258,16 +2263,16 @@ def is_first_golden_cross(_klines):
 
     _max_g = find_local_maximum(_ma50, 50)
     if check_extremum(_max_g):
-        return False
+        return False, _closes[-1]
     _max_l = find_local_maximum(_ma50[-_max_g[1]:], 50)
     if check_extremum(_max_l):
-        return False
+        return False, _closes[-1]
     _min_l = find_minimum(_ma50[-_max_g[1]:-_max_l[1]])
     if check_extremum(_min_l):
-        return False
+        return False, _closes[-1]
     _min_low_l = find_minimum(_low[-_max_g[1]:-_max_l[1]])
     if check_extremum(_min_low_l):
-        return False
+        return False, _closes[-1]
     _min_l_ind = -_max_l[1] + _min_l[1]
     _min_low_l_ind = -_max_l[1] + _min_low_l[1]
     _max_l_ind = - _max_l[1]
@@ -2284,10 +2289,12 @@ def is_first_golden_cross(_klines):
     _not_elder_than_global_max = _max_g[1] < 500 and _max_l_ind < 500
     # _max_high_l_after_min_before_local_max = np.abs(_min_before_local_max[1]) > np.abs(_max_high_l_ind)
 
-    _about_one_week_old = np.abs(_min_low_l_ind) - np.abs(_min_before_local_max[1]) < 150 and np.abs(_max_high_l_ind) - np.abs(_min_before_local_max[1]) < 150
+    _about_one_week_old = np.abs(_min_low_l_ind) - np.abs(_min_before_local_max[1]) < 150 and np.abs(
+        _max_high_l_ind) - np.abs(_min_before_local_max[1]) < 150
 
-    return _is_fall and _not_elder_than_global_max and fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(_max_l_ind) > hours_after_local_max_ma50 and _closes[
-        -1] < _ma50[-1] and _about_one_week_old
+    return _is_fall and _not_elder_than_global_max and fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(
+        _max_l_ind) > hours_after_local_max_ma50 and _closes[
+               -1] < _ma50[-1] and _about_one_week_old, _closes[-1]
 
 
 def find_global_max_min_ind(_low, _high):
@@ -2322,7 +2329,7 @@ def is_drop_below_ma200_after_rally(_klines):
     _drop = (_max_high[0] - _min_l[0]) / _max_high[0]
     rally = (_max_high[0] - _first_gc[0]) / _first_gc[0]  # 48, 82 %
 
-    return _drop > 0.15 and rally > 0.5 and below_ma[1] > 0
+    return _drop > 0.15 and rally > 0.5 and below_ma[1] > 0, _closes[-1]
 
 
 def find_first_golden_cross(__ma50, __ma200, _offset=0):
@@ -2367,7 +2374,7 @@ def is_second_golden_cross(_closes):
                                       _max_50_1[0] > _ma200[
                                           -_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]
 
-    return HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond
+    return HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond, _closes[-1]
 
 
 def get_markets(_exchange, _ticker=False, _exclude_markets=False):
@@ -2375,7 +2382,8 @@ def get_markets(_exchange, _ticker=False, _exclude_markets=False):
         if _exchange == "binance":
             _markets = binance_obj.get_all_btc_currencies(_exclude_markets[_ticker])
         elif _exchange == "kucoin":
-            _markets = list(filter(lambda y: y not in _exclude_markets[_ticker], map(lambda x: x['currency'], kucoin_client.get_currencies())))
+            _markets = list(filter(lambda y: y not in _exclude_markets[_ticker],
+                                   map(lambda x: x['currency'], kucoin_client.get_currencies())))
     else:
         if _exchange == "binance":
             _markets = binance_obj.get_all_btc_currencies()
@@ -2404,12 +2412,15 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
                 _klines = get_binance_klines(_market, _ticker, _time_interval)
 
             _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-            if is_second_golden_cross(_closes):
-                _golden_cross_markets.append((_market, "is_second_golden_cross"))
-            if is_first_golden_cross(_klines):
-                _golden_cross_markets.append((_market, "is_first_golden_cross"))
-            if is_drop_below_ma200_after_rally(_klines):
-                _golden_cross_markets.append((_market, "drop_below_ma200_after_rally"))
+            _is_2nd_golden = is_second_golden_cross(_closes)
+            if _is_2nd_golden[0]:
+                _golden_cross_markets.append((_market, "is_second_golden_cross", _is_2nd_golden[1]))
+            _is_1st_golden = is_first_golden_cross(_klines)
+            if _is_1st_golden[0]:
+                _golden_cross_markets.append((_market, "is_first_golden_cross", _is_1st_golden[1]))
+            _is_drop_below = is_drop_below_ma200_after_rally(_klines)
+            if _is_drop_below[0]:
+                _golden_cross_markets.append((_market, "drop_below_ma200_after_rally", _is_drop_below[1]))
         except Exception as e:
             logger_global[0].warning(e)
             print(f"No data for market : {_market}")
@@ -2426,8 +2437,11 @@ def format_found_markets(_markets_tuple):
     return [f"{x[0]} : {x[1]}" for x in _markets_tuple]
 
 
-def process_setups(_setup_tuples):
+def process_setups(_setup_tuples, _collection):
     _mail_content = ''
+    process_setup_tuples(_setup_tuples[0], _collection)
+    process_setup_tuples(_setup_tuples[1], _collection)
+
     for _setup_tuple in _setup_tuples:
         _setup = _setup_tuple[0]
         _exchange = _setup_tuple[1]
@@ -2436,3 +2450,136 @@ def process_setups(_setup_tuples):
             _mail_content += ' '.join(format_found_markets(_setup))
     if len(_mail_content) > 0:
         send_mail("WWW Market Setup Found WWW", _mail_content)
+
+
+def process_setup_tuples(_setup_tuples, _collection):
+    _assets = _setup_tuples[0]
+    _exchange = _setup_tuples[1]
+    for _st in _assets:
+        persist_setup((_st, _exchange), _collection)
+
+
+def setup_to_mongo(_setup_tuple):
+    _setup = _setup_tuple[0]
+    _exchange = _setup_tuple[1]
+    _timestamp = datetime.datetime.now().timestamp()
+    return {
+        'start_time': _timestamp,
+        'start_time_str': get_time(_timestamp),
+        'close_price': _setup[2],
+        'type': _setup[1],
+        'market': _setup[0],
+        'exchange': _exchange,
+        'times': [_timestamp]
+    }
+
+
+def persist_setup(_setup_tuple, _collection):
+    try:
+        _setup = _setup_tuple[0]
+        _exchange = _setup_tuple[1]
+        _found = _collection.find_one(filter={'setup.market': _setup[0], 'setup.exchange': _exchange},
+                                      sort=[('_id', DESCENDING)])
+
+        if _found:
+            _last_update = _found['setup']['times'][-1]
+            _now = datetime.datetime.now().timestamp()
+            _diff_in_days = (_now - _last_update) / 60 / 60 / 24
+            if _diff_in_days < 5.0:
+                _found['setup']['times'].append(_now)
+                _collection.update_one({'_id': _found['_id']}, {'$set': {'setup': _found['setup']}})
+                pass
+            else:
+                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple)})
+        else:
+            _collection.insert_one({'setup': setup_to_mongo(_setup_tuple)})
+    except PyMongoError:
+        time.sleep(5)
+        persist_setup(_setup_tuple, _collection)
+
+
+def to_mongo_dict(_kline):
+    return {
+        'start_time': _kline.start_time,
+        'opening': _kline.opening,
+        'closing': _kline.closing,
+        'lowest': _kline.lowest,
+        'highest': _kline.highest,
+        'volume': _kline.volume,
+        'btc_volume': _kline.btc_volume,
+        'time_str': _kline.time_str,
+    }
+
+
+def manage_verifying_setup(_collection):
+    _scheduler = threading.Thread(target=_verify_setup, args=(_collection,),
+                                  name='_verify_setup')
+    _scheduler.start()
+
+
+def _verify_setup(_collection):
+    _now = datetime.datetime.now().timestamp()
+    _verified = []
+    for _object in _collection.find({'verified': {'$exists': True}}):
+        _last_update = _object['setup']['times'][-1]
+        _diff_in_days = (_now - _last_update) / 60 / 60 / 24
+        if _diff_in_days > .0:
+            _close_price = _object['setup']['close_price']
+            _start_time = _object['setup']['start_time']
+            _market = _object['setup']['market']
+            _exchange = _object['setup']['exchange']
+            _hours_gap = int((_now - _start_time) / 60 / 60)
+            if _exchange == "binance":
+                _klines = get_binance_klines(_market, BinanceClient.KLINE_INTERVAL_1HOUR,
+                                             "{} hours ago".format(_hours_gap))
+            elif _exchange == "kucoin":
+                _klines = get_kucoin_klines("{}-BTC".format(_market), "1hour", round(_start_time))
+
+            _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+            _min = np.min(_closes)
+            _max = np.max(_closes)
+            _mean = round(np.mean(_closes), 10)
+            _median = np.median(_closes)
+            _max_up = round((_max - _close_price) / _close_price * 100, 4)
+            _max_down = round((_close_price - _min) / _close_price * 100, 4)
+
+            _max_kline = max(_klines, key=attrgetter('closing'))
+            _min_kline = min(_klines, key=attrgetter('closing'))
+
+            _object['verified'] = {
+                'max_up': _max_up,
+                'max_down': _max_down,
+                'min': _min,
+                'max': _max,
+                'mean': _mean,
+                'median': _median,
+                'time_str': get_time(_now),
+                'max_kline': to_mongo_dict(_max_kline),
+                'min_kline': to_mongo_dict(_min_kline)
+            }
+            _verified.append({
+                'exchange': _exchange,
+                'market': _market,
+                'max_up': _max_up,
+                'max_down': _max_down,
+                'close_price': _object['setup']['close_price'],
+                'start_time': _object['setup']['start_time_str']
+            })
+            _collection.update_one({'_id': _object['_id']}, {'$set': {'verified': _object['verified']}})
+    _mail_content = ''
+    if len(_verified) > 0:
+        _binance = list(filter(lambda elem: elem['exchange'] == "binance", _verified))
+        _kucoin = list(filter(lambda elem: elem['exchange'] == "kucoin", _verified))
+
+        _mail_content = add_mail_content_for_exchange(_mail_content, _binance, "binance")
+        _mail_content = add_mail_content_for_exchange(_mail_content, _kucoin, "kucoin")
+
+    if len(_mail_content) > 0:
+        send_mail("YYY Verified YYY", _mail_content)
+
+
+def add_mail_content_for_exchange(_mail_content, _data_list, _exchange):
+    _mail_content += f"<BR/><B>{_exchange}</B><BR/>"
+    for _v in _data_list:
+        _mail_content += f"<BR/>{_v['market']} : max up : {_v['max_up']} max down : {_v['max_down']} close price : {_v['close_price']} start_time : {_v['start_time']} <BR/>"
+    return _mail_content
