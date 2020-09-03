@@ -1,5 +1,6 @@
 import datetime
 import threading
+import traceback
 from random import randrange
 from time import sleep
 
@@ -70,7 +71,9 @@ def to_mongo(_kline):
 def persist_kline(_kline, _collection):
     try:
         _collection.insert_one({'kline': to_mongo(_kline), 'timestamp': _kline.start_time})
-    except PyMongoError:
+    except PyMongoError as err:
+        traceback.print_tb(err.__traceback__)
+        logger.exception("{} {}".format(_kline['market'], err.__traceback__))
         sleep(5)
         persist_kline(_kline, _collection)
 
@@ -78,10 +81,11 @@ def persist_kline(_kline, _collection):
 def get_last_db_record(_collection):
     try:
         return _collection.find_one(sort=[('_id', DESCENDING)])
-    except PyMongoError:
+    except PyMongoError as err:
+        traceback.print_tb(err.__traceback__)
+        logger.exception("get_last_db_record : find_one: {}".format(err.__traceback__))
         sleep(5)
-        get_last_db_record(_collection)
-    # return _collection.find_one({"timestamp": 1594368000000})
+        return get_last_db_record(_collection)
 
 
 def filter_current_klines(_klines, _collection_name, _collection):
@@ -144,11 +148,8 @@ class BuyDepth(MarketDepth):
 def manage_crawling(_schedules):
     sleep(5)
     for _schedule in _schedules:
-        try:
-            _scheduler = threading.Thread(target=_do_schedule, args=(_schedule,),
+        _scheduler = threading.Thread(target=_do_schedule, args=(_schedule,),
                                           name='_do_schedule : {}'.format(_schedule.collection_name))
-        except AttributeError:
-            i = 1
         _scheduler.start()
 
 
@@ -172,10 +173,15 @@ class DepthCrawl(object):
 def _do_depth_crawl(_dc):
     while True:
         sleep(randrange(10))
-        if _dc.exchange == "binance":
-            _order = binance_obj.client.get_order_book(symbol=_dc.market, limit=1000)
-        elif _dc.exchange == "kucoin":
-            _order = kucoin_client.get_full_order_book(_dc.market)
+        try:
+            if _dc.exchange == "binance":
+                _order = binance_obj.client.get_order_book(symbol=_dc.market, limit=1000)
+            elif _dc.exchange == "kucoin":
+                _order = kucoin_client.get_full_order_book(_dc.market)
+        except Exception as err:
+            traceback.print_tb(err.__traceback__)
+            logger.exception("{} {}".format(_dc.market, err.__traceback__))
+
         _bd = compute_depth_percentages(_order['bids'], "bids")
         if _dc.exchange == "kucoin":
             _order['asks'].reverse()
@@ -350,11 +356,19 @@ def _do_schedule(_schedule):
         if _schedule.exchange == "binance":
             try:
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
-            except TypeError:
+            except Exception as err:
+                traceback.print_tb(err.__traceback__)
+                logger.exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
                 sleep(randrange(30))
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
         elif _schedule.exchange == "kucoin":
-            klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
+            try:
+                klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
+            except Exception:
+                traceback.print_tb(err.__traceback__)
+                logger.exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
+                sleep(randrange(30))
+                klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         logger.info("Storing to collection : {} : {} ".format(_schedule.exchange, collection_name))
         klines = [klines[-1]]
         current_klines = filter_current_klines(klines, collection_name, collection)
