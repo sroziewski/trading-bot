@@ -2628,6 +2628,7 @@ def _verify_setup(_collection):
                     'market': _market,
                     'max_up': _max_up,
                     'max_down': _max_down,
+                    'ticker': _object['setup']['ticker'],
                     'close_price': _object['setup']['close_price'],
                     'start_time': _object['setup']['start_time_str']
                 })
@@ -2662,5 +2663,5 @@ def handle_verification_mailing(_data_list, _mail_content):
     if _data_list:
         _mail_content += f"<BR/><B>{_data_list[0]['strategy']}</B><BR/>"
         for _v in _data_list:
-            _mail_content += f"<BR/>{_v['market']} : max up : {_v['max_up']} max down : {_v['max_down']} close price : {_v['close_price']} start_time : {_v['start_time']} <BR/>"
+            _mail_content += f"<BR/>{_v['market']} -- ticker : {_v['ticker']} : max up : {_v['max_up']} max down : {_v['max_down']} close price : {_v['close_price']} start_time : {_v['start_time']} <BR/>"
         return _mail_content
