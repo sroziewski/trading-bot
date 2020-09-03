@@ -2338,9 +2338,9 @@ def is_drop_below_ma50_after_rally(_klines):
         return False
 
     _ma50_above_ma200 = all(_ma50[-_below_ma[1]:] > _ma200[-_below_ma[1]:])
-    _low_below_ma50 = _low[-_below_ma[1]:] > _ma50[-_below_ma[1]:]
-    _trues = np.sum(_low_below_ma50)
-    _falses = len(_low_below_ma50) - _trues
+    _low_above_ma50 = _low[-_below_ma[1]:] > _ma50[-_below_ma[1]:]
+    _trues = np.sum(_low_above_ma50)
+    _falses = len(_low_above_ma50) - _trues
     _ratio = _trues / (_trues + _falses)
 
     _max_high = find_local_maximum(_high[-_below_ma[1] - 1:], 3)
@@ -2349,7 +2349,9 @@ def is_drop_below_ma50_after_rally(_klines):
     _drop = (_max_high[0] - _min_l[0]) / _max_high[0]
     rally = (_max_high[0] - _below_ma[0]) / _below_ma[0]  # 48, 82 %
 
-    return _ratio > 0.7 and _drop > 0.15 and rally > 0.2 and _below_ma[1] > 0 and _ma50_above_ma200, _closes[-1]
+    is_currently_below_ma50 = _low[-1] < _ma50[-1]
+
+    return is_currently_below_ma50 and _ratio > 0.7 and _drop > 0.15 and rally > 0.2 and _below_ma[1] > 0 and _ma50_above_ma200, _closes[-1]
 
 
 def is_drop_below_ma200_after_rally(_klines):
