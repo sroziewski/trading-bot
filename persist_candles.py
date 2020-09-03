@@ -14,7 +14,7 @@ from library import get_binance_klines, get_binance_interval_unit, setup_logger,
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec
 from mongodb import mongo_client
 
-logger = setup_logger("Kline-Crawl-Manager")
+logger = setup_logger("Kline-Crawl-Manager-15.30")
 
 db = mongo_client.klines
 decimal_codec = DecimalCodec()
@@ -390,21 +390,21 @@ def get_binance_schedules(_asset):
     _dc = DepthCrawl(_market, _exchange)
     manage_depth_crawling(_dc)
     return [
-        Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
-                 60 * 60 * 23, _exchange, _dc, 20 * 24),
-        # 30, _exchange, _dc, 5),
-        Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, _exchange, _dc,
-                 20 * 12),
-        Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, _exchange, _dc,
-                 20 * 8),
-        Schedule(_market, '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3, _exchange, _dc,
-                 20 * 4),
-        Schedule(_market, '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), _exchange, _dc,
-                 20),
-        # Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), _exchange, _dc,
-        #          10),
-        # Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), _exchange, _dc,
-        #          5),
+        # Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
+        #          60 * 60 * 23, _exchange, _dc, 20 * 24),
+        # # 30, _exchange, _dc, 5),
+        # Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, _exchange, _dc,
+        #          20 * 12),
+        # Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, _exchange, _dc,
+        #          20 * 8),
+        # Schedule(_market, '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 3, _exchange, _dc,
+        #          20 * 4),
+        # Schedule(_market, '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), _exchange, _dc,
+        #          20),
+        Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), _exchange, _dc,
+                 10),
+        Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), _exchange, _dc,
+                 5),
     ]
 
 
@@ -414,13 +414,13 @@ def get_kucoin_schedules(_asset):
     _dc = DepthCrawl(_market, _exchange)
     manage_depth_crawling(_dc)
     return [
-        Schedule(_market, '{}1d'.format(_asset), '1day', 60 * 60 * 23, _exchange, _dc, 20 * 24),
-        Schedule(_market, '{}12h'.format(_asset), '12hour', 60 * 60 * 11, _exchange, _dc, 20 * 12),
-        Schedule(_market, '{}8h'.format(_asset), '8hour', 60 * 60 * 7, _exchange, _dc, 20 * 8),
-        Schedule(_market, '{}4h'.format(_asset), '4hour', 60 * 60 * 3, _exchange, _dc, 20 * 4),
-        Schedule(_market, '{}1h'.format(_asset), '1hour', 60 * (60 - 15), _exchange, _dc, 20),
-        # Schedule(_market, '{}30m'.format(_asset), '30min', 60 * (30 - 20), _exchange, _dc, 10),
-        # Schedule(_market, '{}15m'.format(_asset), '15min', 60 * (15 - 5), _exchange, _dc, 5),
+        # Schedule(_market, '{}1d'.format(_asset), '1day', 60 * 60 * 23, _exchange, _dc, 20 * 24),
+        # Schedule(_market, '{}12h'.format(_asset), '12hour', 60 * 60 * 11, _exchange, _dc, 20 * 12),
+        # Schedule(_market, '{}8h'.format(_asset), '8hour', 60 * 60 * 7, _exchange, _dc, 20 * 8),
+        # Schedule(_market, '{}4h'.format(_asset), '4hour', 60 * 60 * 3, _exchange, _dc, 20 * 4),
+        # Schedule(_market, '{}1h'.format(_asset), '1hour', 60 * (60 - 15), _exchange, _dc, 20),
+        Schedule(_market, '{}30m'.format(_asset), '30min', 60 * (30 - 20), _exchange, _dc, 10),
+        Schedule(_market, '{}15m'.format(_asset), '15min', 60 * (15 - 5), _exchange, _dc, 5),
     ]
 
 
