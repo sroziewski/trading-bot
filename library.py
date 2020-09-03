@@ -2505,7 +2505,7 @@ def format_found_markets(_markets_tuple):
 
 
 def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
-    _mail_content.content += f"<BR/><B>{_ticker}H</B><BR/>"
+    _mail_content.content += f"<BR/><hr/><BR/><B>{_ticker}</B><BR/>"
     process_setup_tuples(_setup_tuples[0], _collection, _ticker)
     process_setup_tuples(_setup_tuples[1], _collection, _ticker)
 
