@@ -2495,12 +2495,17 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
     return _golden_cross_markets
 
 
+class MailContent(object):
+    def __init__(self, _mail_content):
+        self.content = _mail_content
+
+
 def format_found_markets(_markets_tuple):
     return [f"{x[0]} : {x[1]}" for x in _markets_tuple]
 
 
 def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
-    _mail_content += f"<BR/><B>{_ticker}H</B><BR/>"
+    _mail_content.content += f"<BR/><B>{_ticker}H</B><BR/>"
     process_setup_tuples(_setup_tuples[0], _collection, _ticker)
     process_setup_tuples(_setup_tuples[1], _collection, _ticker)
 
@@ -2508,8 +2513,8 @@ def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
         _setup = _setup_tuple[0]
         _exchange = _setup_tuple[1]
         if len(_setup) > 0:
-            _mail_content += f"<BR/><B>{_exchange}</B><BR/>"
-            _mail_content += ' '.join(format_found_markets(_setup))
+            _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
+            _mail_content.content += ' '.join(format_found_markets(_setup))
 
 
 def process_setup_tuples(_setup_tuples, _collection, _ticker):
