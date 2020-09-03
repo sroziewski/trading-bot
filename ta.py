@@ -489,15 +489,17 @@ def main():
     time_interval = "1600 hours ago"
 
     # _klines = get_binance_klines(market, ticker, time_interval)
-    # _kucoin_ticker = "1hour"
-    # _klines = get_kucoin_klines("UTK-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 1600))
+    _kucoin_ticker = "1hour"
+    _klines = get_kucoin_klines("AKRO-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 1000))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-bnt", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-bnt")
+    # save_to_file("e://bin//data//", "klines-akro", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-akro")
 
-    res = is_first_golden_cross(_klines)
+    _klines = _klines[0:-581]
+
+    # res = is_first_golden_cross(_klines)
     d = is_drop_below_ma200_after_rally(_klines)
 
     # _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
