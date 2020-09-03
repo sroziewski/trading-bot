@@ -24,8 +24,8 @@ while 1:
     try:
         _tickers = ["1", "4", "8", "12"]
         for _t in _tickers:
-            _binance_ticker = "{_t}h"
-            _kucoin_ticker = "{_t}hour"
+            _binance_ticker = f"{_t}h"
+            _kucoin_ticker = f"{_t}hour"
             market_setups_binance = analyze_golden_cross("exclude-markets-binance", _binance_ticker, "1600 hours ago", "binance")
             _kucoin_ticker = "1hour"
             market_setups_kucoin = analyze_golden_cross("exclude-markets-kucoin", _kucoin_ticker,
