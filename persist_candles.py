@@ -357,6 +357,9 @@ def _do_schedule(_schedule):
         if _schedule.exchange == "binance":
             try:
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
+                if not klines:
+                    sleep(3)
+                    klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
                 logger.exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
@@ -365,6 +368,9 @@ def _do_schedule(_schedule):
         elif _schedule.exchange == "kucoin":
             try:
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
+                if not klines:
+                    sleep(3)
+                    klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
             except Exception:
                 traceback.print_tb(err.__traceback__)
                 logger.exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
