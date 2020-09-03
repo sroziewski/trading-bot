@@ -2425,8 +2425,9 @@ def is_second_golden_cross(_closes):
     before_second_golden_cross_cond = _min_50[0] < _ma200[-_min_50[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and \
                                       _max_50_1[0] > _ma200[
                                           -_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]
+    _is_below_ma50 = (_ma50[-1] - _closes[-1]) / _closes[-1]
 
-    return HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond, _closes[-1]
+    return _is_below_ma50 < 0.05 and HL_ma50_reversal_cond and min_after_max_low_variance and before_second_golden_cross_cond, _closes[-1]
 
 
 def get_markets(_exchange, _ticker=False, _exclude_markets=False):
