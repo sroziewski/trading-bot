@@ -2477,9 +2477,12 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
             _is_1st_golden = is_first_golden_cross(_klines)
             if _is_1st_golden[0]:
                 _golden_cross_markets.append((_market, "is_first_golden_cross", _is_1st_golden[1]))
-            _is_drop_below = is_drop_below_ma200_after_rally(_klines)
-            if _is_drop_below[0]:
-                _golden_cross_markets.append((_market, "drop_below_ma200_after_rally", _is_drop_below[1]))
+            _is_drop_below_ma200 = is_drop_below_ma200_after_rally(_klines)
+            if _is_drop_below_ma200[0]:
+                _golden_cross_markets.append((_market, "drop_below_ma200_after_rally", _is_drop_below_ma200[1]))
+            _is_drop_below_ma50 = is_drop_below_ma50_after_rally(_klines)
+            if _is_drop_below_ma50[0]:
+                _golden_cross_markets.append((_market, "is_drop_below_ma50_after_rally", _is_drop_below_ma50[1]))
         except Exception as e:
             logger_global[0].warning(e)
             print(f"No data for market : {_market}")
@@ -2539,7 +2542,7 @@ def persist_setup(_setup_tuple, _collection, _ticker):
     try:
         _setup = _setup_tuple[0]
         _exchange = _setup_tuple[1]
-        _found = _collection.find_one(filter={'setup.market': _setup[0], 'setup.exchange': _exchange},
+        _found = _collection.find_one(filter={'setup.market': _setup[0], 'setup.exchange': _exchange, 'setup.ticker': _ticker},
                                       sort=[('_id', DESCENDING)])
 
         if _found:
@@ -2646,10 +2649,12 @@ def add_mail_content_for_exchange(_mail_content, _data_list, _exchange):
     _mail_content += f"<BR/><B>{_exchange}</B><BR/>"
     _is_first = list(filter(lambda elem: elem['strategy'] == "is_first_golden_cross", _data_list))
     _is_second = list(filter(lambda elem: elem['strategy'] == "is_second_golden_cross", _data_list))
-    _drop_below = list(filter(lambda elem: elem['strategy'] == "drop_below_ma200_after_rally", _data_list))
+    _drop_below_ma50 = list(filter(lambda elem: elem['strategy'] == "drop_below_ma50_after_rally", _data_list))
+    _drop_below_ma200 = list(filter(lambda elem: elem['strategy'] == "drop_below_ma200_after_rally", _data_list))
     _mail_content = handle_verification_mailing(_is_first, _mail_content)
     _mail_content = handle_verification_mailing(_is_second, _mail_content)
-    _mail_content = handle_verification_mailing(_drop_below, _mail_content)
+    _mail_content = handle_verification_mailing(_drop_below_ma50, _mail_content)
+    _mail_content = handle_verification_mailing(_drop_below_ma200, _mail_content)
     return _mail_content
 
 
