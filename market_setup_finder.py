@@ -4,14 +4,14 @@ import traceback
 import requests
 from bson.codec_options import TypeRegistry, CodecOptions
 
-from library import setup_logger, analyze_golden_cross, authorize, send_mail, format_found_markets, \
-    get_kucoin_interval_unit, process_setups, save_to_file, get_pickled, DecimalCodec, manage_verifying_setup
+from library import setup_logger, analyze_golden_cross, authorize, get_kucoin_interval_unit, process_setups, \
+    DecimalCodec, manage_verifying_setup
 from mongodb import mongo_client
 
 logger = setup_logger("market-setup-finder")
 logger.info("Starting Market-Setup-Finder...")
 
-# authorize()
+authorize()
 
 db = mongo_client.setups
 decimal_codec = DecimalCodec()
@@ -22,15 +22,13 @@ manage_verifying_setup(collection)
 
 while 1:
     try:
-        # market_setups_binance = analyze_golden_cross("exclude-markets-binance", "1h", "1600 hours ago", "binance")
-        # _kucoin_ticker = "1hour"
-        # market_setups_kucoin = analyze_golden_cross("exclude-markets-kucoin", _kucoin_ticker,
-        #                                             get_kucoin_interval_unit(_kucoin_ticker, 1600), "kucoin")
-        # setup_tuples = [(market_setups_binance, "binance"), (market_setups_kucoin, "kucoin")]
-        # save_to_file("e:/", "setup_tuples", setup_tuples)
-
-        setup_tuples = get_pickled("e:/", "setup_tuples")
-        process_setups(setup_tuples, collection, "1h")
+        _ticker = "1h"
+        market_setups_binance = analyze_golden_cross("exclude-markets-binance", _ticker, "1600 hours ago", "binance")
+        _kucoin_ticker = "1hour"
+        market_setups_kucoin = analyze_golden_cross("exclude-markets-kucoin", _kucoin_ticker,
+                                                    get_kucoin_interval_unit(_kucoin_ticker, 1600), "kucoin")
+        setup_tuples = [(market_setups_binance, "binance"), (market_setups_kucoin, "kucoin")]
+        process_setups(setup_tuples, collection, _ticker)
         time.sleep(3500)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
