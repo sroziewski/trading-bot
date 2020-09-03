@@ -80,8 +80,9 @@ class Kline(object):
 
 def from_kucoin_klines(klines):
     if klines:
-        return list(map(lambda x: Kline(x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5]), float(x[6]),
-                                        get_time(int(x[0]))), klines))
+        return list(
+            map(lambda x: Kline(x[0], float(x[1]), float(x[2]), float(x[3]), float(x[4]), float(x[5]), float(x[6]),
+                                get_time(int(x[0]))), klines))
     else:
         return []
 
@@ -2321,6 +2322,36 @@ def check_extremum(_data):
     return _data[1] == -1
 
 
+def is_drop_below_ma50_after_rally(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    _high = list(map(lambda _x: float(_x.highest), _klines))
+    _low = list(map(lambda _x: float(_x.lowest), _klines))
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+
+    _f_ma50 = np.flip(_ma50)
+    _f_low = np.flip(_low)
+
+    _below_ma = drop_below_ma_rev(_f_ma50, _f_low)
+
+    if _below_ma[1] == -1:
+        return False
+
+    _ma50_above_ma200 = all(_ma50[-_below_ma[1]:] > _ma200[-_below_ma[1]:])
+    _low_below_ma50 = _low[-_below_ma[1]:] > _ma50[-_below_ma[1]:]
+    _trues = np.sum(_low_below_ma50)
+    _falses = len(_low_below_ma50) - _trues
+    _ratio = _trues / (_trues + _falses)
+
+    _max_high = find_local_maximum(_high[-_below_ma[1] - 1:], 3)
+
+    _min_l = find_minimum(_low[-_max_high[1]:])
+    _drop = (_max_high[0] - _min_l[0]) / _max_high[0]
+    rally = (_max_high[0] - _below_ma[0]) / _below_ma[0]  # 48, 82 %
+
+    return _ratio > 0.5 and _drop > 0.15 and rally > 0.2 and _below_ma[1] > 0 and _ma50_above_ma200, _closes[-1]
+
+
 def is_drop_below_ma200_after_rally(_klines):
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _high = list(map(lambda _x: float(_x.highest), _klines))
@@ -2328,14 +2359,14 @@ def is_drop_below_ma200_after_rally(_klines):
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
     _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
-    below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _low[-_first_gc[1]:])
-    _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
+    _below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _low[-_first_gc[1]:])
+    _max_high = find_local_maximum(_high[-_first_gc[1]:], 24)
 
     _min_l = find_minimum(_low[-_max_high[1]:])
     _drop = (_max_high[0] - _min_l[0]) / _max_high[0]
     rally = (_max_high[0] - _first_gc[0]) / _first_gc[0]  # 48, 82 %
 
-    return _drop > 0.15 and rally > 0.5 and below_ma[1] > 0, _closes[-1]
+    return _drop > 0.15 and rally > 0.5 and _below_ma[1] > 0, _closes[-1]
 
 
 def find_first_golden_cross(__ma50, __ma200, _offset=0):
@@ -2356,6 +2387,21 @@ def drop_below_ma(_ma, _candles, _window=5, _max_window=100):
                 return drop_below_ma(_ma[-_index:], _candles[-_index:], _window)
             else:
                 return _candles[i], _index
+    return -1, -1
+
+
+def drop_below_ma_rev(_ma, _candles, _window=5):
+    _len = len(_ma)
+    for i in range(_len):
+        _j = i
+        if _ma[_j] > _candles[_j]:
+            _index = _j
+            if _index < _window:
+                if _index == 0:
+                    _index += _window
+                return drop_below_ma_rev(_ma[_index:], _candles[_index:], _window)
+            else:
+                return _candles[_j], _index
     return -1, -1
 
 

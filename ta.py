@@ -13,7 +13,8 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, highest
     exclude_markets, take_profit, BuyAsset, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
     is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
     is_second_golden_cross, is_first_golden_cross, get_time_from_binance_tmstmp, get_binance_klines, \
-    find_first_golden_cross, drop_below_ma, get_kucoin_klines, get_kucoin_interval_unit, is_drop_below_ma200_after_rally
+    find_first_golden_cross, drop_below_ma, get_kucoin_klines, get_kucoin_interval_unit, \
+    is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally
 
 from binance.client import Client as BinanceClient
 
@@ -489,18 +490,18 @@ def main():
     time_interval = "1600 hours ago"
 
     # _klines = get_binance_klines(market, ticker, time_interval)
-    _kucoin_ticker = "1hour"
-    _klines = get_kucoin_klines("AKRO-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 1000))
+    _kucoin_ticker = "8hour"
+    # _klines = get_kucoin_klines("AKRO-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
     # save_to_file("e://bin//data//", "klines-akro", _klines)
     _klines = get_pickled('e://bin/data//', "klines-akro")
 
-    _klines = _klines[0:-581]
+    _klines = _klines[0:-38]
 
     # res = is_first_golden_cross(_klines)
-    d = is_drop_below_ma200_after_rally(_klines)
+    d = is_drop_below_ma50_after_rally(_klines)
 
     # _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
     # _opens = np.array(list(map(lambda _x: float(_x[1]), _klines)))
