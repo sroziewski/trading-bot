@@ -2322,7 +2322,7 @@ def is_drop_below_ma200_after_rally(_klines):
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
     _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
-    below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:])
+    below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _low[-_first_gc[1]:])
     _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
 
     _min_l = find_minimum(_low[-_max_high[1]:])
