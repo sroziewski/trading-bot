@@ -5,7 +5,7 @@ import requests
 from bson.codec_options import TypeRegistry, CodecOptions
 
 from library import setup_logger, analyze_golden_cross, authorize, get_kucoin_interval_unit, process_setups, \
-    DecimalCodec, manage_verifying_setup
+    DecimalCodec, manage_verifying_setup, send_mail
 from mongodb import mongo_client
 
 logger = setup_logger("market-setup-finder")
@@ -23,6 +23,7 @@ manage_verifying_setup(collection)
 while 1:
     try:
         _tickers = ["1", "4", "8", "12"]
+        _mail_content = ''
         for _t in _tickers:
             _binance_ticker = f"{_t}h"
             _kucoin_ticker = f"{_t}hour"
@@ -31,7 +32,11 @@ while 1:
             market_setups_kucoin = analyze_golden_cross("exclude-markets-kucoin", _kucoin_ticker,
                                                         get_kucoin_interval_unit(_kucoin_ticker, 1600), "kucoin")
             setup_tuples = [(market_setups_binance, "binance"), (market_setups_kucoin, "kucoin")]
-            process_setups(setup_tuples, collection, _binance_ticker)
+            process_setups(setup_tuples, collection, _binance_ticker, _mail_content)
+
+        if len(_mail_content) > 0:
+            send_mail("WWW Market Setup Found WWW", _mail_content)
+
         time.sleep(3500)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):

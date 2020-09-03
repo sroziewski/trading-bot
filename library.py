@@ -2499,8 +2499,8 @@ def format_found_markets(_markets_tuple):
     return [f"{x[0]} : {x[1]}" for x in _markets_tuple]
 
 
-def process_setups(_setup_tuples, _collection, _ticker):
-    _mail_content = ''
+def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
+    _mail_content += f"<BR/><B>{_ticker}H</B><BR/>"
     process_setup_tuples(_setup_tuples[0], _collection, _ticker)
     process_setup_tuples(_setup_tuples[1], _collection, _ticker)
 
@@ -2510,8 +2510,6 @@ def process_setups(_setup_tuples, _collection, _ticker):
         if len(_setup) > 0:
             _mail_content += f"<BR/><B>{_exchange}</B><BR/>"
             _mail_content += ' '.join(format_found_markets(_setup))
-    if len(_mail_content) > 0:
-        send_mail("WWW Market Setup Found WWW", _mail_content)
 
 
 def process_setup_tuples(_setup_tuples, _collection, _ticker):
