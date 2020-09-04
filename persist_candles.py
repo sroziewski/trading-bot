@@ -33,6 +33,8 @@ def to_mongo(_kline):
         'btc_volume': _kline.btc_volume,
         'time_str': _kline.time_str,
         'market': _kline.market,
+        'bid_price': _kline.bid_depth.bid_price,
+        'ask_price': _kline.bid_depth.ask_price,
         'bid_depth': {
             'p5': _kline.bid_depth.p5,
             'p10': _kline.bid_depth.p10,
@@ -136,20 +138,22 @@ class MarketDepth(object):
 
 
 class SellDepth(MarketDepth):
-    def __init__(self, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
+    def __init__(self, _start_price, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
         super().__init__(_5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p)
+        self.ask_price = _start_price
 
 
 class BuyDepth(MarketDepth):
-    def __init__(self, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
+    def __init__(self, _start_price, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
         super().__init__(_5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p)
+        self.bid_price = _start_price
 
 
 def manage_crawling(_schedules):
     sleep(5)
     for _schedule in _schedules:
         _scheduler = threading.Thread(target=_do_schedule, args=(_schedule,),
-                                          name='_do_schedule : {}'.format(_schedule.collection_name))
+                                      name='_do_schedule : {}'.format(_schedule.collection_name))
         _scheduler.start()
 
 
@@ -212,7 +216,7 @@ def compute_depth_percentages(_depth, _type):
     _60p_d = (0, 0)
     _65p_d = (0, 0)
     _70p_d = (0, 0)
-    if _start_price > 5000: # we assume we have BTC here ;)
+    if _start_price > 5000:  # we assume we have BTC here ;)
         _divisor = 100.0
     else:
         _divisor = 1.0
@@ -224,40 +228,42 @@ def compute_depth_percentages(_depth, _type):
             _ratio = (_start_price - _price) / _start_price
         elif _type == "asks":
             _ratio = (_price - _start_price) / _start_price
-        if _ratio < 0.05/_divisor:
+        if _ratio < 0.05 / _divisor:
             _5p_d = (_5p_d[0] + _amount, _5p_d[1] + _amount * _price)
-        if _ratio < 0.10/_divisor:
+        if _ratio < 0.10 / _divisor:
             _10p_d = (_10p_d[0] + _amount, _10p_d[1] + _amount * _price)
-        if _ratio < 0.15/_divisor:
+        if _ratio < 0.15 / _divisor:
             _15p_d = (_15p_d[0] + _amount, _15p_d[1] + _amount * _price)
-        if _ratio < 0.20/_divisor:
+        if _ratio < 0.20 / _divisor:
             _20p_d = (_20p_d[0] + _amount, _20p_d[1] + _amount * _price)
-        if _ratio < 0.25/_divisor:
+        if _ratio < 0.25 / _divisor:
             _25p_d = (_25p_d[0] + _amount, _25p_d[1] + _amount * _price)
-        if _ratio < 0.30/_divisor:
+        if _ratio < 0.30 / _divisor:
             _30p_d = (_30p_d[0] + _amount, _30p_d[1] + _amount * _price)
-        if _ratio < 0.35/_divisor:
+        if _ratio < 0.35 / _divisor:
             _35p_d = (_35p_d[0] + _amount, _35p_d[1] + _amount * _price)
-        if _ratio < 0.40/_divisor:
+        if _ratio < 0.40 / _divisor:
             _40p_d = (_40p_d[0] + _amount, _40p_d[1] + _amount * _price)
-        if _ratio < 0.45/_divisor:
+        if _ratio < 0.45 / _divisor:
             _45p_d = (_45p_d[0] + _amount, _45p_d[1] + _amount * _price)
-        if _ratio < 0.5/_divisor:
+        if _ratio < 0.5 / _divisor:
             _50p_d = (_50p_d[0] + _amount, _50p_d[1] + _amount * _price)
-        if _ratio < 0.55/_divisor:
+        if _ratio < 0.55 / _divisor:
             _55p_d = (_55p_d[0] + _amount, _55p_d[1] + _amount * _price)
-        if _ratio < 0.6/_divisor:
+        if _ratio < 0.6 / _divisor:
             _60p_d = (_60p_d[0] + _amount, _60p_d[1] + _amount * _price)
-        if _ratio < 0.65/_divisor:
+        if _ratio < 0.65 / _divisor:
             _65p_d = (_65p_d[0] + _amount, _65p_d[1] + _amount * _price)
-        if _ratio < 0.7/_divisor:
+        if _ratio < 0.7 / _divisor:
             _70p_d = (_70p_d[0] + _amount, _70p_d[1] + _amount * _price)
     if _type == "bids":
-        _md = BuyDepth(_5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d, _55p_d, _60p_d,
+        _md = BuyDepth(_start_price, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d,
+                       _55p_d, _60p_d,
                        _65p_d,
                        _70p_d)
     elif _type == "asks":
-        _md = SellDepth(_5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d, _55p_d, _60p_d,
+        _md = SellDepth(_start_price, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d,
+                        _55p_d, _60p_d,
                         _65p_d,
                         _70p_d)
     return _md
@@ -279,7 +285,7 @@ def get_average_depths(_dc, _number_of_elements):
 
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
-        return BuyDepth((round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
+        return BuyDepth(round(_dc.bid_price / _by, 4), (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
                         (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
                         (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
                         (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
@@ -294,7 +300,7 @@ def divide_dc(_dc, _by):
                         (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
                         (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
     elif isinstance(_dc, SellDepth):
-        return SellDepth((round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
+        return SellDepth(round(_dc.ask_price / _by, 4), (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
                          (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
                          (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
                          (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
@@ -312,7 +318,7 @@ def divide_dc(_dc, _by):
 
 def add_dc(_dc1, _dc2):
     if isinstance(_dc1, BuyDepth):
-        return BuyDepth((_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
+        return BuyDepth(_dc1.bid_price + _dc2.bid_price, (_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
                         (_dc1.p10[0] + _dc2.p10[0], _dc1.p10[1] + _dc2.p10[1]),
                         (_dc1.p15[0] + _dc2.p15[0], _dc1.p15[1] + _dc2.p15[1]),
                         (_dc1.p20[0] + _dc2.p20[0], _dc1.p20[1] + _dc2.p20[1]),
@@ -327,7 +333,7 @@ def add_dc(_dc1, _dc2):
                         (_dc1.p65[0] + _dc2.p65[0], _dc1.p65[1] + _dc2.p65[1]),
                         (_dc1.p70[0] + _dc2.p70[0], _dc1.p70[1] + _dc2.p70[1]))
     elif isinstance(_dc1, SellDepth):
-        return SellDepth((_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
+        return SellDepth(_dc1.ask_price + _dc2.ask_price, (_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
                          (_dc1.p10[0] + _dc2.p10[0], _dc1.p10[1] + _dc2.p10[1]),
                          (_dc1.p15[0] + _dc2.p15[0], _dc1.p15[1] + _dc2.p15[1]),
                          (_dc1.p20[0] + _dc2.p20[0], _dc1.p20[1] + _dc2.p20[1]),
