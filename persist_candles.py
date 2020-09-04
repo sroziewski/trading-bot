@@ -34,7 +34,7 @@ def to_mongo(_kline):
         'time_str': _kline.time_str,
         'market': _kline.market,
         'bid_price': _kline.bid_depth.bid_price,
-        'ask_price': _kline.bid_depth.ask_price,
+        'ask_price': _kline.ask_depth.ask_price,
         'bid_depth': {
             'p5': _kline.bid_depth.p5,
             'p10': _kline.bid_depth.p10,
