@@ -484,7 +484,7 @@ def main():
     # get_most_volatile_market()
 
 
-    asset = "BNT"
+    asset = "TRX"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
@@ -495,13 +495,15 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-akro", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-akro")
+    # save_to_file("e://bin//data//", "klines-trx", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-trx")
 
-    _klines = _klines[0:-38]
-
-    # res = is_first_golden_cross(_klines)
+    # _klines = _klines[0:-38]
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    res0 = is_second_golden_cross(_closes[:-1])
+    res = is_first_golden_cross(_klines)
     d = is_drop_below_ma50_after_rally(_klines)
+    d1 = is_drop_below_ma200_after_rally(_klines)
 
     # _closes = np.array(list(map(lambda _x: float(_x[4]), _klines)))
     # _opens = np.array(list(map(lambda _x: float(_x[1]), _klines)))
