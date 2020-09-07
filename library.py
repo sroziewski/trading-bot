@@ -2284,7 +2284,7 @@ def is_first_golden_cross(_klines):
     _rsi = relative_strength_index(_closes)
 
     if not is_tradeable(_closes, _rsi, _macd, _macdsignal):
-        return False
+        return False, _closes[-1]
 
     fall = (np.max(_high[-500:]) - np.min(_low[-500:])) / np.max(_high[-500:])  # > 22%
 
@@ -2449,7 +2449,7 @@ def is_second_golden_cross(_closes):
     _rsi = relative_strength_index(_closes)
 
     if not is_tradeable(_closes, _rsi, _macd, _macdsignal):
-        return False
+        return False, _closes[-1]
 
     _max_50 = find_local_maximum(_ma50, 200)  # first a long-period maximum
     _min_50 = find_minimum_2(_ma50, 200)  # first a long-period minimum
@@ -2571,10 +2571,15 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
         _markets = get_markets(_exchange)
     for _market in _markets:
         try:
+            # if _exchange == 'kucoin':
+            #     _klines = get_kucoin_klines(f"{_market}-BTC", _ticker, _time_interval)
+            # elif _exchange == "binance":
+            #     _klines = get_binance_klines(_market, _ticker, _time_interval)
+
             if _exchange == 'kucoin':
-                _klines = get_kucoin_klines(f"{_market}-BTC", _ticker, _time_interval)
+                _klines = try_get_klines("kucoin", f"{_market}-BTC", _ticker, _time_interval)
             elif _exchange == "binance":
-                _klines = get_binance_klines(_market, _ticker, _time_interval)
+                _klines = try_get_klines("binance", _market, _ticker, _time_interval)
 
             _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
             _is_2nd_golden = is_second_golden_cross(_closes)
@@ -2602,6 +2607,24 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
     logger_global[0].info(' '.join(format_found_markets(_golden_cross_markets)))
     save_to_file(key_dir, _filename, _exclude_markets)
     return _golden_cross_markets
+
+
+def try_get_klines(_exchange, _market, _ticker, _time_interval):
+    _ii = 0
+    _klines = []
+    for _ii in range(0, 5):
+        try:
+            if _exchange == 'kucoin':
+                _klines = get_kucoin_klines(f"{_market}-BTC", _ticker, _time_interval)
+            elif _exchange == "binance":
+                _klines = get_binance_klines(_market, _ticker, _time_interval)
+        except Exception as e:
+            logger_global[0].warning(e)
+            print(f"Trying for market : {_market} ... {_ii}")
+            time.sleep(1)
+        if _klines:
+            return _klines
+    raise RuntimeError(f"No klines for market {_market}")
 
 
 class MailContent(object):
