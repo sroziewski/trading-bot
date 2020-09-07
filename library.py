@@ -2420,6 +2420,11 @@ def is_second_golden_cross(_closes):
     _min_200 = find_minimum_2(_ma200, 200)  # first a long-period minimum
     _max_200_1 = find_first_maximum(_ma200, 5)  # second lower max
     _min_200_1 = find_first_minimum(_ma200, 25)  # first higher minimum
+    _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+    _rsi = relative_strength_index(_closes)
+
+    if not is_tradeable(_closes, _rsi, _macd, _macdsignal):
+        return False
 
     _max_50 = find_local_maximum(_ma50, 200)  # first a long-period maximum
     _min_50 = find_minimum_2(_ma50, 200)  # first a long-period minimum
@@ -2451,6 +2456,72 @@ def get_markets(_exchange, _ticker=False, _exclude_markets=False):
         elif _exchange == "kucoin":
             _markets = list(map(lambda x: x['currency'], kucoin_client.get_currencies()))
     return _markets
+
+
+def is_macd_condition(_macd, _angle_limit, _start, _stop, _window=10):
+    _macd_max_val, _macd_reversed_max_ind = find_first_maximum(_macd[_start:_stop:1], _window)
+    _macd_max_val2, _macd_reversed_max_ind2 = find_first_maximum(-_macd[_start:_stop:1], _window)
+    if _macd_reversed_max_ind2 < _macd_reversed_max_ind:
+        _current_macd = (_macd[_stop] + _macd[_stop - 1]) / 2
+        _local_min_ratio = (_macd_max_val2 - np.abs(_current_macd)) / _macd_max_val2
+        if _local_min_ratio > 0.2:
+            # we have a minimum at first
+            return False
+    if _macd_reversed_max_ind == -1:
+        return False
+    _macd_magnitude = get_magnitude(_macd_reversed_max_ind, _macd_max_val)
+    _macd_angle = get_angle((0, _macd[_start:_stop:1][-1]),
+                            (_macd_reversed_max_ind / np.power(10, _macd_magnitude), _macd_max_val))
+    return _macd_angle >= _angle_limit
+
+
+def is_signal_divergence_ratio(_macd, _macdsignal, _ratio, _start, _stop):
+    _diff = _macd - _macdsignal
+    _diff_max_val, _diff_reversed_max_ind = find_first_maximum(_diff[_start:_stop:1], 10)
+    _diff_max_val2, _diff_reversed_max_ind2 = find_first_maximum(-_diff[_start:_stop:1], 10)
+    if _diff_max_val2 > _diff_max_val:
+        _diff_max_val = _diff_max_val2
+    return np.abs((_diff[_stop] + _diff[_stop - 1]) / 2) / _diff_max_val <= _ratio
+
+
+def is_higher_low(_values, _limit, _start, _stop, _window=10):
+    _flipped_values = np.max(_values[_start:_stop:1]) - _values
+    _max_val, _reversed_max_ind = find_first_maximum(_flipped_values[_start:_stop:1], _window)
+    _first_local_min = _values[_stop - _reversed_max_ind]
+    if _reversed_max_ind == -1 or _first_local_min > _limit:  # 1. there is no local minimum 2. RSI value for minimum is too high
+        return False
+    _current_value = _values[_stop]
+    if _stop - _reversed_max_ind + 1 - (_stop - 1) <= 2:  # len for the interval should be longer than 2
+        return False
+    _interval_for_local_max = _values[_stop - _reversed_max_ind + 1:_stop - 1]
+    _local_max = np.max(_interval_for_local_max)
+    return (_local_max - _current_value) > 2  # the difference in RSI local extrema has to be minimum 2 rsi
+
+
+def is_tradeable(_closes, _rsi, _macd, _macdsignal):
+    if len(list(filter(lambda x: x == 0, get_last(_rsi, -1, 10)))) > 0:
+        return False
+    _start = 33
+    _stop = -1
+    _slope = 30
+    _tight_slope = 40
+    _rsi_limit = 45
+    _rsi_tight_limit = 30
+    _rsi_normal_cond = is_rsi_slope_condition(_rsi, _rsi_limit, _slope, _start, _stop)
+    _rsi_tight_cond = is_rsi_slope_condition(_rsi, _rsi_tight_limit, _tight_slope, _start, _stop)
+    _macd_normal_cond = is_macd_condition(_macd, _slope, _start, _stop)
+    _macd_tight_cond = is_macd_condition(_macd, 50, _start, _stop)
+    _divergence_ratio_cond = is_signal_divergence_ratio(_macd, _macdsignal, 0.1, _start, _stop)
+    _hl_cond = is_higher_low(_rsi, _rsi_limit, _start, _stop)
+
+    _tradeable = False
+    if _rsi_normal_cond and _divergence_ratio_cond and _macd_normal_cond:
+        _tradeable = True
+    if _rsi_tight_cond or _macd_tight_cond:
+        _tradeable = True
+    if _hl_cond and _divergence_ratio_cond:
+        _tradeable = True
+    return _tradeable
 
 
 def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):

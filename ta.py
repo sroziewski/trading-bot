@@ -484,7 +484,7 @@ def main():
     # get_most_volatile_market()
 
 
-    asset = "TRX"
+    asset = "SKY"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
@@ -495,10 +495,10 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-trx", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-trx")
+    # save_to_file("e://bin//data//", "klines-sky", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-sky")
 
-    # _klines = _klines[0:-38]
+    # _klines = _klines[0:-31]
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     res0 = is_second_golden_cross(_closes[:-1])
     res = is_first_golden_cross(_klines)
@@ -520,6 +520,8 @@ def main():
     ## MACD
 
     macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+
+    is_it = is_tradeable(_closes, r, macd, macdsignal)
 
     #
     start = 0
