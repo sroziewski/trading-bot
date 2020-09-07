@@ -2262,6 +2262,12 @@ def is_first_golden_cross(_klines):
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
 
+    _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+    _rsi = relative_strength_index(_closes)
+
+    if not is_tradeable(_closes, _rsi, _macd, _macdsignal):
+        return False
+
     fall = (np.max(_high[-500:]) - np.min(_low[-500:])) / np.max(_high[-500:])  # > 22%
 
     _min_ind, _max_ind = find_global_max_min_ind(_low, _high)
@@ -2491,7 +2497,7 @@ def is_higher_low(_values, _limit, _start, _stop, _window=10):
     if _reversed_max_ind == -1 or _first_local_min > _limit:  # 1. there is no local minimum 2. RSI value for minimum is too high
         return False
     _current_value = _values[_stop]
-    if _stop - _reversed_max_ind + 1 - (_stop - 1) <= 2:  # len for the interval should be longer than 2
+    if abs(_stop - _reversed_max_ind + 1 - (_stop - 1)) <= 2:   # len for the interval should be longer than 2
         return False
     _interval_for_local_max = _values[_stop - _reversed_max_ind + 1:_stop - 1]
     _local_max = np.max(_interval_for_local_max)
@@ -2511,7 +2517,7 @@ def is_tradeable(_closes, _rsi, _macd, _macdsignal):
     _rsi_tight_cond = is_rsi_slope_condition(_rsi, _rsi_tight_limit, _tight_slope, _start, _stop)
     _macd_normal_cond = is_macd_condition(_macd, _slope, _start, _stop)
     _macd_tight_cond = is_macd_condition(_macd, 50, _start, _stop)
-    _divergence_ratio_cond = is_signal_divergence_ratio(_macd, _macdsignal, 0.1, _start, _stop)
+    _divergence_ratio_cond = is_signal_divergence_ratio(_macd, _macdsignal, 0.5, _start, _stop)
     _hl_cond = is_higher_low(_rsi, _rsi_limit, _start, _stop)
 
     _tradeable = False

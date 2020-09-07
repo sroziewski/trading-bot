@@ -14,7 +14,7 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, highest
     is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
     is_second_golden_cross, is_first_golden_cross, get_time_from_binance_tmstmp, get_binance_klines, \
     find_first_golden_cross, drop_below_ma, get_kucoin_klines, get_kucoin_interval_unit, \
-    is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally
+    is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable
 
 from binance.client import Client as BinanceClient
 
@@ -123,45 +123,6 @@ def is_macd_condition(_macd, _angle_limit, _start, _stop, _window=10):
                             (_macd_reversed_max_ind / np.power(10, _macd_magnitude), _macd_max_val))
     return _macd_angle >= _angle_limit
 
-
-def is_higher_low(_values, _limit, _start, _stop, _window=10):
-    _flipped_values = np.max(_values[_start:_stop:1]) - _values
-    _max_val, _reversed_max_ind = find_first_maximum(_flipped_values[_start:_stop:1], _window)
-    _first_local_min = _values[_stop - _reversed_max_ind]
-    if _reversed_max_ind == -1 or _first_local_min > _limit:  # 1. there is no local minimum 2. RSI value for minimum is too high
-        return False
-    _current_value = _values[_stop]
-    if _stop - _reversed_max_ind + 1 - (_stop - 1) <= 2:  # len for the interval should be longer than 2
-        return False
-    _interval_for_local_max = _values[_stop - _reversed_max_ind + 1:_stop - 1]
-    _local_max = np.max(_interval_for_local_max)
-    return (_local_max - _current_value) > 2  # the difference in RSI local extrema has to be minimum 2 rsi
-
-
-def is_tradeable(_closes, _rsi, _macd, _macdsignal):
-    if len(list(filter(lambda x: x == 0, get_last(_rsi, -1, 10)))) > 0:
-        return False
-    _start = 33
-    _stop = -1
-    _slope = 30
-    _tight_slope = 40
-    _rsi_limit = 45
-    _rsi_tight_limit = 30
-    _rsi_normal_cond = is_rsi_slope_condition(_rsi, _rsi_limit, _slope, _start, _stop)
-    _rsi_tight_cond = is_rsi_slope_condition(_rsi, _rsi_tight_limit, _tight_slope, _start, _stop)
-    _macd_normal_cond = is_macd_condition(_macd, _slope, _start, _stop)
-    _macd_tight_cond = is_macd_condition(_macd, 50, _start, _stop)
-    _divergence_ratio_cond = is_signal_divergence_ratio(_macd, _macdsignal, 0.1, _start, _stop)
-    _hl_cond = is_higher_low(_rsi, _rsi_limit, _start, _stop)
-
-    _tradeable = False
-    if _rsi_normal_cond and _divergence_ratio_cond and _macd_normal_cond:
-        _tradeable = True
-    if _rsi_tight_cond or _macd_tight_cond:
-        _tradeable = True
-    if _hl_cond and _divergence_ratio_cond:
-        _tradeable = True
-    return _tradeable
 
 
 def get_closes(_klines):
@@ -484,21 +445,22 @@ def main():
     # get_most_volatile_market()
 
 
-    asset = "SKY"
+    asset = "CMT"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
 
-    # _klines = get_binance_klines(market, ticker, time_interval)
+    _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "8hour"
     # _klines = get_kucoin_klines("AKRO-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-sky", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-sky")
+    _klines = _klines[0:-32]
+    save_to_file("e://bin//data//", "klines-cmt", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-cmt")
 
-    # _klines = _klines[0:-31]
+
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     res0 = is_second_golden_cross(_closes[:-1])
     res = is_first_golden_cross(_klines)
@@ -523,6 +485,8 @@ def main():
 
     is_it = is_tradeable(_closes, r, macd, macdsignal)
 
+    _out = is_second_golden_cross(_closes)
+    _first = is_first_golden_cross(_klines)
     #
     start = 0
     # stop = -5*60-30-32
