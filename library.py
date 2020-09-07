@@ -2000,7 +2000,7 @@ def find_first_maximum(_values, _window):  # find the first maximum
     _range = int(len(_values) / _window)
     _max_val = -1
     _min_stop_level = 0.9
-    _activate_stop = False
+    # _activate_stop = False
     _max_ind = -1
     _maxes = []
     for _i in range(0, _range - 1):
@@ -2011,10 +2011,12 @@ def find_first_maximum(_values, _window):  # find the first maximum
         if _i_max > _max_val:
             _max_val = _i_max
             _max_ind = _index
-            if _max_val > 0:
-                _activate_stop = True
-        if _activate_stop and _i_max < _min_stop_level * _max_val:
-            return check_maxes(_values, _maxes)
+            # if _max_val > 0:
+            #     _activate_stop = True
+        if _i_max < _min_stop_level * _max_val:
+            _res = check_maxes(_values, _maxes)
+            if _res[1] > -1:
+                return _res
     return check_maxes(_values, _maxes)
 
 
@@ -2026,24 +2028,44 @@ def check_maxes(_data, _tuples):
     return -1, -1
 
 
-def find_first_minimum(_values, _window):  # find the first maximum
+def check_mins(_data, _tuples):
+    _tuples = sorted(_tuples, key= lambda x: x[0])
+    for _tuple in _tuples:
+        if _data[-_tuple[1] - 1] > _tuple[0] < _data[-_tuple[1] + 1]:
+            return _tuple
+    return -1, -1
+
+
+def find_first_minimum(_values, _window, _reversed=False):  # find the first maximum
     _range = int(len(_values) / _window)
     _min_val = 1000
     _min_stop_level = 0.9
-    _activate_stop = False
+    # _activate_stop = False
     _min_ind = -1
+    _mins = []
     for _i in range(0, _range - 1):
         _i_min = np.min(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
         _tmp = list(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
         _index = _window - _tmp.index(min(_tmp)) + _i * _window + 1
+        _mins.append((_i_min, _index))
         if _i_min < _min_val:
             _min_val = _i_min
             _min_ind = _index
-            if _min_val < 1000:
-                _activate_stop = True
-        if _activate_stop and _i_min > _min_stop_level * _min_val:
-            return _min_val, _min_ind
-    return _min_val, _min_ind
+            # if _min_val < 1000:
+            #     _activate_stop = True
+        if _i_min > _min_stop_level * _min_val:
+            _res = check_mins(_values, _mins)
+            if _res[1] > -1:
+                return _reverse_result(_res, _values, _reversed)
+    return _reverse_result(check_mins(_values, _mins), _values, _reversed)
+
+
+def _reverse_result(_tuple, _values, _reversed=False):
+    if _reversed:
+        return _tuple[0], len(_values) - _tuple[0] - 1
+    else:
+        return _tuple
+
 
 
 def find_maximum_2(_values, _window):  # find the first maximum
@@ -2807,24 +2829,28 @@ def handle_verification_mailing(_data_list, _mail_content):
 
 def is_wedge(_closes):
     _max_val, _index_max_val = find_first_maximum(_closes, 5)
+    _max_val0, _index_max_val0 = find_first_maximum(_closes[:-_index_max_val], 5)
     _max_val2, _index_max_val2 = find_first_maximum(_closes[-_index_max_val:], 3)
-    _min_val, _index3 = find_first_minimum(_closes[-_index_max_val:-_index_max_val2], 3)
-    _index_min_val = _index_max_val2 + _index3
+    _min_va11, _index_min_val1 = find_first_minimum(_closes[-_index_max_val:], 3)
+    _min_val, _index_min_val2 = find_first_minimum(_closes[-_index_max_val:-_index_max_val2][::-1], 3)
+    _index_min_val = _index_max_val2 + _index_min_val2 + 1
     _magnitude = get_magnitude(_index_max_val, _max_val)
     _slope_max = slope(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                        _max_val2 * np.power(10, _magnitude))
-    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -1, _closes[-1] * np.power(10, _magnitude))
+    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1, _min_va11 * np.power(10, _magnitude))
 
     _b_max = bias(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                   _max_val2 * np.power(10, _magnitude))
-    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -1, _closes[-1] * np.power(10, _magnitude))
+    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1, _min_va11 * np.power(10, _magnitude))
 
     _checked_max = check_wedge(_slope_max, _b_max, range(-_index_max_val, 0),
                                _closes[-_index_max_val:] * np.power(10, _magnitude))
     _checked_min = check_wedge(_slope_min, _b_min, range(-_index_max_val, 0),
                                _closes[-_index_max_val:] * np.power(10, _magnitude), True)
 
-    return _checked_min and _checked_max
+    _max0_cond = _max_val0* np.power(10, _magnitude) <= -_slope_max*_index_max_val0+_b_max
+
+    return _max0_cond and _checked_min and _checked_max
 
 
 def check_wedge(_a, _b, _x, _y, _greater=False, _ratio=0.66):
