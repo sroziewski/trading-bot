@@ -1,22 +1,19 @@
 import time
-import traceback
 import warnings
 from os import path
 
-import numpy as np
-
 import matplotlib.pyplot as plt
+import numpy as np
 import talib
 from binance.client import Client
-
-from library import binance_obj, get_binance_interval_unit, AssetTicker, highest_bid, get_pickled, \
-    exclude_markets, take_profit, BuyAsset, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
-    is_bullish_setup, Asset, find_minimum, find_local_maximum, find_minimum_2, find_first_minimum, \
-    is_second_golden_cross, is_first_golden_cross, get_time_from_binance_tmstmp, get_binance_klines, \
-    find_first_golden_cross, drop_below_ma, get_kucoin_klines, get_kucoin_interval_unit, \
-    is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable
-
 from binance.client import Client as BinanceClient
+
+from library import binance_obj, get_binance_interval_unit, AssetTicker, get_pickled, \
+    exclude_markets, find_first_maximum, save_to_file, get_klines, lowest_ask, get_time, key_dir, \
+    find_local_maximum, find_minimum_2, find_first_minimum, \
+    is_second_golden_cross, is_first_golden_cross, find_first_golden_cross, drop_below_ma, \
+    is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable, slope, bias, check_wedge, \
+    is_falling_wedge, is_higher_low
 
 warnings.filterwarnings('error')
 
@@ -122,7 +119,6 @@ def is_macd_condition(_macd, _angle_limit, _start, _stop, _window=10):
     _macd_angle = get_angle((0, _macd[_start:_stop:1][-1]),
                             (_macd_reversed_max_ind / np.power(10, _macd_magnitude), _macd_max_val))
     return _macd_angle >= _angle_limit
-
 
 
 def get_closes(_klines):
@@ -438,30 +434,81 @@ def get_most_volatile_market():
     i = 1
 
 
+def is_falling_wedge_0(_closes):
+    _max_val, _index_max_val = find_first_maximum(_closes, 5)
+    _max_val2, _index_max_val2 = find_first_maximum(_closes[-_index_max_val:], 3)
+    _min_val, _index3 = find_first_minimum(_closes[-_index_max_val:-_index_max_val2], 3)
+    _index_min_val = _index_max_val2 + _index3
+    _magnitude = get_magnitude(_index_max_val, _max_val)
+    _slope_max = slope(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
+                       _max_val2 * np.power(10, _magnitude))
+    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -1, _closes[-1] * np.power(10, _magnitude))
+
+    _b_max = bias(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
+                  _max_val2 * np.power(10, _magnitude))
+    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -1, _closes[-1] * np.power(10, _magnitude))
+
+    _checked_max = check_wedge(_slope_max, _b_max, range(-_index_max_val, 0),
+                               _closes[-_index_max_val:] * np.power(10, _magnitude))
+    _checked_min = check_wedge(_slope_min, _b_min, range(-_index_max_val, 0),
+                               _closes[-_index_max_val:] * np.power(10, _magnitude), True)
+
+    _at1 = np.math.atan(_slope_max)
+    _at2 = np.math.atan(_slope_min)
+    _deg1 = np.math.degrees(_at1)
+    _deg2 = np.math.degrees(_at2)
+    _diff_deg = _deg2 - _deg1
+    _wedge_formed = 0 < _diff_deg < 60.0
+
+    plt.subplot2grid((1, 1), (0, 0))
+    plt.plot(-_index_max_val, _max_val * np.power(10, _magnitude), 'g^')
+    plt.plot(-_index_max_val2, _max_val2 * np.power(10, _magnitude), 'g^')
+    plt.plot(-_index_min_val, _min_val * np.power(10, _magnitude), 'bs')
+    plt.plot(-1, _closes[-1] * np.power(10, _magnitude), 'bs')
+
+    t = range(-11, 0)
+    y1 = _slope_max * t + _b_max
+    y2 = _slope_min * t + _b_min
+
+    plt.plot(t, y1)
+    plt.plot(t, y2)
+    plt.plot(t, np.array(_closes[-11:]) * np.power(10, _magnitude))
+
+    plt.show()
+    i = 1
+
+
 def main():
     # asset = Asset(exchange="binance", name="LINK", ticker=BinanceClient.KLINE_INTERVAL_1HOUR)
     # is_bullish_setup(asset)
     # analyze_markets()
     # get_most_volatile_market()
 
-
-    asset = "CMT"
+    asset = "BZRX"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
     time_interval = "1600 hours ago"
 
-    _klines = get_binance_klines(market, ticker, time_interval)
+    # _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "8hour"
     # _klines = get_kucoin_klines("AKRO-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    _klines = _klines[0:-32]
-    save_to_file("e://bin//data//", "klines-cmt", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-cmt")
-
+    # save_to_file("e://bin//data//", "klines-bzrx", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-bzrx")
+    _klines = _klines[0:-2]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    fw = is_falling_wedge(_closes)
+
+    macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+    r = relative_strength_index(_closes)
+
+    hl = is_higher_low(r, 45.0, 33, -1)
+
+    is_it = is_tradeable(_closes, r, macd, macdsignal)
+
     res0 = is_second_golden_cross(_closes[:-1])
     res = is_first_golden_cross(_klines)
     d = is_drop_below_ma50_after_rally(_klines)
@@ -477,13 +524,11 @@ def main():
     _high = list(map(lambda _x: float(_x.highest), _klines))
     _low = list(map(lambda _x: float(_x.lowest), _klines))
 
-    r = relative_strength_index(_closes)
+
 
     ## MACD
 
-    macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
 
-    is_it = is_tradeable(_closes, r, macd, macdsignal)
 
     _out = is_second_golden_cross(_closes)
     _first = is_first_golden_cross(_klines)
@@ -532,7 +577,7 @@ def main():
     below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _closes[-_first_gc[1]:], 5)
 
     _max_high = find_local_maximum(_high[-_first_gc[1]:], 100)
-    rally = (_max_high[0] - _first_gc[0]) / _first_gc[0] # 48, 82 %
+    rally = (_max_high[0] - _first_gc[0]) / _first_gc[0]  # 48, 82 %
 
     if rally > 0.5 and below_ma[1] > 0:
         i = 1
@@ -589,7 +634,6 @@ def main():
     # before_second_golden_cross_cond = _min_50[0] < _ma200[-_min_50[1]] and _max_50_1[0] > _ma200[-_max_50_1[1]] and _max_50_1[0] > _ma200[
     #     -_max_50_1[1]] and _min_50_1[0] < _ma200[-_min_50_1[1]]
 
-
     # if _min_200[0] < _max_200[0] and _max_200[1] > _min_200[1] and np.std(ma200[-200:])/np.mean(ma200[-200:]) < 0.02:
     #     aja = 1
     #
@@ -618,7 +662,6 @@ def main():
     plt.subplot2grid((3, 1), (2, 0))
     # plt.plot(ma200[start:stop:1], 'green', lw=1)
     # plt.plot(ma50[start:stop:1], 'red', lw=1)
-
 
     plt.plot(_ma200, 'black', lw=1)
     plt.plot(_ma200[-_first_gc[1]:], 'green', lw=1)
