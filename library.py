@@ -2415,6 +2415,7 @@ def is_drop_below_ma200_after_rally(_klines):
     _max_high = find_local_maximum(_high[-_first_gc[1]:], 24)
 
     _min_l = find_minimum(_low[-_max_high[1]:])
+    _min_l_cl = find_minimum(_closes[-_max_high[1]:])
     _drop = (_max_high[0] - _min_l[0]) / _max_high[0]
     rally = (_max_high[0] - _first_gc[0]) / _first_gc[0]  # 48, 82 %
 
@@ -2424,7 +2425,9 @@ def is_drop_below_ma200_after_rally(_klines):
     _falses = len(_low_below_ma50) - _trues
     _ratio = _trues / (_trues + _falses)
 
-    return _ratio > 0.7 and _ma50_above_ma200 and _drop > 0.15 and rally > 0.5 and _below_ma[1] > 0, _closes[-1]
+    _bounce = (_max_high[0] - _min_l_cl[0]) / _min_l_cl[0]
+
+    return _bounce < 0.1 and _ratio > 0.7 and _ma50_above_ma200 and _drop > 0.25 and rally > 0.5 and _below_ma[1] > 0, _closes[-1]
 
 
 def find_first_golden_cross(__ma50, __ma200, _offset=0):
