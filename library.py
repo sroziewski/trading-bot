@@ -2392,12 +2392,15 @@ def is_drop_below_ma50_after_rally(_klines):
     _max_high = find_local_maximum(_high[-_below_ma[1] - 1:], 3)
 
     _min_l = find_minimum(_low[-_max_high[1]:])
+    _min_l_cl = find_minimum(_closes[-_max_high[1]:])
     _drop = (_max_high[0] - _min_l[0]) / _max_high[0]
     rally = (_max_high[0] - _below_ma[0]) / _below_ma[0]  # 48, 82 %
 
-    is_currently_below_ma50 = _low[-1] < _ma50[-1]
+    _is_currently_below_ma50 = _low[-1] < _ma50[-1]
 
-    return is_currently_below_ma50 and _ratio > 0.7 and _drop > 0.15 and rally > 0.2 and _below_ma[
+    _bounce = (_max_high[0]-_min_l_cl[0])/_min_l_cl[0]
+
+    return _bounce < 0.1 and _is_currently_below_ma50 and _ratio > 0.7 and _drop > 0.25 and rally > 0.3 and _below_ma[
         1] > 0 and _ma50_above_ma200, _closes[-1]
 
 

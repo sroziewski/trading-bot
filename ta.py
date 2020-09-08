@@ -489,7 +489,7 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "BNB"
+    asset = "XEM"
     market = "{}BTC".format(asset)
     ticker = BinanceClient.KLINE_INTERVAL_4HOUR
     time_interval = "1600 hours ago"
@@ -500,8 +500,8 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-bnb", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-bnb")
+    # save_to_file("e://bin//data//", "klines-xem", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-xem")
     # _klines = _klines[0:-2]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
