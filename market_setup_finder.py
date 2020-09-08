@@ -22,12 +22,19 @@ manage_verifying_setup(collection)
 
 while 1:
     try:
-        _tickers = ["1", "4", "8", "12"]
+        _tickers = [30, 1, 4, 8, 12, 24]
 
         mail_content = MailContent('')
         for _t in _tickers:
-            _binance_ticker = f"{_t}h"
-            _kucoin_ticker = f"{_t}hour"
+            if _t < 24:
+                _binance_ticker = f"{_t}h"
+                _kucoin_ticker = f"{_t}hour"
+            elif _t == 24:
+                _binance_ticker = "1d"
+                _kucoin_ticker = "1day"
+            elif _t == 30:
+                _binance_ticker = "30m"
+                _kucoin_ticker = "30min"
             market_setups_binance = analyze_golden_cross("exclude-markets-binance", _binance_ticker, "1600 hours ago", "binance")
             _kucoin_ticker = "1hour"
             market_setups_kucoin = analyze_golden_cross("exclude-markets-kucoin", _kucoin_ticker,
