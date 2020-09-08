@@ -2550,7 +2550,8 @@ def is_higher_low(_values, _limit, _start, _stop, _window=10):
         return False
     _interval_for_local_max = _values[_stop - _reversed_max_ind + 1:_stop - 1]
     _local_max = np.max(_interval_for_local_max)
-    return (_local_max - _current_value) > 2  # the difference in RSI local extrema has to be minimum 2 rsi
+    _is_retraced = _local_max - (_local_max - _first_local_min) * 0.618 > _current_value
+    return _is_retraced and (_local_max - _current_value) > 2  # the difference in RSI local extrema has to be minimum 2 rsi
 
 
 def is_tradeable(_closes, _rsi, _macd, _macdsignal):

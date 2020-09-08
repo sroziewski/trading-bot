@@ -13,7 +13,7 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, get_pic
     find_local_maximum, find_minimum_2, find_first_minimum, \
     is_second_golden_cross, is_first_golden_cross, find_first_golden_cross, drop_below_ma, \
     is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable, slope, bias, check_wedge, \
-    is_falling_wedge, is_higher_low
+    is_falling_wedge, is_higher_low, get_binance_klines
 
 warnings.filterwarnings('error')
 
@@ -436,22 +436,27 @@ def get_most_volatile_market():
 
 def is_falling_wedge_0(_closes):
     _max_val, _index_max_val = find_first_maximum(_closes, 5)
+    _max_val0, _index_max_val0 = find_first_maximum(_closes[:-_index_max_val], 5)
     _max_val2, _index_max_val2 = find_first_maximum(_closes[-_index_max_val:], 3)
-    _min_val, _index3 = find_first_minimum(_closes[-_index_max_val:-_index_max_val2], 3)
-    _index_min_val = _index_max_val2 + _index3
+    _min_va11, _index_min_val1 = find_first_minimum(_closes[-_index_max_val:], 3)
+    _min_val, _index_min_val2 = find_first_minimum(_closes[-_index_max_val:-_index_max_val2][::-1], 3)
+    _index_min_val = _index_max_val2 + _index_min_val2 + 1
     _magnitude = get_magnitude(_index_max_val, _max_val)
     _slope_max = slope(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                        _max_val2 * np.power(10, _magnitude))
-    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -1, _closes[-1] * np.power(10, _magnitude))
+    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1, _min_va11 * np.power(10, _magnitude))
 
     _b_max = bias(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                   _max_val2 * np.power(10, _magnitude))
-    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -1, _closes[-1] * np.power(10, _magnitude))
+    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1, _min_va11 * np.power(10, _magnitude))
 
     _checked_max = check_wedge(_slope_max, _b_max, range(-_index_max_val, 0),
                                _closes[-_index_max_val:] * np.power(10, _magnitude))
     _checked_min = check_wedge(_slope_min, _b_min, range(-_index_max_val, 0),
                                _closes[-_index_max_val:] * np.power(10, _magnitude), True)
+
+    _max0_cond = _max_val0* np.power(10, _magnitude) <= -_slope_max*_index_max_val0+_b_max
+
 
     _at1 = np.math.atan(_slope_max)
     _at2 = np.math.atan(_slope_min)
@@ -464,15 +469,15 @@ def is_falling_wedge_0(_closes):
     plt.plot(-_index_max_val, _max_val * np.power(10, _magnitude), 'g^')
     plt.plot(-_index_max_val2, _max_val2 * np.power(10, _magnitude), 'g^')
     plt.plot(-_index_min_val, _min_val * np.power(10, _magnitude), 'bs')
-    plt.plot(-1, _closes[-1] * np.power(10, _magnitude), 'bs')
+    plt.plot(-_index_min_val1, _min_va11 * np.power(10, _magnitude), 'bs')
 
-    t = range(-11, 0)
+    t = range(-_index_max_val, 0)
     y1 = _slope_max * t + _b_max
     y2 = _slope_min * t + _b_min
 
     plt.plot(t, y1)
     plt.plot(t, y2)
-    plt.plot(t, np.array(_closes[-11:]) * np.power(10, _magnitude))
+    plt.plot(t, np.array(_closes[-_index_max_val:]) * np.power(10, _magnitude))
 
     plt.show()
     i = 1
@@ -484,9 +489,9 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "BZRX"
+    asset = "BNB"
     market = "{}BTC".format(asset)
-    ticker = BinanceClient.KLINE_INTERVAL_1HOUR
+    ticker = BinanceClient.KLINE_INTERVAL_4HOUR
     time_interval = "1600 hours ago"
 
     # _klines = get_binance_klines(market, ticker, time_interval)
@@ -495,11 +500,12 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-bzrx", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-bzrx")
-    _klines = _klines[0:-2]
+    # save_to_file("e://bin//data//", "klines-bnb", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-bnb")
+    # _klines = _klines[0:-2]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    fw0 = is_falling_wedge_0(_closes)
     fw = is_falling_wedge(_closes)
 
     macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
