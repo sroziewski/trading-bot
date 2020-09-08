@@ -2519,6 +2519,17 @@ def get_markets(_exchange, _ticker=False, _exclude_markets=False):
     return _markets
 
 
+def get_excluded_markets(_markets, _to_exclude, _ticker):
+    _res = []
+    if _ticker in _to_exclude:
+        for _m in _markets:
+            if not _m in _to_exclude[_ticker]:
+                _res.append(_m)
+        return _res
+    return _markets
+
+
+
 def is_macd_condition(_macd, _angle_limit, _start, _stop, _window=10):
     _macd_max_val, _macd_reversed_max_ind = find_first_maximum(_macd[_start:_stop:1], _window)
     _macd_max_val2, _macd_reversed_max_ind2 = find_first_maximum(-_macd[_start:_stop:1], _window)
@@ -2628,7 +2639,7 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
                 _golden_cross_markets.append((_market, "is_falling_wedge", _is_fw[1]))
         except Exception as e:
             logger_global[0].warning(e)
-            print(f"No data for market : {_market}")
+            logger_global[0].warning(f"No data for market : {_market}")
             if _ticker in _exclude_markets:
                 _exclude_markets[_ticker].append(_market)
             else:
@@ -2649,7 +2660,7 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
                 _klines = get_binance_klines(_market, _ticker, _time_interval)
         except Exception as e:
             logger_global[0].warning(e)
-            print(f"Trying for market : {_market} ... {_ii}")
+            logger_global[0].warning(f"Trying for market : {_market} ... {_ii}")
             time.sleep(1)
         if _klines:
             return _klines
