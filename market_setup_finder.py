@@ -36,7 +36,6 @@ while 1:
                 _binance_ticker = "30m"
                 _kucoin_ticker = "30min"
             market_setups_binance = analyze_golden_cross("exclude-markets-binance", _binance_ticker, "1600 hours ago", "binance")
-            _kucoin_ticker = "1hour"
             market_setups_kucoin = analyze_golden_cross("exclude-markets-kucoin", _kucoin_ticker,
                                                         get_kucoin_interval_unit(_kucoin_ticker, 1600), "kucoin")
             setup_tuples = [(market_setups_binance, "binance"), (market_setups_kucoin, "kucoin")]

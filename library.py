@@ -2658,7 +2658,7 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
     for _ii in range(0, 5):
         try:
             if _exchange == 'kucoin':
-                _klines = get_kucoin_klines(f"{_market}-BTC", _ticker, _time_interval)
+                _klines = get_kucoin_klines(_market, _ticker, _time_interval)
             elif _exchange == "binance":
                 _klines = get_binance_klines(_market, _ticker, _time_interval)
             if not _klines:
@@ -2666,6 +2666,7 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
                 time.sleep(1)
         except Exception as e:
             logger_global[0].warning(e)
+            time.sleep(1)
         if _klines:
             return _klines
     raise RuntimeError(f"No klines for market {_market}")
