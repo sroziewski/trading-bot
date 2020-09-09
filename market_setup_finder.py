@@ -11,7 +11,7 @@ from mongodb import mongo_client
 logger = setup_logger("market-setup-finder")
 logger.info("Starting Market-Setup-Finder...")
 
-# authorize()
+authorize()
 
 db = mongo_client.setups
 decimal_codec = DecimalCodec()
