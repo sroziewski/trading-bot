@@ -2640,7 +2640,31 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
             _is_bf = is_bull_flag(_closes)
             if _is_bf[0]:
                 _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
+
+
         except Exception as e:
+
+            if e.args[0] == 'invalid value encountered in int_scalars':
+
+                _is_2nd_golden = is_second_golden_cross(_closes)
+                if _is_2nd_golden[0]:
+                    _golden_cross_markets.append((_market, "is_second_golden_cross", _is_2nd_golden[1]))
+                _is_1st_golden = is_first_golden_cross(_klines)
+                if _is_1st_golden[0]:
+                    _golden_cross_markets.append((_market, "is_first_golden_cross", _is_1st_golden[1]))
+                _is_drop_below_ma200 = is_drop_below_ma200_after_rally(_klines)
+                if _is_drop_below_ma200[0]:
+                    _golden_cross_markets.append((_market, "drop_below_ma200_after_rally", _is_drop_below_ma200[1]))
+                _is_drop_below_ma50 = is_drop_below_ma50_after_rally(_klines)
+                if _is_drop_below_ma50[0]:
+                    _golden_cross_markets.append((_market, "is_drop_below_ma50_after_rally", _is_drop_below_ma50[1]))
+                _is_fw = is_falling_wedge(_closes)
+                if _is_fw[0]:
+                    _golden_cross_markets.append((_market, "is_falling_wedge", _is_fw[1]))
+                _is_bf = is_bull_flag(_closes)
+                if _is_bf[0]:
+                    _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
+
             logger_global[0].warning(e)
             logger_global[0].warning(f"No data for market : {_market}")
             if _ticker in _exclude_markets:
@@ -2860,8 +2884,16 @@ def is_wedge(_closes):
     _min_val, _index_min_val2 = find_first_minimum(_closes[-_index_max_val:-_index_max_val2][::-1], 3)
     _index_min_val = _index_max_val2 + _index_min_val2 + 1
     _magnitude = get_magnitude(_index_max_val, _max_val)
+
+    if _index_max_val == _index_max_val2:
+        return False
+
     _slope_max = slope(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                        _max_val2 * np.power(10, _magnitude))
+
+    if _index_min_val == _index_min_val1:
+        return False
+
     _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1,
                        _min_va11 * np.power(10, _magnitude))
 
