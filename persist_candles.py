@@ -396,9 +396,8 @@ def get_binance_schedules(_asset):
     _dc = DepthCrawl(_market, _exchange)
     manage_depth_crawling(_dc)
     return [
-        Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
-                 60 * 60 * 23, _exchange, _dc, 20 * 24),
-        # 30, _exchange, _dc, 5),
+        # Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
+        #          60 * 60 * 23, _exchange, _dc, 20 * 24),
         # Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, _exchange, _dc,
         #          20 * 12),
         # Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, _exchange, _dc,
