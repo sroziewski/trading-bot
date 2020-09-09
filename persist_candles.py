@@ -11,7 +11,7 @@ from pymongo import DESCENDING
 from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec
+    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines
 from mongodb import mongo_client
 
 logger = setup_logger("Kline-Crawl-Manager")
@@ -362,10 +362,7 @@ def _do_schedule(_schedule):
             sleep(randrange(200))
         if _schedule.exchange == "binance":
             try:
-                klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
-                if not klines:
-                    sleep(3)
-                    klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
+                klines = try_get_klines(_schedule.exchange, market, ticker, get_binance_interval_unit(ticker))
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
                 logger.exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
@@ -373,17 +370,13 @@ def _do_schedule(_schedule):
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
         elif _schedule.exchange == "kucoin":
             try:
-                klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
-                if not klines:
-                    sleep(3)
-                    klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
+                klines = try_get_klines(_schedule.exchange, market, ticker, get_kucoin_interval_unit(ticker))
             except Exception:
                 traceback.print_tb(err.__traceback__)
                 logger.exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
                 sleep(randrange(30))
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         logger.info("Storing to collection : {} : {} ".format(_schedule.exchange, collection_name))
-        klines = [klines[-1]]
         current_klines = filter_current_klines(klines, collection_name, collection)
         sleep(5)
         bd, sd = get_average_depths(_schedule.depth_crawl, _schedule.no_depths)
