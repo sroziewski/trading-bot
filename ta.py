@@ -506,7 +506,15 @@ def is_bull_flag(_klines):
     _min_after_max_rev = np.mean(_closes[-_rev_max_ind:])
     _is_min_existing = _rev_min_val < _min_after_max_rev
 
-    return _is_bullish and _is_min_existing
+    _rsi_last_avg = np.mean(_rsi[-10:])
+
+    _ma50 = talib.MA(_closes, timeperiod=50)
+
+    _c_m = np.mean(_closes[-10:])
+    _r_m = np.mean(_ma50[-10:])
+    _closes_above_ma50 = _c_m > _r_m
+
+    return _is_bullish and _is_min_existing and _rsi_last_avg > 50.0 and _closes_above_ma50
 
 
 def main():
@@ -515,20 +523,21 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "XEM"
+    asset = "FET"
     market = "{}BTC".format(asset)
+    # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
     ticker = BinanceClient.KLINE_INTERVAL_4HOUR
     time_interval = "1600 hours ago"
 
-    # _klines = get_binance_klines(market, ticker, time_interval)
+    _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "8hour"
     # _klines = get_kucoin_klines("AKRO-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-xem", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-xem")
-    _klines = _klines[:-67]
+    # save_to_file("e://bin//data//", "klines-rune", _klines)
+    # _klines = get_pickled('e://bin/data//', "klines-rune")
+    # _klines = _klines[:-67]
 
     is_bull_flag(_klines)
 
