@@ -2661,10 +2661,11 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
                 _klines = get_kucoin_klines(f"{_market}-BTC", _ticker, _time_interval)
             elif _exchange == "binance":
                 _klines = get_binance_klines(_market, _ticker, _time_interval)
+            if not _klines:
+                logger_global[0].warning(f"Trying for market : {_market} ... {_ii}")
+                time.sleep(1)
         except Exception as e:
             logger_global[0].warning(e)
-            logger_global[0].warning(f"Trying for market : {_market} ... {_ii}")
-            time.sleep(1)
         if _klines:
             return _klines
     raise RuntimeError(f"No klines for market {_market}")
@@ -2902,4 +2903,4 @@ def is_bull_flag(_closes):
     _min_after_max_rev = np.mean(_closes[-_rev_max_ind:])
     _is_min_existing = _rev_min_val < _min_after_max_rev
 
-    return _is_bullish and _is_min_existing
+    return _is_bullish and _is_min_existing, _closes[-1]
