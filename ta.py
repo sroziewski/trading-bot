@@ -483,6 +483,32 @@ def is_falling_wedge_0(_closes):
     i = 1
 
 
+def is_bull_flag(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    _opens = np.array(list(map(lambda _x: float(_x.opening), _klines)))
+    _high = list(map(lambda _x: float(_x.highest), _klines))
+    _low = list(map(lambda _x: float(_x.lowest), _klines))
+
+    _max_val, _index_max_val = find_first_maximum(_closes, 5)
+
+    _rsi = relative_strength_index(_closes)
+
+    _r_max_val_max, _r_max_ind = find_first_maximum(_rsi, 10)
+    _r_min_val_max, _r_min_ind0 = find_first_minimum(_rsi[:-_r_max_ind], 10)
+    _r_min_ind = _r_max_ind + _r_min_ind0
+    _rsi_mean = np.mean(_rsi[-_r_min_ind:])
+    _is_bullish = _rsi_mean > 58.0
+
+    _rev_min_val, _rev_min_ind0 = find_first_minimum(_closes[-_r_max_ind:][::-1], 10)
+    _rev_min_ind = len(_closes[-_r_max_ind:]) - _rev_min_ind0
+    _rev_max_val, _rev_max_ind0 = find_first_maximum(_closes[-_rev_min_ind:][::-1], 10)
+    _rev_max_ind = _rev_min_ind - _rev_max_ind0 + 1
+    _min_after_max_rev = np.mean(_closes[-_rev_max_ind:])
+    _is_min_existing = _rev_min_val < _min_after_max_rev
+
+    return _is_bullish and _is_min_existing
+
+
 def main():
     # asset = Asset(exchange="binance", name="LINK", ticker=BinanceClient.KLINE_INTERVAL_1HOUR)
     # is_bullish_setup(asset)
@@ -502,10 +528,12 @@ def main():
 
     # save_to_file("e://bin//data//", "klines-xem", _klines)
     _klines = get_pickled('e://bin/data//', "klines-xem")
-    # _klines = _klines[0:-2]
+    _klines = _klines[:-67]
+
+    is_bull_flag(_klines)
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-    fw0 = is_falling_wedge_0(_closes)
+    # fw0 = is_falling_wedge_0(_closes)
     fw = is_falling_wedge(_closes)
 
     macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)

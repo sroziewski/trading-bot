@@ -2021,7 +2021,7 @@ def find_first_maximum(_values, _window):  # find the first maximum
 
 
 def check_maxes(_data, _tuples):
-    _tuples = sorted(_tuples, key= lambda x: x[0], reverse=True)
+    _tuples = sorted(_tuples, key=lambda x: x[0], reverse=True)
     for _tuple in _tuples:
         if _data[-_tuple[1] - 1] < _tuple[0] > _data[-_tuple[1] + 1]:
             return _tuple
@@ -2029,7 +2029,7 @@ def check_maxes(_data, _tuples):
 
 
 def check_mins(_data, _tuples):
-    _tuples = sorted(_tuples, key= lambda x: x[0])
+    _tuples = sorted(_tuples, key=lambda x: x[0])
     for _tuple in _tuples:
         if _data[-_tuple[1] - 1] > _tuple[0] < _data[-_tuple[1] + 1]:
             return _tuple
@@ -2065,7 +2065,6 @@ def _reverse_result(_tuple, _values, _reversed=False):
         return _tuple[0], len(_values) - _tuple[0] - 1
     else:
         return _tuple
-
 
 
 def find_maximum_2(_values, _window):  # find the first maximum
@@ -2398,7 +2397,7 @@ def is_drop_below_ma50_after_rally(_klines):
 
     _is_currently_below_ma50 = _low[-1] < _ma50[-1]
 
-    _bounce = (_max_high[0]-_min_l_cl[0])/_min_l_cl[0]
+    _bounce = (_max_high[0] - _min_l_cl[0]) / _min_l_cl[0]
 
     return _bounce < 0.1 and _is_currently_below_ma50 and _ratio > 0.7 and _drop > 0.25 and rally > 0.3 and _below_ma[
         1] > 0 and _ma50_above_ma200, _closes[-1]
@@ -2427,7 +2426,8 @@ def is_drop_below_ma200_after_rally(_klines):
 
     _bounce = (_max_high[0] - _min_l_cl[0]) / _min_l_cl[0]
 
-    return _bounce < 0.1 and _ratio > 0.7 and _ma50_above_ma200 and _drop > 0.25 and rally > 0.5 and _below_ma[1] > 0, _closes[-1]
+    return _bounce < 0.1 and _ratio > 0.7 and _ma50_above_ma200 and _drop > 0.25 and rally > 0.5 and _below_ma[1] > 0, \
+           _closes[-1]
 
 
 def find_first_golden_cross(__ma50, __ma200, _offset=0):
@@ -2529,7 +2529,6 @@ def get_excluded_markets(_markets, _to_exclude, _ticker):
     return _markets
 
 
-
 def is_macd_condition(_macd, _angle_limit, _start, _stop, _window=10):
     _macd_max_val, _macd_reversed_max_ind = find_first_maximum(_macd[_start:_stop:1], _window)
     _macd_max_val2, _macd_reversed_max_ind2 = find_first_maximum(-_macd[_start:_stop:1], _window)
@@ -2568,7 +2567,8 @@ def is_higher_low(_values, _limit, _start, _stop, _window=10):
     _interval_for_local_max = _values[_stop - _reversed_max_ind + 1:_stop - 1]
     _local_max = np.max(_interval_for_local_max)
     _is_retraced = _local_max - (_local_max - _first_local_min) * 0.618 > _current_value
-    return _is_retraced and (_local_max - _current_value) > 2  # the difference in RSI local extrema has to be minimum 2 rsi
+    return _is_retraced and (
+            _local_max - _current_value) > 2  # the difference in RSI local extrema has to be minimum 2 rsi
 
 
 def is_tradeable(_closes, _rsi, _macd, _macdsignal):
@@ -2637,6 +2637,9 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
             _is_fw = is_falling_wedge(_closes)
             if _is_fw[0]:
                 _golden_cross_markets.append((_market, "is_falling_wedge", _is_fw[1]))
+            _is_bf = is_bull_flag(_closes)
+            if _is_bf[0]:
+                _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
         except Exception as e:
             logger_global[0].warning(e)
             logger_global[0].warning(f"No data for market : {_market}")
@@ -2829,11 +2832,13 @@ def add_mail_content_for_exchange(_mail_content, _data_list, _exchange):
     _drop_below_ma50 = list(filter(lambda elem: elem['strategy'] == "drop_below_ma50_after_rally", _data_list))
     _drop_below_ma200 = list(filter(lambda elem: elem['strategy'] == "drop_below_ma200_after_rally", _data_list))
     _is_fw = list(filter(lambda elem: elem['strategy'] == "is_falling_wedge", _data_list))
+    _is_bf = list(filter(lambda elem: elem['strategy'] == "is_bull_flag", _data_list))
     _mail_content = handle_verification_mailing(_is_first, _mail_content)
     _mail_content = handle_verification_mailing(_is_second, _mail_content)
     _mail_content = handle_verification_mailing(_drop_below_ma50, _mail_content)
     _mail_content = handle_verification_mailing(_drop_below_ma200, _mail_content)
     _mail_content = handle_verification_mailing(_is_fw, _mail_content)
+    _mail_content = handle_verification_mailing(_is_bf, _mail_content)
     return _mail_content
 
 
@@ -2855,18 +2860,20 @@ def is_wedge(_closes):
     _magnitude = get_magnitude(_index_max_val, _max_val)
     _slope_max = slope(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                        _max_val2 * np.power(10, _magnitude))
-    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1, _min_va11 * np.power(10, _magnitude))
+    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1,
+                       _min_va11 * np.power(10, _magnitude))
 
     _b_max = bias(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                   _max_val2 * np.power(10, _magnitude))
-    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1, _min_va11 * np.power(10, _magnitude))
+    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1,
+                  _min_va11 * np.power(10, _magnitude))
 
     _checked_max = check_wedge(_slope_max, _b_max, range(-_index_max_val, 0),
                                _closes[-_index_max_val:] * np.power(10, _magnitude))
     _checked_min = check_wedge(_slope_min, _b_min, range(-_index_max_val, 0),
                                _closes[-_index_max_val:] * np.power(10, _magnitude), True)
 
-    _max0_cond = _max_val0* np.power(10, _magnitude) <= -_slope_max*_index_max_val0+_b_max
+    _max0_cond = _max_val0 * np.power(10, _magnitude) <= -_slope_max * _index_max_val0 + _b_max
 
     return _max0_cond and _checked_min and _checked_max
 
@@ -2878,3 +2885,21 @@ def check_wedge(_a, _b, _x, _y, _greater=False, _ratio=0.66):
     else:
         _r = _f >= _y
     return np.sum(_r) / len(_r) > _ratio
+
+
+def is_bull_flag(_closes):
+    _rsi = relative_strength_index(_closes)
+    _r_max_val_max, _r_max_ind = find_first_maximum(_rsi, 10)
+    _r_min_val_max, _r_min_ind0 = find_first_minimum(_rsi[:-_r_max_ind], 10)
+    _r_min_ind = _r_max_ind + _r_min_ind0
+    _rsi_mean = np.mean(_rsi[-_r_min_ind:])
+    _is_bullish = _rsi_mean > 58.0
+
+    _rev_min_val, _rev_min_ind0 = find_first_minimum(_closes[-_r_max_ind:][::-1], 10)
+    _rev_min_ind = len(_closes[-_r_max_ind:]) - _rev_min_ind0
+    _rev_max_val, _rev_max_ind0 = find_first_maximum(_closes[-_rev_min_ind:][::-1], 10)
+    _rev_max_ind = _rev_min_ind - _rev_max_ind0 + 1
+    _min_after_max_rev = np.mean(_closes[-_rev_max_ind:])
+    _is_min_existing = _rev_min_val < _min_after_max_rev
+
+    return _is_bullish and _is_min_existing
