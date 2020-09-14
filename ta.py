@@ -13,7 +13,7 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, get_pic
     find_local_maximum, find_minimum_2, find_first_minimum, \
     is_second_golden_cross, is_first_golden_cross, find_first_golden_cross, drop_below_ma, \
     is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable, slope, bias, check_wedge, \
-    is_falling_wedge, is_higher_low, get_binance_klines
+    is_falling_wedge, is_higher_low, get_binance_klines, get_kucoin_klines, get_kucoin_interval_unit, is_bull_flag
 
 warnings.filterwarnings('error')
 
@@ -483,7 +483,7 @@ def is_falling_wedge_0(_closes):
     i = 1
 
 
-def is_bull_flag(_klines):
+def is_bull_flag0(_klines):
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _opens = np.array(list(map(lambda _x: float(_x.opening), _klines)))
     _high = list(map(lambda _x: float(_x.highest), _klines))
@@ -523,25 +523,26 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "FET"
-    market = "{}BTC".format(asset)
+    asset = "VIDT"
+    market = "{}-BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
     ticker = BinanceClient.KLINE_INTERVAL_4HOUR
     time_interval = "1600 hours ago"
 
-    _klines = get_binance_klines(market, ticker, time_interval)
-    _kucoin_ticker = "8hour"
-    # _klines = get_kucoin_klines("AKRO-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
+    # _klines = get_binance_klines(market, ticker, time_interval)
+    _kucoin_ticker = "1day"
+    _klines = get_kucoin_klines(market, _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-rune", _klines)
-    # _klines = get_pickled('e://bin/data//', "klines-rune")
+    save_to_file("e://bin//data//", "klines-vidt", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-vidt")
     # _klines = _klines[:-67]
 
-    is_bull_flag(_klines)
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+
+    bf = is_bull_flag(_closes)
     # fw0 = is_falling_wedge_0(_closes)
     fw = is_falling_wedge(_closes)
 
