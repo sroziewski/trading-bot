@@ -2931,7 +2931,7 @@ def is_bull_flag(_closes):
 
     _c_last_max_val, _c_last_max_ind0 = find_first_maximum(_closes[-_r_max_ind + 1:][::-1], 2)
     _c_last_max_ind = len(_closes[-_r_max_ind:]) - _c_last_max_ind0
-    _not_bullish_cond = _c_last_max_val > _closes[-_r_max_ind] and _rsi[-_c_last_max_ind] < _rsi[-_r_max_ind]
+    _not_bullish_cond = _r_max_val_max > 75 and _c_last_max_val > _closes[-_r_max_ind] and _rsi[-_c_last_max_ind] < _rsi[-_r_max_ind]
 
     _rev_min_val, _rev_min_ind0 = find_first_minimum(_closes[-_r_max_ind:][::-1], 10)
     _rev_min_ind = len(_closes[-_r_max_ind:]) - _rev_min_ind0
