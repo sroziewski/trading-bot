@@ -2929,6 +2929,10 @@ def is_bull_flag(_closes):
     _rsi_mean = np.mean(_rsi[-_r_min_ind:])
     _is_bullish = _rsi_mean > 58.0
 
+    _c_last_max_val, _c_last_max_ind0 = find_first_maximum(_closes[-_r_max_ind + 1:][::-1], 2)
+    _c_last_max_ind = len(_closes[-_r_max_ind:]) - _c_last_max_ind0
+    _not_bullish_cond = _c_last_max_val > _closes[-_r_max_ind] and _rsi[-_c_last_max_ind] < _rsi[-_r_max_ind]
+
     _rev_min_val, _rev_min_ind0 = find_first_minimum(_closes[-_r_max_ind:][::-1], 10)
     _rev_min_ind = len(_closes[-_r_max_ind:]) - _rev_min_ind0
     _rev_max_val, _rev_max_ind0 = find_first_maximum(_closes[-_rev_min_ind:][::-1], 10)
@@ -2941,4 +2945,4 @@ def is_bull_flag(_closes):
     _r_m = np.mean(_ma50[-10:])
     _closes_above_ma50 = _c_m > _r_m
 
-    return _is_bullish and _is_min_existing and _rsi_last_avg > 48.0 and _closes_above_ma50, _closes[-1]
+    return not _not_bullish_cond and  _is_bullish and _is_min_existing and _rsi_last_avg > 48.0 and _closes_above_ma50, _closes[-1]
