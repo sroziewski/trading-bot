@@ -2344,7 +2344,17 @@ def is_first_golden_cross(_klines):
     _about_one_week_old = np.abs(_min_low_l_ind) - np.abs(_min_before_local_max[1]) < 150 and np.abs(
         _max_high_l_ind) - np.abs(_min_before_local_max[1]) < 150
 
-    return _is_fall and _not_elder_than_global_max and fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(
+    _bc_val, _bc_ind = bear_cross(_closes)
+    _max_bc_val, _max_bc_ind0 = find_first_maximum(_closes[-_bc_ind:][::-1], 5)
+    _max_bc_ind = _bc_ind - _max_bc_ind0 + 1
+    _min_bc_val, _min_bc_ind0 = find_first_minimum(_closes[-_max_bc_ind-2:][::-1], 5)
+    _c_avg = get_avg_last(_closes, -5)
+
+    _true = True
+    if _bc_ind == -1 or _max_bc_ind0 == -1 or _min_bc_ind0 == -1 or _c_avg < _min_bc_val:
+        _true = False
+
+    return _true and _is_fall and _not_elder_than_global_max and fall > 0.22 and rise > 0.15 and drop > 0.1 and np.abs(
         _max_l_ind) > hours_after_local_max_ma50 and _closes[
                -1] < _ma50[-1] and _about_one_week_old, _closes[-1]
 
@@ -2949,3 +2959,17 @@ def is_bull_flag(_closes):
     _closes_above_ma50 = _c_m > _r_m
 
     return _true and not _not_bullish_cond and  _is_bullish and _is_min_existing and _rsi_last_avg > 48.0 and _closes_above_ma50, _closes[-1]
+
+
+def bear_cross(_closes):
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+
+    _ma200_rev = _ma200[::-1]
+    _ma50_rev = _ma50[::-1]
+    if _ma50_rev[0] > _ma200_rev[0]:
+        return -1, -1
+    for _i in range(len(_closes)):
+        if _ma50_rev[_i] > _ma200_rev[_i]:
+            return _ma50_rev[_i], _i
+    return -1, -1
