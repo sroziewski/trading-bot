@@ -2922,6 +2922,7 @@ def check_wedge(_a, _b, _x, _y, _greater=False, _ratio=0.66):
 
 
 def is_bull_flag(_closes):
+    _true = True
     _rsi = relative_strength_index(_closes)
     _r_max_val_max, _r_max_ind = find_first_maximum(_rsi, 10)
     _r_min_val_max, _r_min_ind0 = find_first_minimum(_rsi[:-_r_max_ind], 10)
@@ -2936,6 +2937,8 @@ def is_bull_flag(_closes):
     _rev_min_val, _rev_min_ind0 = find_first_minimum(_closes[-_r_max_ind:][::-1], 10)
     _rev_min_ind = len(_closes[-_r_max_ind:]) - _rev_min_ind0
     _rev_max_val, _rev_max_ind0 = find_first_maximum(_closes[-_rev_min_ind:][::-1], 10)
+    if _rev_min_ind0 == -1 or _rev_max_ind0 == -1:
+        _true = False
     _rev_max_ind = _rev_min_ind - _rev_max_ind0 + 1
     _min_after_max_rev = np.mean(_closes[-_rev_max_ind:])
     _is_min_existing = _rev_min_val < _min_after_max_rev
@@ -2945,4 +2948,4 @@ def is_bull_flag(_closes):
     _r_m = np.mean(_ma50[-10:])
     _closes_above_ma50 = _c_m > _r_m
 
-    return not _not_bullish_cond and  _is_bullish and _is_min_existing and _rsi_last_avg > 48.0 and _closes_above_ma50, _closes[-1]
+    return _true and not _not_bullish_cond and  _is_bullish and _is_min_existing and _rsi_last_avg > 48.0 and _closes_above_ma50, _closes[-1]
