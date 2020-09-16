@@ -11,7 +11,7 @@ from mongodb import mongo_client
 logger = setup_logger("market-micro-setup-finder")
 logger.info("Starting Market-Micro-Setup-Finder...")
 
-authorize()
+# authorize()
 
 db = mongo_client.micro
 decimal_codec = DecimalCodec()
@@ -26,7 +26,7 @@ while 1:
 
         mail_content = MailContent('')
         for _t in _tickers:
-            if _t < 24:
+            if 1 < _t < 24:
                 _binance_ticker = f"{_t}h"
                 _kucoin_ticker = f"{_t}hour"
             elif _t == 24:
@@ -38,9 +38,9 @@ while 1:
             elif _t == 0.5:
                 _binance_ticker = "5m"
                 _kucoin_ticker = "5min"
-            market_setups_binance = analyze_micro_markets("exclude-markets-binance", _binance_ticker, "1600 hours ago", "binance")
-            market_setups_kucoin = analyze_micro_markets("exclude-markets-kucoin", _kucoin_ticker,
-                                                        get_kucoin_interval_unit(_kucoin_ticker, 1600), "kucoin")
+            market_setups_binance = analyze_micro_markets("exclude-micro-markets-binance", _binance_ticker, "200 hours ago", "binance")
+            market_setups_kucoin = analyze_micro_markets("exclude-micro-markets-kucoin", _kucoin_ticker,
+                                                        get_kucoin_interval_unit(_kucoin_ticker, 200), "kucoin")
             setup_tuples = [(market_setups_binance, "binance"), (market_setups_kucoin, "kucoin")]
             process_setups(setup_tuples, collection, _binance_ticker, mail_content)
 
