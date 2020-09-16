@@ -3049,7 +3049,7 @@ def is_bull_cross_in_bull_mode(_closes):
 
     _cond1 = True
     if _ma200[-1] < _maxv:
-        _cond1 = (_maxv - _minv) / _minv < 0.05
+        _cond1 = (_maxv - _minv) / _minv > 0.05
 
     _cond2 = (_ma200[-1] - _minv) / _minv > 0.05 and _mini > 500
 

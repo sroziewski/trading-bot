@@ -538,7 +538,7 @@ def main():
 
     # save_to_file("e://bin//data//", "klines-dock", _klines)
     _klines = get_pickled('e://bin/data//', "klines-dock")
-    _klines = _klines[10000:-int(8*24*60/5)]
+    _klines = _klines[10000:-int(8*24*60/5)+525]
 
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
