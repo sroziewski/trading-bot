@@ -13,7 +13,8 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, get_pic
     find_local_maximum, find_minimum_2, find_first_minimum, \
     is_second_golden_cross, is_first_golden_cross, find_first_golden_cross, drop_below_ma, \
     is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable, slope, bias, check_wedge, \
-    is_falling_wedge, is_higher_low, get_binance_klines, get_kucoin_klines, get_kucoin_interval_unit, is_bull_flag
+    is_falling_wedge, is_higher_low, get_binance_klines, get_kucoin_klines, get_kucoin_interval_unit, is_bull_flag, \
+    find_maximum_2, bull_cross, is_bull_cross_in_bull_mode
 
 warnings.filterwarnings('error')
 
@@ -523,21 +524,21 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "VIDT"
-    market = "{}-BTC".format(asset)
+    asset = "DOCK"
+    market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
-    ticker = BinanceClient.KLINE_INTERVAL_4HOUR
+    ticker = BinanceClient.KLINE_INTERVAL_5MINUTE
     time_interval = "1600 hours ago"
 
     # _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "1day"
-    _klines = get_kucoin_klines(market, _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
+    # _klines = get_kucoin_klines(market, _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    save_to_file("e://bin//data//", "klines-vidt", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-vidt")
-    # _klines = _klines[:-67]
+    # save_to_file("e://bin//data//", "klines-dock", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-dock")
+    _klines = _klines[10000:-int(8*24*60/5)]
 
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
@@ -615,6 +616,23 @@ def main():
 
     _ma200 = ma200[start:stop:1]
     _ma50 = ma50[start:stop:1]
+
+    _mv, _mi = find_first_maximum(_ma200[-500:], 10)
+    _mv2, _m2i = find_maximum_2(_ma200, 10)
+    _minv, _mini = find_minimum_2(_ma200, 10)
+    _maxv, _maxi = find_maximum_2(_ma200[-_mini:], 10)
+
+    _cond1 = True
+    if _ma200[-1] < _maxv:
+        _cond1 = (_maxv - _minv) / _minv < 0.05
+
+    _cond2 = (_ma200[-1] - _minv) / _minv > 0.05 and _mini > 500
+
+    _bc_val, _bc_ind = bull_cross(_closes)
+
+    _cond3 = _bc_ind < 2
+
+    _is = is_bull_cross_in_bull_mode(_closes)
 
     _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
 

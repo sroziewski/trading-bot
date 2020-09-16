@@ -2347,7 +2347,7 @@ def is_first_golden_cross(_klines):
     _bc_val, _bc_ind = bear_cross(_closes)
     _max_bc_val, _max_bc_ind0 = find_first_maximum(_closes[-_bc_ind:][::-1], 5)
     _max_bc_ind = _bc_ind - _max_bc_ind0 + 1
-    _min_bc_val, _min_bc_ind0 = find_first_minimum(_closes[-_max_bc_ind-2:][::-1], 5)
+    _min_bc_val, _min_bc_ind0 = find_first_minimum(_closes[-_max_bc_ind - 2:][::-1], 5)
     _c_avg = get_avg_last(_closes, -5)
 
     _true = True
@@ -2686,6 +2686,56 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
     return _golden_cross_markets
 
 
+def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange):
+    logger_global[0].info(_exchange)
+    _golden_cross_markets = []
+    _exclude_markets = {}
+    if path.isfile(key_dir + _filename + ".pkl"):
+        _exclude_markets = get_pickled(key_dir, _filename)
+    else:
+        _exclude_markets[_ticker] = []
+    if _ticker in _exclude_markets:
+        _markets = get_markets(_exchange, _ticker, _exclude_markets)
+    else:
+        _markets = get_markets(_exchange)
+    for _market in _markets:
+        try:
+            # if _exchange == 'kucoin':
+            #     _klines = get_kucoin_klines(f"{_market}-BTC", _ticker, _time_interval)
+            # elif _exchange == "binance":
+            #     _klines = get_binance_klines(_market, _ticker, _time_interval)
+
+            if _exchange == 'kucoin':
+                _klines = try_get_klines("kucoin", f"{_market}-BTC", _ticker, _time_interval)
+            elif _exchange == "binance":
+                _klines = try_get_klines("binance", _market, _ticker, _time_interval)
+
+            _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+
+            _is_bull_cross_in_bull_mode = is_bull_cross_in_bull_mode(_closes)
+            if _is_bull_cross_in_bull_mode[0]:
+                _golden_cross_markets.append((_market, "_is_bull_cross_in_bull_mode", _is_bull_cross_in_bull_mode[1]))
+
+        except Exception as e:
+
+            if e.args[0] == 'invalid value encountered in int_scalars':
+
+                _is_bull_cross_in_bull_mode = is_bull_cross_in_bull_mode(_closes)
+                if _is_bull_cross_in_bull_mode[0]:
+                    _golden_cross_markets.append(
+                        (_market, "_is_bull_cross_in_bull_mode", _is_bull_cross_in_bull_mode[1]))
+
+            logger_global[0].warning(e)
+            logger_global[0].warning(f"No data for market : {_market}")
+            if _ticker in _exclude_markets:
+                _exclude_markets[_ticker].append(_market)
+            else:
+                _exclude_markets[_ticker] = [_market]
+    logger_global[0].info(' '.join(format_found_markets(_golden_cross_markets)))
+    save_to_file(key_dir, _filename, _exclude_markets)
+    return _golden_cross_markets
+
+
 def try_get_klines(_exchange, _market, _ticker, _time_interval):
     _ii = 0
     _klines = []
@@ -2942,7 +2992,8 @@ def is_bull_flag(_closes):
 
     _c_last_max_val, _c_last_max_ind0 = find_first_maximum(_closes[-_r_max_ind + 1:][::-1], 2)
     _c_last_max_ind = len(_closes[-_r_max_ind:]) - _c_last_max_ind0
-    _not_bullish_cond = _r_max_val_max > 75 and _c_last_max_val > _closes[-_r_max_ind] and _rsi[-_c_last_max_ind] < _rsi[-_r_max_ind]
+    _not_bullish_cond = _r_max_val_max > 75 and _c_last_max_val > _closes[-_r_max_ind] and _rsi[-_c_last_max_ind] < \
+                        _rsi[-_r_max_ind]
 
     _rev_min_val, _rev_min_ind0 = find_first_minimum(_closes[-_r_max_ind:][::-1], 10)
     _rev_min_ind = len(_closes[-_r_max_ind:]) - _rev_min_ind0
@@ -2958,7 +3009,8 @@ def is_bull_flag(_closes):
     _r_m = np.mean(_ma50[-10:])
     _closes_above_ma50 = _c_m > _r_m
 
-    return _true and not _not_bullish_cond and  _is_bullish and _is_min_existing and _rsi_last_avg > 48.0 and _closes_above_ma50, _closes[-1]
+    return _true and not _not_bullish_cond and _is_bullish and _is_min_existing and _rsi_last_avg > 48.0 and _closes_above_ma50, \
+           _closes[-1]
 
 
 def bear_cross(_closes):
@@ -2973,3 +3025,36 @@ def bear_cross(_closes):
         if _ma50_rev[_i] > _ma200_rev[_i]:
             return _ma50_rev[_i], _i
     return -1, -1
+
+
+def bull_cross(_closes):
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+
+    _ma200_rev = _ma200[::-1]
+    _ma50_rev = _ma50[::-1]
+    if _ma50_rev[0] < _ma200_rev[0]:
+        return -1, -1
+    for _i in range(len(_closes)):
+        if _ma50_rev[_i] < _ma200_rev[_i]:
+            return _ma50_rev[_i], _i
+    return -1, -1
+
+
+def is_bull_cross_in_bull_mode(_closes):
+    _ma200 = talib.MA(_closes, timeperiod=200)
+
+    _minv, _mini = find_minimum_2(_ma200, 10)
+    _maxv, _maxi = find_maximum_2(_ma200[-_mini:], 10)
+
+    _cond1 = True
+    if _ma200[-1] < _maxv:
+        _cond1 = (_maxv - _minv) / _minv < 0.05
+
+    _cond2 = (_ma200[-1] - _minv) / _minv > 0.05 and _mini > 500
+
+    _bc_val, _bc_ind = bull_cross(_closes)
+
+    _cond3 = _bc_ind < 2
+
+    return _cond1 and _cond2 and _cond3, _closes[-1]
