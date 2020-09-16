@@ -3055,6 +3055,6 @@ def is_bull_cross_in_bull_mode(_closes):
 
     _bc_val, _bc_ind = bull_cross(_closes)
 
-    _cond3 = _bc_ind < 2
+    _cond3 = _bc_ind < 10
 
     return _cond1 and _cond2 and _cond3, _closes[-1]
