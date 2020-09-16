@@ -44,8 +44,8 @@ while 1:
             setup_tuples = [(market_setups_binance, "binance"), (market_setups_kucoin, "kucoin")]
             process_setups(setup_tuples, collection, _binance_ticker, mail_content)
 
-        if len(mail_content.content) > 0:
-            send_mail("WWW Market Micro Setup Found WWW", mail_content.content)
+        # if len(mail_content.content) > 0:
+        #     send_mail("WWW Market Micro Setup Found WWW", mail_content.content)
 
         time.sleep(60)
     except Exception as err:
