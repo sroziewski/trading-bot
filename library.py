@@ -2425,6 +2425,8 @@ def is_drop_below_ma200_after_rally(_klines):
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
     _first_gc = find_first_golden_cross(_ma50, _ma200, 50)
+    if _first_gc[1] == -1:
+        return False, _closes[-1]
     _below_ma = drop_below_ma(_ma200[-_first_gc[1]:], _low[-_first_gc[1]:])
     _max_high = find_local_maximum(_high[-_first_gc[1]:], 24)
 
@@ -2662,7 +2664,7 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets
 
         except Exception as e:
 
-            if e.args[0] == 'invalid value encountered in int_scalars':
+            if e.args[0] == 'Integers to negative integer powers are not allowed.' or e.args[0] == 'invalid value encountered in greater' or e.args[0] =='zero-size array to reduction operation maximum which has no identity':
 
                 _is_2nd_golden = is_second_golden_cross(_closes)
                 if _is_2nd_golden[0]:
@@ -2802,7 +2804,7 @@ def get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets
 def try_get_klines(_exchange, _market, _ticker, _time_interval):
     _ii = 0
     _klines = []
-    for _ii in range(0, 5):
+    for _ii in range(0, 2):
         try:
             if _exchange == 'kucoin':
                 _klines = get_kucoin_klines(_market, _ticker, _time_interval)
