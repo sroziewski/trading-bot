@@ -2920,38 +2920,41 @@ def _verify_setup(_collection):
                     _klines = get_kucoin_klines("{}-BTC".format(_market), "1hour", round(_start_time))
 
                 _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-                _min = np.min(_closes)
-                _max = np.max(_closes)
-                _mean = round(np.mean(_closes), 10)
-                _median = np.median(_closes)
-                _max_up = round((_max - _close_price) / _close_price * 100, 4)
-                _max_down = round((_close_price - _min) / _close_price * 100, 4)
+                if _closes:
+                    _min = np.min(_closes)
+                    _max = np.max(_closes)
+                    _mean = round(np.mean(_closes), 10)
+                    _median = np.median(_closes)
+                    _max_up = round((_max - _close_price) / _close_price * 100, 4)
+                    _max_down = round((_close_price - _min) / _close_price * 100, 4)
 
-                _max_kline = max(_klines, key=attrgetter('closing'))
-                _min_kline = min(_klines, key=attrgetter('closing'))
+                    _max_kline = max(_klines, key=attrgetter('closing'))
+                    _min_kline = min(_klines, key=attrgetter('closing'))
 
-                _object['verified'] = {
-                    'max_up': _max_up,
-                    'max_down': _max_down,
-                    'min': _min,
-                    'max': _max,
-                    'mean': _mean,
-                    'median': _median,
-                    'time_str': get_time(_now),
-                    'max_kline': to_mongo_dict(_max_kline),
-                    'min_kline': to_mongo_dict(_min_kline)
-                }
-                _verified.append({
-                    'exchange': _exchange,
-                    'strategy': _object['setup']['type'],
-                    'market': _market,
-                    'max_up': _max_up,
-                    'max_down': _max_down,
-                    'ticker': _object['setup']['ticker'],
-                    'close_price': _object['setup']['close_price'],
-                    'start_time': _object['setup']['start_time_str']
-                })
-                _collection.update_one({'_id': _object['_id']}, {'$set': {'verified': _object['verified']}})
+                    _object['verified'] = {
+                        'max_up': _max_up,
+                        'max_down': _max_down,
+                        'min': _min,
+                        'max': _max,
+                        'mean': _mean,
+                        'median': _median,
+                        'time_str': get_time(_now),
+                        'max_kline': to_mongo_dict(_max_kline),
+                        'min_kline': to_mongo_dict(_min_kline)
+                    }
+                    _verified.append({
+                        'exchange': _exchange,
+                        'strategy': _object['setup']['type'],
+                        'market': _market,
+                        'max_up': _max_up,
+                        'max_down': _max_down,
+                        'ticker': _object['setup']['ticker'],
+                        'close_price': _object['setup']['close_price'],
+                        'start_time': _object['setup']['start_time_str']
+                    })
+                    _collection.update_one({'_id': _object['_id']}, {'$set': {'verified': _object['verified']}})
+                else:
+                    _collection.update_one({'_id': _object['_id']}, {'$set': {'verified': 'NA'}})
         _mail_content = ''
         if len(_verified) > 0:
             _binance = list(filter(lambda elem: elem['exchange'] == "binance", _verified))
