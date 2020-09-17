@@ -27,11 +27,11 @@ markets_obj = Markets(binance_vol_filter, kucoin_vol_filter)
 
 while 1:
     try:
-        _tickers = [15, 30, 1, 4, 8, 12, 24]
+        _tickers = [0.15, 30, 1, 4, 8, 12, 24]
 
         mail_content = MailContent('')
         for _t in _tickers:
-            if _t < 24:
+            if 1 < _t < 24:
                 _binance_ticker = f"{_t}h"
                 _kucoin_ticker = f"{_t}hour"
             elif _t == 24:
@@ -40,7 +40,7 @@ while 1:
             elif _t == 30:
                 _binance_ticker = "30m"
                 _kucoin_ticker = "30min"
-            elif _t == 15:
+            elif _t == 0.15:
                 _binance_ticker = "15m"
                 _kucoin_ticker = "15min"
 
@@ -58,7 +58,7 @@ while 1:
         if len(mail_content.content) > 0:
             send_mail("WWW Market Setup Found WWW", mail_content.content)
 
-        time.sleep(3500)
+        time.sleep(10)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
             logger.error("Connection problem...")
