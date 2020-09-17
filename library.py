@@ -2031,7 +2031,7 @@ def check_maxes(_data, _tuples):
 def check_mins(_data, _tuples):
     _tuples = sorted(_tuples, key=lambda x: x[0])
     for _tuple in _tuples:
-        if _data[-_tuple[1] - 1] > _tuple[0] < _data[-_tuple[1] + 1]:
+        if _data[-_tuple[1] - 1] >= _tuple[0] <= _data[-_tuple[1] + 1]:
             return _tuple
     return -1, -1
 
@@ -2047,7 +2047,12 @@ def find_first_minimum(_values, _window, _reversed=False):  # find the first max
         _i_min = np.min(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
         _tmp = list(_values[len(_values) - (_i + 1) * _window - 1:len(_values) - _i * _window - 1])
         _index = _window - _tmp.index(min(_tmp)) + _i * _window + 1
-        _mins.append((_i_min, _index))
+        if _mins and _i_min < _mins[-1][0]:
+            _mins.append((_i_min, _index))
+        elif _mins and _i_min > _mins[-1][0]:
+            return _reverse_result(check_mins(_values, _mins), _values, _reversed)
+        if not _mins:
+            _mins.append((_i_min, _index))
         if _i_min < _min_val:
             _min_val = _i_min
             _min_ind = _index
@@ -2607,7 +2612,7 @@ def is_tradeable(_closes, _rsi, _macd, _macdsignal):
     return _tradeable
 
 
-def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
+def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets_obj):
     logger_global[0].info(_exchange)
     _golden_cross_markets = []
     _exclude_markets = {}
@@ -2616,9 +2621,12 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
     else:
         _exclude_markets[_ticker] = []
     if _ticker in _exclude_markets:
-        _markets = get_markets(_exchange, _ticker, _exclude_markets)
+        _markets_raw = get_markets(_exchange, _ticker, _exclude_markets)
     else:
-        _markets = get_markets(_exchange)
+        _markets_raw = get_markets(_exchange)
+
+    _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw)
+
     for _market in _markets:
         try:
             # if _exchange == 'kucoin':
@@ -2686,7 +2694,36 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange):
     return _golden_cross_markets
 
 
-def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange):
+def filter_markets_by_volume(_markets, _vol_btc, _exchange):
+    _binance_ticker = "1d"
+    _kucoin_ticker = "1day"
+    _markets_out = []
+    for _market in _markets:
+        if _exchange == 'kucoin':
+            _klines = try_get_klines("kucoin", f"{_market}-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 240))
+        elif _exchange == "binance":
+            _klines = try_get_klines("binance", _market, _binance_ticker, "10 days ago")
+        _mean_vol = np.mean(list(map(lambda x: x.btc_volume, _klines)))
+        if _mean_vol > _vol_btc:
+            _markets_out.append(_market)
+
+    return _markets_out
+
+
+class Markets(object):
+    def __init__(self, _binance_vol, _kucoin_vol):
+        self.timestamp = datetime.datetime.now().timestamp()
+        self.binance_btc_vol = _binance_vol
+        self._kucoin_vol = _kucoin_vol
+        self.binance_markets = []
+        self.kucoin_markets = []
+    def set_binance_markets(self, _m):
+        self.binance_markets = _m
+    def set_kucoin_markets(self, _m):
+        self.kucoin_markets = _m
+
+
+def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj):
     logger_global[0].info(_exchange)
     _golden_cross_markets = []
     _exclude_markets = {}
@@ -2695,9 +2732,12 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange):
     else:
         _exclude_markets[_ticker] = []
     if _ticker in _exclude_markets:
-        _markets = get_markets(_exchange, _ticker, _exclude_markets)
+        _markets_raw = get_markets(_exchange, _ticker, _exclude_markets)
     else:
-        _markets = get_markets(_exchange)
+        _markets_raw = get_markets(_exchange)
+
+    _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw)
+
     for _market in _markets:
         try:
             # if _exchange == 'kucoin':
@@ -2734,6 +2774,20 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange):
     logger_global[0].info(' '.join(format_found_markets(_golden_cross_markets)))
     save_to_file(key_dir, _filename, _exclude_markets)
     return _golden_cross_markets
+
+
+def get_filtered_markets(_exchange, _markets_obj, _markets_raw):
+    if _exchange == "binance" and not _markets_obj.binance_markets:
+        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.binance_btc_vol, _exchange)
+        _markets_obj.set_binance_markets(_markets)
+    elif _exchange == "kucoin" and not _markets_obj.kucoin_markets:
+        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.kucoin_btc_vol, _exchange)
+        _markets_obj.set_kucoin_markets(_markets)
+    if _exchange == "binance" and _markets_obj.binance_markets:
+        _markets = _markets_obj.binance_markets
+    if _exchange == "kucoin" and _markets_obj.kucoin_markets:
+        _markets = _markets_obj.kucoin_markets
+    return _markets
 
 
 def try_get_klines(_exchange, _market, _ticker, _time_interval):
@@ -2816,7 +2870,7 @@ def persist_setup(_setup_tuple, _collection, _ticker):
             _diff_in_days = (_now - _last_update) / 60 / 60 / 24
             if _diff_in_days < 5.0:
                 _found['setup']['times'].append(_now)
-                _found['setup']['types'].append(_setup_tuple[1])
+                _found['setup']['types'].append(_setup['type'])
                 _collection.update_one({'_id': _found['_id']}, {'$set': {'setup': _found['setup']}})
             else:
                 _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
@@ -3054,7 +3108,17 @@ def is_bull_cross_in_bull_mode(_closes):
     _cond2 = (_ma200[-1] - _minv) / _minv > 0.05 and _mini > 500
 
     _bc_val, _bc_ind = bull_cross(_closes)
-
+    if _bc_ind == -1:
+        return False, _closes[-1]
     _cond3 = _bc_ind < 10
 
-    return _cond1 and _cond2 and _cond3, _closes[-1]
+    _fmax_v, _fmax_i = find_first_maximum(_ma200, 10)
+    _fminv, _fmin_i0 = find_first_minimum(_ma200[:-_fmax_i], 10)
+    _fmin_i = _fmax_i + _fmin_i0 - 1
+
+    _fmax_v0, _fmax_i0_ = find_first_maximum(_ma200[:-_fmin_i], 10)
+    _fmax_i0 = _fmax_i0_ + _fmin_i - 1
+
+    _cond4_bear = not (_fmax_v - _fminv) / _fminv > 0.05 and _fmax_v - _fmax_v0 < 0
+
+    return _cond1 and _cond2 and _cond3 and _cond4_bear, _closes[-1]

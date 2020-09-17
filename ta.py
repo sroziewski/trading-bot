@@ -524,11 +524,11 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "DOCK"
+    asset = "AGI"
     market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
     ticker = BinanceClient.KLINE_INTERVAL_5MINUTE
-    time_interval = "1600 hours ago"
+    time_interval = "200 hours ago"
 
     # _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "1day"
@@ -536,9 +536,9 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-dock", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-dock")
-    _klines = _klines[10000:-int(8*24*60/5)+525]
+    # save_to_file("e://bin//data//", "klines-agi", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-agi")
+    _klines = _klines[:-30]
 
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
@@ -624,13 +624,22 @@ def main():
 
     _cond1 = True
     if _ma200[-1] < _maxv:
-        _cond1 = (_maxv - _minv) / _minv < 0.05
+        _cond1 = (_maxv - _minv) / _minv > 0.05
 
     _cond2 = (_ma200[-1] - _minv) / _minv > 0.05 and _mini > 500
 
     _bc_val, _bc_ind = bull_cross(_closes)
 
-    _cond3 = _bc_ind < 2
+    _cond3 = _bc_ind < 10
+
+    _fmax_v, _fmax_i = find_first_maximum(_ma200, 10)
+    _fminv, _fmin_i0 = find_first_minimum(_ma200[:-_fmax_i], 10)
+    _fmin_i = _fmax_i+_fmin_i0-1
+
+    _fmax_v0, _fmax_i0_ = find_first_maximum(_ma200[:-_fmin_i], 10)
+    _fmax_i0 = _fmax_i0_+_fmin_i -1
+
+    _cond4_bear = not (_fmax_v - _fminv) / _fminv > 0.05 and _fmax_v-_fmax_v0 < 0
 
     _is = is_bull_cross_in_bull_mode(_closes)
 
