@@ -2625,7 +2625,7 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets
     else:
         _markets_raw = get_markets(_exchange)
 
-    _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw)
+    _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
 
     for _market in _markets:
         try:
@@ -2694,18 +2694,27 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets
     return _golden_cross_markets
 
 
-def filter_markets_by_volume(_markets, _vol_btc, _exchange):
+def filter_markets_by_volume(_markets, _vol_btc, _exchange, _exclude_markets, _ticker):
     _binance_ticker = "1d"
     _kucoin_ticker = "1day"
     _markets_out = []
     for _market in _markets:
-        if _exchange == 'kucoin':
-            _klines = try_get_klines("kucoin", f"{_market}-BTC", _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 240))
-        elif _exchange == "binance":
-            _klines = try_get_klines("binance", _market, _binance_ticker, "10 days ago")
-        _mean_vol = np.mean(list(map(lambda x: x.btc_volume, _klines)))
-        if _mean_vol > _vol_btc:
-            _markets_out.append(_market)
+        try:
+            if _exchange == 'kucoin':
+                _klines = try_get_klines("kucoin", f"{_market}-BTC", _kucoin_ticker,
+                                         get_kucoin_interval_unit(_kucoin_ticker, 240))
+            elif _exchange == "binance":
+                _klines = try_get_klines("binance", _market, _binance_ticker, "10 days ago")
+            _mean_vol = np.mean(list(map(lambda x: x.btc_volume, _klines)))
+            if _mean_vol > _vol_btc:
+                _markets_out.append(_market)
+        except RuntimeError as e:
+            logger_global[0].warning(e)
+            logger_global[0].warning(f"No data for market : {_market}")
+            if _ticker in _exclude_markets:
+                _exclude_markets[_ticker].append(_market)
+            else:
+                _exclude_markets[_ticker] = [_market]
 
     return _markets_out
 
@@ -2736,15 +2745,7 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _market
     else:
         _markets_raw = get_markets(_exchange)
 
-    try:
-        _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw)
-    except RuntimeError as e:
-        logger_global[0].warning(e)
-        logger_global[0].warning(f"No data for market : {_market}")
-        if _ticker in _exclude_markets:
-            _exclude_markets[_ticker].append(_market)
-        else:
-            _exclude_markets[_ticker] = [_market]
+    _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
 
     for _market in _markets:
         try:
@@ -2784,12 +2785,12 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _market
     return _golden_cross_markets
 
 
-def get_filtered_markets(_exchange, _markets_obj, _markets_raw):
+def get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker):
     if _exchange == "binance" and not _markets_obj.binance_markets:
-        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.binance_btc_vol, _exchange)
+        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.binance_btc_vol, _exchange, _exclude_markets, _ticker)
         _markets_obj.set_binance_markets(_markets)
     elif _exchange == "kucoin" and not _markets_obj.kucoin_markets:
-        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.kucoin_btc_vol, _exchange)
+        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.kucoin_btc_vol, _exchange, _exclude_markets, _ticker)
         _markets_obj.set_kucoin_markets(_markets)
     if _exchange == "binance" and _markets_obj.binance_markets:
         _markets = _markets_obj.binance_markets
