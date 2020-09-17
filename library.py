@@ -2736,7 +2736,15 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _market
     else:
         _markets_raw = get_markets(_exchange)
 
-    _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw)
+    try:
+        _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw)
+    except RuntimeError as e:
+        logger_global[0].warning(e)
+        logger_global[0].warning(f"No data for market : {_market}")
+        if _ticker in _exclude_markets:
+            _exclude_markets[_ticker].append(_market)
+        else:
+            _exclude_markets[_ticker] = [_market]
 
     for _market in _markets:
         try:
