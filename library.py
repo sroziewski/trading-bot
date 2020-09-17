@@ -2879,7 +2879,7 @@ def persist_setup(_setup_tuple, _collection, _ticker):
             _diff_in_days = (_now - _last_update) / 60 / 60 / 24
             if _diff_in_days < 5.0:
                 _found['setup']['times'].append(_now)
-                _found['setup']['types'].append(_setup['type'])
+                _found['setup']['types'].append(_setup[1])
                 _collection.update_one({'_id': _found['_id']}, {'$set': {'setup': _found['setup']}})
             else:
                 _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
