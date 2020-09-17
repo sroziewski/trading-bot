@@ -2920,7 +2920,7 @@ def _verify_setup(_collection):
                     _klines = get_kucoin_klines("{}-BTC".format(_market), "1hour", round(_start_time))
 
                 _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-                if _closes:
+                if len(_closes)>0:
                     _min = np.min(_closes)
                     _max = np.max(_closes)
                     _mean = round(np.mean(_closes), 10)
