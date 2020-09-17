@@ -2714,7 +2714,7 @@ class Markets(object):
     def __init__(self, _binance_vol, _kucoin_vol):
         self.timestamp = datetime.datetime.now().timestamp()
         self.binance_btc_vol = _binance_vol
-        self._kucoin_vol = _kucoin_vol
+        self.kucoin_btc_vol = _kucoin_vol
         self.binance_markets = []
         self.kucoin_markets = []
     def set_binance_markets(self, _m):
