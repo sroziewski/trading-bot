@@ -2629,6 +2629,8 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets
 
     _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
 
+    logger_global[0].info(f"We are analyzing {len(_markets)} on {_exchange} ( with at least {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
+
     for _market in _markets:
         try:
             # if _exchange == 'kucoin':
@@ -2748,6 +2750,8 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _market
         _markets_raw = get_markets(_exchange)
 
     _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
+    logger_global[0].info(
+        f"We are analyzing {len(_markets)} on {_exchange} ( with at least {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
 
     for _market in _markets:
         try:
