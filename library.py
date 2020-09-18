@@ -3197,4 +3197,4 @@ def is_tilting(_closes):
         _res = True
     if _rel_ind > 0.5 and _closes[-1] > _ma200[-1]:
         _res = True
-    return _res
+    return _res, _closes[-1]
