@@ -2669,10 +2669,10 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
             _is_bf = is_bull_flag(_closes)
             if _is_bf[0]:
                 _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
-            _is_tilting = is_tilting(_closes)
-            if _is_tilting[0]:
-                _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1]))
-
+            if '15' not in _ticker:
+                _is_tilting = is_tilting(_closes)
+                if _is_tilting[0]:
+                    _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1]))
 
         except Exception as e:
 
@@ -2708,7 +2708,8 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
                 _exclude_markets[_ticker].append(_market)
             else:
                 _exclude_markets[_ticker] = [_market]
-    logger_global[0].info(' '.join(format_found_markets(_golden_cross_markets)))
+    _info = ' '.join(format_found_markets(_golden_cross_markets))
+    logger_global[0].info(f"{_ticker} : {_info}")
     save_to_file(key_dir, _filename, _exclude_markets)
     return _golden_cross_markets
 
