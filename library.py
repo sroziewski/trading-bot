@@ -2558,6 +2558,8 @@ def is_macd_condition(_macd, _angle_limit, _start, _stop, _window=10):
     if _macd_reversed_max_ind == -1:
         return False
     _macd_magnitude = get_magnitude(_macd_reversed_max_ind, _macd_max_val)
+    if _macd_magnitude < 0:
+        return False
     _macd_angle = get_angle((0, _macd[_start:_stop:1][-1]),
                             (_macd_reversed_max_ind / np.power(10, _macd_magnitude), _macd_max_val))
     return _macd_angle >= _angle_limit
@@ -2629,7 +2631,7 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets
 
     _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
 
-    logger_global[0].info(f"We are analyzing {len(_markets)} on {_exchange} ( with at least {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
+    logger_global[0].info(f"We are analyzing {len(_markets)} markets on {_exchange} ( with at least btc volume: {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
 
     for _market in _markets:
         try:
@@ -2751,7 +2753,7 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _market
 
     _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
     logger_global[0].info(
-        f"We are analyzing {len(_markets)} on {_exchange} ( with at least {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
+        f"We are analyzing {len(_markets)} markets on {_exchange} ( with at least btc voulume: {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
 
     for _market in _markets:
         try:
