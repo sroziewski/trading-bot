@@ -2397,7 +2397,11 @@ def is_drop_below_ma50_after_rally(_klines):
     if _below_ma[1] == -1:
         return False
 
-    _ma50_above_ma200 = all(_ma50[-_below_ma[1]:] > _ma200[-_below_ma[1]:])
+    try:
+        _ma50_above_ma200 = all(_ma50[-_below_ma[1]:] > _ma200[-_below_ma[1]:])
+    except RuntimeWarning:
+        return False
+
     _low_above_ma50 = _low[-_below_ma[1]:] > _ma50[-_below_ma[1]:]
     _trues = np.sum(_low_above_ma50)
     _falses = len(_low_above_ma50) - _trues
@@ -2616,7 +2620,7 @@ def is_tradeable(_closes, _rsi, _macd, _macdsignal):
     return _tradeable
 
 
-def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets_obj):
+def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj):
     logger_global[0].info(_exchange)
     _golden_cross_markets = []
     _exclude_markets = {}
@@ -2631,7 +2635,8 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets
 
     _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
 
-    logger_global[0].info(f"We are analyzing {len(_markets)} markets on {_exchange} ( with at least btc volume: {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
+    logger_global[0].info(
+        f"We are analyzing {len(_markets)} markets on {_exchange} ( with at least btc volume: {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
 
     for _market in _markets:
         try:
@@ -2664,11 +2669,16 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets
             _is_bf = is_bull_flag(_closes)
             if _is_bf[0]:
                 _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
+            _is_tilting = is_tilting(_closes)
+            if _is_tilting[0]:
+                _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1]))
 
 
         except Exception as e:
 
-            if e.args[0] == 'Integers to negative integer powers are not allowed.' or e.args[0] == 'invalid value encountered in greater' or e.args[0] =='zero-size array to reduction operation maximum which has no identity':
+            if e.args[0] == 'Integers to negative integer powers are not allowed.' or e.args[
+                0] == 'invalid value encountered in greater' or e.args[
+                0] == 'zero-size array to reduction operation maximum which has no identity':
 
                 _is_2nd_golden = is_second_golden_cross(_closes)
                 if _is_2nd_golden[0]:
@@ -2688,6 +2698,9 @@ def analyze_golden_cross(_filename, _ticker, _time_interval, _exchange, _markets
                 _is_bf = is_bull_flag(_closes)
                 if _is_bf[0]:
                     _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
+                _is_tilting = is_tilting(_closes)
+                if _is_tilting[0]:
+                    _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1]))
 
             logger_global[0].warning(e)
             logger_global[0].warning(f"No data for market : {_market}")
@@ -2732,8 +2745,10 @@ class Markets(object):
         self.kucoin_btc_vol = _kucoin_vol
         self.binance_markets = []
         self.kucoin_markets = []
+
     def set_binance_markets(self, _m):
         self.binance_markets = _m
+
     def set_kucoin_markets(self, _m):
         self.kucoin_markets = _m
 
@@ -2795,10 +2810,12 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _market
 
 def get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker):
     if _exchange == "binance" and not _markets_obj.binance_markets:
-        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.binance_btc_vol, _exchange, _exclude_markets, _ticker)
+        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.binance_btc_vol, _exchange, _exclude_markets,
+                                            _ticker)
         _markets_obj.set_binance_markets(_markets)
     elif _exchange == "kucoin" and not _markets_obj.kucoin_markets:
-        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.kucoin_btc_vol, _exchange, _exclude_markets, _ticker)
+        _markets = filter_markets_by_volume(_markets_raw, _markets_obj.kucoin_btc_vol, _exchange, _exclude_markets,
+                                            _ticker)
         _markets_obj.set_kucoin_markets(_markets)
     if _exchange == "binance" and _markets_obj.binance_markets:
         _markets = _markets_obj.binance_markets
@@ -2810,7 +2827,7 @@ def get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets
 def try_get_klines(_exchange, _market, _ticker, _time_interval):
     _ii = 0
     _klines = []
-    for _ii in range(0, 5):
+    for _ii in range(0, 2):
         try:
             if _exchange == 'kucoin':
                 _klines = get_kucoin_klines(_market, _ticker, _time_interval)
@@ -2937,7 +2954,7 @@ def _verify_setup(_collection):
                     _klines = get_kucoin_klines("{}-BTC".format(_market), "1hour", round(_start_time))
 
                 _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-                if len(_closes)>0:
+                if len(_closes) > 0:
                     _min = np.min(_closes)
                     _max = np.max(_closes)
                     _mean = round(np.mean(_closes), 10)
@@ -2993,12 +3010,14 @@ def add_mail_content_for_exchange(_mail_content, _data_list, _exchange):
     _drop_below_ma200 = list(filter(lambda elem: elem['strategy'] == "drop_below_ma200_after_rally", _data_list))
     _is_fw = list(filter(lambda elem: elem['strategy'] == "is_falling_wedge", _data_list))
     _is_bf = list(filter(lambda elem: elem['strategy'] == "is_bull_flag", _data_list))
+    _is_tilting = list(filter(lambda elem: elem['strategy'] == "is_tilting", _data_list))
     _mail_content = handle_verification_mailing(_is_first, _mail_content)
     _mail_content = handle_verification_mailing(_is_second, _mail_content)
     _mail_content = handle_verification_mailing(_drop_below_ma50, _mail_content)
     _mail_content = handle_verification_mailing(_drop_below_ma200, _mail_content)
     _mail_content = handle_verification_mailing(_is_fw, _mail_content)
     _mail_content = handle_verification_mailing(_is_bf, _mail_content)
+    _mail_content = handle_verification_mailing(_is_tilting, _mail_content)
     return _mail_content
 
 
@@ -3021,6 +3040,9 @@ def is_wedge(_closes):
     _magnitude = get_magnitude(_index_max_val, _max_val)
 
     if _index_max_val == _index_max_val2:
+        return False
+
+    if _magnitude < 0:
         return False
 
     _slope_max = slope(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
@@ -3143,3 +3165,36 @@ def is_bull_cross_in_bull_mode(_closes):
     _cond4_bear = not (_fmax_v - _fminv) / _fminv > 0.05 and _fmax_v - _fmax_v0 < 0
 
     return _cond1 and _cond2 and _cond3 and _cond4_bear, _closes[-1]
+
+
+def index_of_max_mas_difference(_closes):
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+    _bv, _bi = bear_cross(_closes)
+    if _bi == -1:
+        return -1, -1
+    _ma200_in = _ma200[-_bi:]
+    _ma50_in = _ma50[-_bi:]
+    _last_diff = -1
+    for _i in range(len(_ma200_in) - 1):
+        _diff = abs(_ma200_in[_i] - _ma50_in[_i])
+        if _diff < _last_diff:
+            _ind = _bi - _i - 1
+            _rel_ind = (len(_ma200_in) - _ind - 1) / _ind
+            return _ind, _rel_ind
+        _last_diff = _diff
+    return -1, -1
+
+
+def is_tilting(_closes):
+    _ind, _rel_ind = index_of_max_mas_difference(_closes)
+    _ma200 = talib.MA(_closes, timeperiod=200)
+    _ma50 = talib.MA(_closes, timeperiod=50)
+    _res = False
+    if _rel_ind > 0.5 and _closes[-1] < _ma50[-1]:
+        _res = True
+    if _rel_ind > 0.8:
+        _res = True
+    if _rel_ind > 0.5 and _closes[-1] > _ma200[-1]:
+        _res = True
+    return _res

@@ -14,7 +14,7 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, get_pic
     is_second_golden_cross, is_first_golden_cross, find_first_golden_cross, drop_below_ma, \
     is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable, slope, bias, check_wedge, \
     is_falling_wedge, is_higher_low, get_binance_klines, get_kucoin_klines, get_kucoin_interval_unit, is_bull_flag, \
-    find_maximum_2, bull_cross, is_bull_cross_in_bull_mode
+    find_maximum_2, bull_cross, is_bull_cross_in_bull_mode, bear_cross, index_of_max_mas_difference, is_tilting
 
 warnings.filterwarnings('error')
 
@@ -445,19 +445,20 @@ def is_falling_wedge_0(_closes):
     _magnitude = get_magnitude(_index_max_val, _max_val)
     _slope_max = slope(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                        _max_val2 * np.power(10, _magnitude))
-    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1, _min_va11 * np.power(10, _magnitude))
+    _slope_min = slope(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1,
+                       _min_va11 * np.power(10, _magnitude))
 
     _b_max = bias(-_index_max_val, _max_val * np.power(10, _magnitude), -_index_max_val2,
                   _max_val2 * np.power(10, _magnitude))
-    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1, _min_va11 * np.power(10, _magnitude))
+    _b_min = bias(-_index_min_val, _min_val * np.power(10, _magnitude), -_index_min_val1,
+                  _min_va11 * np.power(10, _magnitude))
 
     _checked_max = check_wedge(_slope_max, _b_max, range(-_index_max_val, 0),
                                _closes[-_index_max_val:] * np.power(10, _magnitude))
     _checked_min = check_wedge(_slope_min, _b_min, range(-_index_max_val, 0),
                                _closes[-_index_max_val:] * np.power(10, _magnitude), True)
 
-    _max0_cond = _max_val0* np.power(10, _magnitude) <= -_slope_max*_index_max_val0+_b_max
-
+    _max0_cond = _max_val0 * np.power(10, _magnitude) <= -_slope_max * _index_max_val0 + _b_max
 
     _at1 = np.math.atan(_slope_max)
     _at2 = np.math.atan(_slope_min)
@@ -518,28 +519,28 @@ def is_bull_flag0(_klines):
     return _is_bullish and _is_min_existing and _rsi_last_avg > 50.0 and _closes_above_ma50
 
 
+
 def main():
     # asset = Asset(exchange="binance", name="LINK", ticker=BinanceClient.KLINE_INTERVAL_1HOUR)
     # is_bullish_setup(asset)
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "AGI"
+    asset = "ENG"
     market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
-    ticker = BinanceClient.KLINE_INTERVAL_5MINUTE
-    time_interval = "200 hours ago"
+    ticker = BinanceClient.KLINE_INTERVAL_4HOUR
+    time_interval = "3600 hours ago"
 
-    # _klines = get_binance_klines(market, ticker, time_interval)
+    _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "1day"
     # _klines = get_kucoin_klines(market, _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-agi", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-agi")
-    _klines = _klines[:-30]
-
+    save_to_file("e://bin//data//", "klines-eng", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-eng")
+    _klines = _klines[:-241]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
 
@@ -569,11 +570,10 @@ def main():
     _high = list(map(lambda _x: float(_x.highest), _klines))
     _low = list(map(lambda _x: float(_x.lowest), _klines))
 
-
-
+    bv, bi = bear_cross(_closes)
+    _ind, _rel_ind = index_of_max_mas_difference(_closes)
+    _is_it = is_tilting(_closes)
     ## MACD
-
-
 
     _out = is_second_golden_cross(_closes)
     _first = is_first_golden_cross(_klines)
@@ -634,12 +634,12 @@ def main():
 
     _fmax_v, _fmax_i = find_first_maximum(_ma200, 10)
     _fminv, _fmin_i0 = find_first_minimum(_ma200[:-_fmax_i], 10)
-    _fmin_i = _fmax_i+_fmin_i0-1
+    _fmin_i = _fmax_i + _fmin_i0 - 1
 
     _fmax_v0, _fmax_i0_ = find_first_maximum(_ma200[:-_fmin_i], 10)
-    _fmax_i0 = _fmax_i0_+_fmin_i -1
+    _fmax_i0 = _fmax_i0_ + _fmin_i - 1
 
-    _cond4_bear = not (_fmax_v - _fminv) / _fminv > 0.05 and _fmax_v-_fmax_v0 < 0
+    _cond4_bear = not (_fmax_v - _fminv) / _fminv > 0.05 and _fmax_v - _fmax_v0 < 0
 
     _is = is_bull_cross_in_bull_mode(_closes)
 

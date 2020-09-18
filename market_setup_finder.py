@@ -5,7 +5,7 @@ import traceback
 import requests
 from bson.codec_options import TypeRegistry, CodecOptions
 
-from library import setup_logger, analyze_golden_cross, authorize, get_kucoin_interval_unit, process_setups, \
+from library import setup_logger, analyze_markets, authorize, get_kucoin_interval_unit, process_setups, \
     DecimalCodec, manage_verifying_setup, send_mail, MailContent, Markets
 from mongodb import mongo_client
 
@@ -49,9 +49,9 @@ while 1:
                 logger.info(
                     f"Markets older than 24 hours {datetime.datetime.now().timestamp()} <- now : {markets_obj.timestamp} <- markets")
                 markets_obj = Markets(binance_vol_filter, kucoin_vol_filter)
-            market_setups_binance = analyze_golden_cross("exclude-markets-binance", _binance_ticker, "1600 hours ago", "binance", markets_obj)
-            market_setups_kucoin = analyze_golden_cross("exclude-markets-kucoin", _kucoin_ticker,
-                                                        get_kucoin_interval_unit(_kucoin_ticker, 1600), "kucoin", markets_obj)
+            market_setups_binance = analyze_markets("exclude-markets-binance", _binance_ticker, "1600 hours ago", "binance", markets_obj)
+            market_setups_kucoin = analyze_markets("exclude-markets-kucoin", _kucoin_ticker,
+                                                   get_kucoin_interval_unit(_kucoin_ticker, 1600), "kucoin", markets_obj)
             setup_tuples = [(market_setups_binance, "binance"), (market_setups_kucoin, "kucoin")]
             process_setups(setup_tuples, collection, _binance_ticker, mail_content)
 
