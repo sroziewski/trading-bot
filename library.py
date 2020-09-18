@@ -2608,7 +2608,10 @@ def is_tradeable(_closes, _rsi, _macd, _macdsignal):
     _macd_normal_cond = is_macd_condition(_macd, _slope, _start, _stop)
     _macd_tight_cond = is_macd_condition(_macd, 50, _start, _stop)
     _divergence_ratio_cond = is_signal_divergence_ratio(_macd, _macdsignal, 0.5, _start, _stop)
-    _hl_cond = is_higher_low(_rsi, _rsi_limit, _start, _stop)
+    try:
+        _hl_cond = is_higher_low(_rsi, _rsi_limit, _start, _stop)
+    except ValueError:
+        _hl_cond = False
 
     _tradeable = False
     if _rsi_normal_cond and _divergence_ratio_cond and _macd_normal_cond:
