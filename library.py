@@ -2706,7 +2706,7 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
                     _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1]))
 
             logger_global[0].warning(e)
-            logger_global[0].warning(f"No data for market : {_market}")
+            logger_global[0].warning(f"No data for market {_ticker} : {_market}")
             if _ticker in _exclude_markets:
                 _exclude_markets[_ticker].append(_market)
             else:
