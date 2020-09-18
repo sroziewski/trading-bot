@@ -2395,12 +2395,12 @@ def is_drop_below_ma50_after_rally(_klines):
     _below_ma = drop_below_ma_rev(_f_ma50, _f_low)
 
     if _below_ma[1] == -1:
-        return False
+        return False, _closes[-1]
 
     try:
         _ma50_above_ma200 = all(_ma50[-_below_ma[1]:] > _ma200[-_below_ma[1]:])
     except RuntimeWarning:
-        return False
+        return False, _closes[-1]
 
     _low_above_ma50 = _low[-_below_ma[1]:] > _ma50[-_below_ma[1]:]
     _trues = np.sum(_low_above_ma50)
