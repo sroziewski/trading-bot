@@ -3182,17 +3182,18 @@ def index_of_max_mas_difference(_closes):
         if _diff < _last_diff:
             _ind = _bi - _i - 1
             _rel_ind = (len(_ma200_in) - _ind - 1) / _ind
-            return _ind, _rel_ind
+            return _ind, _rel_ind, _diff
         _last_diff = _diff
-    return -1, -1
+    return -1, -1, -1
 
 
 def is_tilting(_closes):
-    _ind, _rel_ind = index_of_max_mas_difference(_closes)
+    _ind, _rel_ind, _diff = index_of_max_mas_difference(_closes)
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
+    _frac = (_closes[-1] - _ma50[-1]) / _diff
     _res = False
-    if _rel_ind > 0.5 and _closes[-1] < _ma50[-1]:
+    if _rel_ind > 0.5 and (_closes[-1] < _ma50[-1] or _frac < 0.25):
         _res = True
     if _rel_ind > 0.8:
         _res = True
