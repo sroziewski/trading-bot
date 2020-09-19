@@ -2681,7 +2681,10 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
 
             if e.args[0] == 'Integers to negative integer powers are not allowed.' or e.args[
                 0] == 'invalid value encountered in greater' or e.args[
-                0] == 'zero-size array to reduction operation maximum which has no identity':
+                0] == 'zero-size array to reduction operation maximum which has no identity' \
+                   or e.args[
+                0] == 'invalid value encountered in greater' or e.args[
+                0]== 'not enough values to unpack (expected 3, got 2)':
 
                 _is_2nd_golden = is_second_golden_cross(_closes)
                 if _is_2nd_golden[0]:
@@ -3176,7 +3179,7 @@ def index_of_max_mas_difference(_closes):
     _ma50 = talib.MA(_closes, timeperiod=50)
     _bv, _bi = bear_cross(_closes)
     if _bi == -1:
-        return -1, -1
+        return -1, -1, -1
     _ma200_in = _ma200[-_bi:]
     _ma50_in = _ma50[-_bi:]
     _last_diff = -1
