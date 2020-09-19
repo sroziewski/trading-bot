@@ -58,7 +58,7 @@ while 1:
         if len(mail_content.content) > 0:
             send_mail("WWW Market Setup Found WWW", mail_content.content)
 
-        time.sleep(10)
+        time.sleep(3500)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
             logger.error("Connection problem...")
