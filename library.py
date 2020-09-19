@@ -2521,7 +2521,12 @@ def is_second_golden_cross(_closes):
 def is_falling_wedge(_closes):
     _w = is_wedge(_closes)
     _r = relative_strength_index(_closes)
-    _hl = is_higher_low(_r, 45.0, 33, -1)
+    try:
+        _hl = is_higher_low(_r, 45.0, 33, -1)
+
+    except ValueError:
+        return False, _closes[-1]
+
     return _w and _hl, _closes[-1]
 
 
