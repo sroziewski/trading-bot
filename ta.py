@@ -519,6 +519,10 @@ def is_bull_flag0(_klines):
     return _is_bullish and _is_min_existing and _rsi_last_avg > 50.0 and _closes_above_ma50
 
 
+def find_valuable_alts(_closes):
+    _min_val = np.min(_closes)
+    _max = np.max(_closes)
+    return (_max-_min_val)/_min_val > 3
 
 def main():
     # asset = Asset(exchange="binance", name="LINK", ticker=BinanceClient.KLINE_INTERVAL_1HOUR)
@@ -529,8 +533,8 @@ def main():
     asset = "ENG"
     market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
-    ticker = BinanceClient.KLINE_INTERVAL_4HOUR
-    time_interval = "3600 hours ago"
+    ticker = BinanceClient.KLINE_INTERVAL_1WEEK
+    time_interval = "30 weeks ago"
 
     _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "1day"
@@ -538,12 +542,12 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    save_to_file("e://bin//data//", "klines-eng", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-eng")
-    _klines = _klines[:-241]
+    # save_to_file("e://bin//data//", "klines-eng", _klines)
+    # _klines = get_pickled('e://bin/data//', "klines-eng")
+    # _klines = _klines[:-241]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-
+    find_valuable_alts(_closes)
     bf = is_bull_flag(_closes)
     # fw0 = is_falling_wedge_0(_closes)
     fw = is_falling_wedge(_closes)
@@ -571,7 +575,7 @@ def main():
     _low = list(map(lambda _x: float(_x.lowest), _klines))
 
     bv, bi = bear_cross(_closes)
-    _ind, _rel_ind = index_of_max_mas_difference(_closes)
+    _ind, _rel_ind, _diff = index_of_max_mas_difference(_closes)
     _is_it = is_tilting(_closes)
     ## MACD
 

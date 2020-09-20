@@ -2839,7 +2839,7 @@ def get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets
 def try_get_klines(_exchange, _market, _ticker, _time_interval):
     _ii = 0
     _klines = []
-    for _ii in range(0, 5):
+    for _ii in range(0, 2):
         try:
             if _exchange == 'kucoin':
                 _klines = get_kucoin_klines(_market, _ticker, _time_interval)
@@ -2876,6 +2876,15 @@ def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
         if len(_setup) > 0:
             _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
             _mail_content.content += ' '.join(format_found_markets(_setup))
+
+
+def process_valuable_alts(_valuable_tuples, _exchange, _ticker, _mail_content):
+    _mail_content.content += f"<BR/><hr/><BR/><B>{_ticker}</B><BR/>"
+    _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
+    for _valuable_tuple in _valuable_tuples:
+        _market = _valuable_tuple[0]
+        _val = _valuable_tuple[1]
+        _mail_content.content += f"{_market} :{_val}<BR/>"
 
 
 def process_setup_tuples(_setup_tuples, _collection, _ticker):
@@ -3211,3 +3220,45 @@ def is_tilting(_closes):
     if _rel_ind > 0.5 and _closes[-1] > _ma200[-1]:
         _res = True
     return _res, _closes[-1]
+
+
+def find_valuable_alts(_highs):
+    _min_val = np.min(_highs)
+    _max = np.max(_highs)
+    _ratio = round((_max - _min_val) / _min_val, 2)
+    return _ratio > 3, _ratio
+
+
+def analyze_valuable_alts(_filename, _exchange, _ticker, _time_interval, _markets_obj):
+    _markets_raw = get_markets(_exchange)
+    _exclude_markets = {}
+    _valuable_markets = []
+    if path.isfile(key_dir + _filename + ".pkl"):
+        _exclude_markets = get_pickled(key_dir, _filename)
+    else:
+        _exclude_markets[_ticker] = []
+    if _ticker in _exclude_markets:
+        _markets_raw = get_markets(_exchange, _ticker, _exclude_markets)
+    else:
+        _markets_raw = get_markets(_exchange)
+        
+    _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
+    logger_global[0].info(
+        f"We are analyzing {len(_markets)} markets on {_exchange} ( with at least btc volume: {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
+    for _market in _markets:
+        try:
+            if _exchange == 'kucoin':
+                _klines = try_get_klines("kucoin", f"{_market}-BTC", _ticker, _time_interval)
+            elif _exchange == "binance":
+                _klines = try_get_klines("binance", _market, _ticker, _time_interval)
+
+            _highs = np.array(list(map(lambda _x: float(_x.highest), _klines)))
+            _is, _val = find_valuable_alts(_highs)
+            if _is:
+                _valuable_markets.append((_market, _val))
+        except Exception as e:
+            logger_global[0].warning(e)
+            logger_global[0].warning(f"No data for market {_ticker} : {_market}")
+
+    save_to_file(key_dir, _filename, _exclude_markets)
+    return _valuable_markets
