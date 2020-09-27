@@ -530,24 +530,27 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "ENG"
+    asset = "ZIL"
     market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
-    ticker = BinanceClient.KLINE_INTERVAL_1WEEK
-    time_interval = "30 weeks ago"
+    ticker = BinanceClient.KLINE_INTERVAL_1HOUR
+    time_interval = "10 weeks ago"
 
-    _klines = get_binance_klines(market, ticker, time_interval)
+    # _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "1day"
     # _klines = get_kucoin_klines(market, _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-eng", _klines)
-    # _klines = get_pickled('e://bin/data//', "klines-eng")
-    # _klines = _klines[:-241]
+    # save_to_file("e://bin//data//", "klines-zil", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-zil")
+    _klines = _klines[:-238]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-    find_valuable_alts(_closes)
+    # find_valuable_alts(_closes)
+
+    _is, _1 = is_second_golden_cross(_closes)
+
     bf = is_bull_flag(_closes)
     # fw0 = is_falling_wedge_0(_closes)
     fw = is_falling_wedge(_closes)
