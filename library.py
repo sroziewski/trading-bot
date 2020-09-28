@@ -2796,7 +2796,7 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _market
 
             _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
 
-            _is_bull_cross_in_bull_mode = is_bull_cross_in_bull_mode(_closes)
+            _is_bull_cross_in_bull_mode = strategy_for_micro(_closes)
             if _is_bull_cross_in_bull_mode[0]:
                 _golden_cross_markets.append((_market, "_is_bull_cross_in_bull_mode", _is_bull_cross_in_bull_mode[1]))
 
@@ -3157,6 +3157,13 @@ def bull_cross(_closes):
         if _ma50_rev[_i] < _ma200_rev[_i]:
             return _ma50_rev[_i], _i
     return -1, -1
+
+
+def strategy_for_micro(_closes):
+    _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+    _rsi = relative_strength_index(_closes)
+
+    return is_tradeable(_closes, _rsi, _macd, _macdsignal), _closes[-1]
 
 
 def is_bull_cross_in_bull_mode(_closes):
