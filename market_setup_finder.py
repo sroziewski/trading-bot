@@ -27,17 +27,17 @@ markets_obj = Markets(binance_vol_filter, kucoin_vol_filter)
 
 while 1:
     try:
-        _tickers = [0.15, 30, 1, 4, 8, 12, 24]
+        _tickers = [0.15, 0.30, 1, 4, 8, 12, 24]
 
         mail_content = MailContent('')
         for _t in _tickers:
-            if 1 < _t < 24:
+            if 1 <= _t < 24:
                 _binance_ticker = f"{_t}h"
                 _kucoin_ticker = f"{_t}hour"
             elif _t == 24:
                 _binance_ticker = "1d"
                 _kucoin_ticker = "1day"
-            elif _t == 30:
+            elif _t == 0.30:
                 _binance_ticker = "30m"
                 _kucoin_ticker = "30min"
             elif _t == 0.15:
