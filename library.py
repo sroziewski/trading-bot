@@ -2687,9 +2687,9 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
             if e.args[0] == 'Integers to negative integer powers are not allowed.' or e.args[
                 0] == 'invalid value encountered in greater' or e.args[
                 0] == 'zero-size array to reduction operation maximum which has no identity' \
-                   or e.args[
+                    or e.args[
                 0] == 'invalid value encountered in greater' or e.args[
-                0]== 'not enough values to unpack (expected 3, got 2)':
+                0] == 'not enough values to unpack (expected 3, got 2)':
 
                 _is_2nd_golden = is_second_golden_cross(_closes)
                 if _is_2nd_golden[0]:
@@ -3017,7 +3017,7 @@ def _verify_setup(_collection):
 
             if len(_binance) > 0:
                 _mail_content = add_mail_content_for_exchange(_mail_content, _binance, "binance")
-            if len(_kucoin)>0:
+            if len(_kucoin) > 0:
                 _mail_content = add_mail_content_for_exchange(_mail_content, _kucoin, "kucoin")
 
         if len(_mail_content) > 0:
@@ -3220,7 +3220,7 @@ def index_of_max_mas_difference(_closes):
             return -1, -1, -1
         _last_diff = _diff
 
-    return _ind, _rel_ind, _diff if _ind_o > 0 else  -1, -1, -1
+    return _ind, _rel_ind, _diff if _ind_o > 0 else -1, -1, -1
 
 
 def is_tilting(_closes):
@@ -3257,7 +3257,7 @@ def analyze_valuable_alts(_filename, _exchange, _ticker, _time_interval, _market
         _markets_raw = get_markets(_exchange, _ticker, _exclude_markets)
     else:
         _markets_raw = get_markets(_exchange)
-        
+
     _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
     logger_global[0].info(
         f"We are analyzing {len(_markets)} markets on {_exchange} ( with at least btc volume: {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
