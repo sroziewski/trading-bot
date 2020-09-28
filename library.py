@@ -3197,14 +3197,21 @@ def index_of_max_mas_difference(_closes):
     _ma200_in = _ma200[-_bi:]
     _ma50_in = _ma50[-_bi:]
     _last_diff = -1
+    _ind_o = _rel_ind_o = _diff_o = _i_o = -1
     for _i in range(len(_ma200_in) - 1):
         _diff = abs(_ma200_in[_i] - _ma50_in[_i])
         if _diff < _last_diff:
             _ind = _bi - _i - 1
             _rel_ind = (len(_ma200_in) - _ind - 1) / _ind
-            return _ind, _rel_ind, _diff
+            _ind_o = _ind
+            _rel_ind_o = _rel_ind
+            _i_o = _i
+            _diff_o = _diff
+        if _diff > _diff_o > 0 and _i > _i_o > 0:
+            return -1, -1, -1
         _last_diff = _diff
-    return -1, -1, -1
+
+    return _ind, _rel_ind, _diff if _ind_o > 0 else  -1, -1, -1
 
 
 def is_tilting(_closes):

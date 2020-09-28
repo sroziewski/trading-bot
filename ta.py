@@ -530,10 +530,10 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "ZIL"
+    asset = "ENJ"
     market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
-    ticker = BinanceClient.KLINE_INTERVAL_1HOUR
+    ticker = BinanceClient.KLINE_INTERVAL_4HOUR
     time_interval = "10 weeks ago"
 
     # _klines = get_binance_klines(market, ticker, time_interval)
@@ -542,9 +542,9 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-zil", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-zil")
-    _klines = _klines[:-238]
+    # save_to_file("e://bin//data//", "klines-enj", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-enj")
+    _klines = _klines[:-43]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     # find_valuable_alts(_closes)
