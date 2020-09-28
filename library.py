@@ -3015,8 +3015,10 @@ def _verify_setup(_collection):
             _binance = list(filter(lambda elem: elem['exchange'] == "binance", _verified))
             _kucoin = list(filter(lambda elem: elem['exchange'] == "kucoin", _verified))
 
-            _mail_content = add_mail_content_for_exchange(_mail_content, _binance, "binance")
-            _mail_content = add_mail_content_for_exchange(_mail_content, _kucoin, "kucoin")
+            if len(_binance) > 0:
+                _mail_content = add_mail_content_for_exchange(_mail_content, _binance, "binance")
+            if len(_kucoin)>0:
+                _mail_content = add_mail_content_for_exchange(_mail_content, _kucoin, "kucoin")
 
         if len(_mail_content) > 0:
             send_mail("YYY Verified YYY", _mail_content)
