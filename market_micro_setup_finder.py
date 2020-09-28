@@ -5,8 +5,8 @@ import traceback
 import requests
 from bson.codec_options import TypeRegistry, CodecOptions
 
-from library import setup_logger, analyze_markets, authorize, get_kucoin_interval_unit, process_setups, \
-    DecimalCodec, manage_verifying_setup, send_mail, MailContent, analyze_micro_markets, Markets
+from library import setup_logger, get_kucoin_interval_unit, process_setups, \
+    DecimalCodec, manage_verifying_setup, MailContent, analyze_micro_markets, Markets
 from mongodb import mongo_client
 
 logger = setup_logger("market-micro-setup-finder")

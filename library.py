@@ -2599,6 +2599,13 @@ def is_higher_low(_values, _limit, _start, _stop, _window=10):
             _local_max - _current_value) > 2  # the difference in RSI local extrema has to be minimum 2 rsi
 
 
+def is_tradeable_strategy(_closes):
+    _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+    _rsi = relative_strength_index(_closes)
+
+    return is_tradeable(_closes, _rsi, _macd, _macdsignal), _closes[-1]
+
+
 def is_tradeable(_closes, _rsi, _macd, _macdsignal):
     if len(list(filter(lambda x: x == 0, get_last(_rsi, -1, 10)))) > 0:
         return False
@@ -2677,6 +2684,9 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
             _is_bf = is_bull_flag(_closes)
             if _is_bf[0]:
                 _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
+            _is_tradeable_strategy = is_tradeable_strategy(_closes)
+            if _is_tradeable_strategy[0]:
+                _golden_cross_markets.append((_market, "is_tradeable_strategy", _is_tradeable_strategy[1]))
             if '15' not in _ticker:
                 _is_tilting = is_tilting(_closes)
                 if _is_tilting[0]:
@@ -2796,7 +2806,7 @@ def analyze_micro_markets(_filename, _ticker, _time_interval, _exchange, _market
 
             _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
 
-            _is_bull_cross_in_bull_mode = strategy_for_micro(_closes)
+            _is_bull_cross_in_bull_mode = is_tradeable_strategy(_closes)
             if _is_bull_cross_in_bull_mode[0]:
                 _golden_cross_markets.append((_market, "_is_bull_cross_in_bull_mode", _is_bull_cross_in_bull_mode[1]))
 
@@ -3034,6 +3044,7 @@ def add_mail_content_for_exchange(_mail_content, _data_list, _exchange):
     _is_fw = list(filter(lambda elem: elem['strategy'] == "is_falling_wedge", _data_list))
     _is_bf = list(filter(lambda elem: elem['strategy'] == "is_bull_flag", _data_list))
     _is_tilting = list(filter(lambda elem: elem['strategy'] == "is_tilting", _data_list))
+    _is_tradeable_strategy = list(filter(lambda elem: elem['strategy'] == "is_tradeable_strategy", _data_list))
     _mail_content = handle_verification_mailing(_is_first, _mail_content)
     _mail_content = handle_verification_mailing(_is_second, _mail_content)
     _mail_content = handle_verification_mailing(_drop_below_ma50, _mail_content)
@@ -3041,6 +3052,7 @@ def add_mail_content_for_exchange(_mail_content, _data_list, _exchange):
     _mail_content = handle_verification_mailing(_is_fw, _mail_content)
     _mail_content = handle_verification_mailing(_is_bf, _mail_content)
     _mail_content = handle_verification_mailing(_is_tilting, _mail_content)
+    _mail_content = handle_verification_mailing(_is_tradeable_strategy, _mail_content)
     return _mail_content
 
 
@@ -3159,13 +3171,6 @@ def bull_cross(_closes):
         if _ma50_rev[_i] < _ma200_rev[_i]:
             return _ma50_rev[_i], _i
     return -1, -1
-
-
-def strategy_for_micro(_closes):
-    _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
-    _rsi = relative_strength_index(_closes)
-
-    return is_tradeable(_closes, _rsi, _macd, _macdsignal), _closes[-1]
 
 
 def is_bull_cross_in_bull_mode(_closes):
