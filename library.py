@@ -2839,7 +2839,7 @@ def get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets
 def try_get_klines(_exchange, _market, _ticker, _time_interval):
     _ii = 0
     _klines = []
-    for _ii in range(0, 2):
+    for _ii in range(0, 5):
         try:
             if _exchange == 'kucoin':
                 _klines = get_kucoin_klines(_market, _ticker, _time_interval)
