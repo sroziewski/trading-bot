@@ -2892,7 +2892,7 @@ class MailContent(object):
 
 
 def format_found_markets(_markets_tuple):
-    return [f"{x[0]} : {x[1]}" for x in _markets_tuple]
+    return [f"{x[0]} : {x[1]}({x[3]})" for x in _markets_tuple]
 
 
 def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
@@ -2902,6 +2902,7 @@ def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
 
     for _setup_tuple in _setup_tuples:
         _setup = _setup_tuple[0]
+        _setup = sorted(_setup, key=lambda x: x[3], reverse=True)
         _exchange = _setup_tuple[1]
         if len(_setup) > 0:
             _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
