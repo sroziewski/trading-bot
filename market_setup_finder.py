@@ -16,7 +16,7 @@ if arguments == 0:
     print("You have to specify type of setups: for longer periods (long), and shorter (short)")
     exit(0)
 
-type_of_scan = sys.argv[0]
+type_of_scan = sys.argv[1]
 tickers = []
 if type_of_scan == "long":
     tickers = [4, 8, 12, 24]
@@ -25,6 +25,8 @@ elif type_of_scan == "short":
 
 logger = setup_logger(f"market-setup-finder-{type_of_scan}")
 logger.info(f"Starting Market-Setup-Finder...{type_of_scan}")
+
+print(type_of_scan)
 
 authorize()
 
