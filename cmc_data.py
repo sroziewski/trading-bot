@@ -84,4 +84,4 @@ while 1:
         collection.insert_one({'data': to_mongo(data), 'timestamp': now})
     except (ConnectionError, Timeout, TooManyRedirects) as e:
         logger.error(e)
-    datetime.time.sleep(900)
+    sleep(900)
