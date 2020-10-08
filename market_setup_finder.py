@@ -10,9 +10,6 @@ from library import setup_logger, analyze_markets, authorize, get_kucoin_interva
     DecimalCodec, manage_verifying_setup, send_mail, MailContent, Markets
 from mongodb import mongo_client
 
-logger = setup_logger("market-setup-finder")
-logger.info("Starting Market-Setup-Finder...")
-
 arguments = len(sys.argv) - 1
 
 if arguments == 0:
@@ -25,7 +22,11 @@ if type_of_scan == "long":
 elif type_of_scan == "short":
     _tickers = [0.15, 0.30, 1]
 
+logger = setup_logger(f"market-setup-finder-{type_of_scan}")
+logger.info(f"Starting Market-Setup-Finder...{type_of_scan}")
+
 authorize()
+logger.info("Authorized")
 
 db = mongo_client.setups
 decimal_codec = DecimalCodec()
