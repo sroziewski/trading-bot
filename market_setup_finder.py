@@ -27,7 +27,6 @@ logger = setup_logger(f"market-setup-finder-{type_of_scan}")
 logger.info(f"Starting Market-Setup-Finder...{type_of_scan}")
 
 authorize()
-logger.info("Authorized")
 
 db = mongo_client.setups
 decimal_codec = DecimalCodec()
