@@ -17,10 +17,11 @@ if arguments == 0:
     exit(0)
 
 type_of_scan = sys.argv[0]
+tickers = []
 if type_of_scan == "long":
-    _tickers = [4, 8, 12, 24]
+    tickers = [4, 8, 12, 24]
 elif type_of_scan == "short":
-    _tickers = [0.15, 0.30, 1]
+    tickers = [0.15, 0.30, 1]
 
 logger = setup_logger(f"market-setup-finder-{type_of_scan}")
 logger.info(f"Starting Market-Setup-Finder...{type_of_scan}")
@@ -42,7 +43,7 @@ markets_obj = Markets(binance_vol_filter, kucoin_vol_filter)
 while 1:
     try:
         mail_content = MailContent('')
-        for _t in _tickers:
+        for _t in tickers:
             if 1 <= _t < 24:
                 _binance_ticker = f"{_t}h"
                 _kucoin_ticker = f"{_t}hour"
