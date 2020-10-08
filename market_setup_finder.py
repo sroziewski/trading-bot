@@ -72,7 +72,10 @@ while 1:
         if len(mail_content.content) > 0:
             send_mail(f"WWW Market Setup Found ({type_of_scan.upper()}) WWW", mail_content.content)
 
-        time.sleep(3500)
+        if type_of_scan == "long":
+            time.sleep(3600*4-900)
+        elif type_of_scan == "short":
+            time.sleep(3600-900)
     except Exception as err:
         if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
             logger.error("Connection problem...")
