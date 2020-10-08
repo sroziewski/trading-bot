@@ -2487,7 +2487,8 @@ def drop_below_ma_rev(_ma, _candles, _window=5):
     return -1, -1
 
 
-def is_second_golden_cross(_closes):
+def is_second_golden_cross(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)
     _max_200 = find_local_maximum(_ma200, 200)  # first a long-period maximum
@@ -2518,7 +2519,8 @@ def is_second_golden_cross(_closes):
            _closes[-1]
 
 
-def is_falling_wedge(_closes):
+def is_falling_wedge(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _w = is_wedge(_closes)
     _r = relative_strength_index(_closes)
     try:
@@ -2599,7 +2601,8 @@ def is_higher_low(_values, _limit, _start, _stop, _window=10):
             _local_max - _current_value) > 2  # the difference in RSI local extrema has to be minimum 2 rsi
 
 
-def is_tradeable_strategy(_closes):
+def is_tradeable_strategy(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
     _rsi = relative_strength_index(_closes)
 
@@ -2665,32 +2668,30 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
             elif _exchange == "binance":
                 _klines = try_get_klines("binance", _market, _ticker, _time_interval)
 
-            _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
-            _is_2nd_golden = is_second_golden_cross(_closes)
-            if _is_2nd_golden[0]:
-                _golden_cross_markets.append((_market, "is_second_golden_cross", _is_2nd_golden[1]))
-            _is_1st_golden = is_first_golden_cross(_klines)
-            if _is_1st_golden[0]:
-                _golden_cross_markets.append((_market, "is_first_golden_cross", _is_1st_golden[1]))
-            _is_drop_below_ma200 = is_drop_below_ma200_after_rally(_klines)
-            if _is_drop_below_ma200[0]:
-                _golden_cross_markets.append((_market, "drop_below_ma200_after_rally", _is_drop_below_ma200[1]))
-            _is_drop_below_ma50 = is_drop_below_ma50_after_rally(_klines)
-            if _is_drop_below_ma50[0]:
-                _golden_cross_markets.append((_market, "is_drop_below_ma50_after_rally", _is_drop_below_ma50[1]))
-            _is_fw = is_falling_wedge(_closes)
-            if _is_fw[0]:
-                _golden_cross_markets.append((_market, "is_falling_wedge", _is_fw[1]))
-            _is_bf = is_bull_flag(_closes)
-            if _is_bf[0]:
-                _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
-            _is_tradeable_strategy = is_tradeable_strategy(_closes)
-            if _is_tradeable_strategy[0]:
-                _golden_cross_markets.append((_market, "is_tradeable_strategy", _is_tradeable_strategy[1]))
-            if '15' not in _ticker:
-                _is_tilting = is_tilting(_closes)
-                if _is_tilting[0]:
-                    _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1]))
+            _is_2nd_golden = compute_wider_interval(is_second_golden_cross, _klines)
+            if _is_2nd_golden[0] > 0:
+                _golden_cross_markets.append((_market, "is_second_golden_cross", _is_2nd_golden[1], _is_2nd_golden[0]))
+            _is_1st_golden = compute_wider_interval(is_first_golden_cross, _klines)
+            if _is_1st_golden[0] > 0:
+                _golden_cross_markets.append((_market, "is_first_golden_cross", _is_1st_golden[1], _is_1st_golden[0]))
+            _is_drop_below_ma200 = compute_wider_interval(is_drop_below_ma200_after_rally, _klines)
+            if _is_drop_below_ma200[0] > 0:
+                _golden_cross_markets.append((_market, "drop_below_ma200_after_rally", _is_drop_below_ma200[1], _is_drop_below_ma200[0]))
+            _is_drop_below_ma50 = compute_wider_interval(is_drop_below_ma50_after_rally, _klines)
+            if _is_drop_below_ma50[0] > 0:
+                _golden_cross_markets.append((_market, "is_drop_below_ma50_after_rally", _is_drop_below_ma50[1], _is_drop_below_ma50[0]))
+            _is_fw = compute_wider_interval(is_falling_wedge, _klines)
+            if _is_fw[0] > 0:
+                _golden_cross_markets.append((_market, "is_falling_wedge", _is_fw[1], _is_fw[0]))
+            _is_bf = compute_wider_interval(is_bull_flag, _klines)
+            if _is_bf[0] > 0:
+                _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1], _is_bf[0]))
+            _is_tradeable_strategy = compute_wider_interval(is_tradeable_strategy, _klines)
+            if _is_tradeable_strategy[0] > 0:
+                _golden_cross_markets.append((_market, "is_tradeable_strategy", _is_tradeable_strategy[1], _is_tradeable_strategy[0]))
+            _is_tilting = compute_wider_interval(is_tilting, _klines)
+            if _is_tilting[0] > 0:
+                _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1], _is_tilting[0]))
 
         except Exception as e:
 
@@ -2701,27 +2702,35 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
                 0] == 'invalid value encountered in greater' or e.args[
                 0] == 'not enough values to unpack (expected 3, got 2)':
 
-                _is_2nd_golden = is_second_golden_cross(_closes)
-                if _is_2nd_golden[0]:
-                    _golden_cross_markets.append((_market, "is_second_golden_cross", _is_2nd_golden[1]))
-                _is_1st_golden = is_first_golden_cross(_klines)
-                if _is_1st_golden[0]:
-                    _golden_cross_markets.append((_market, "is_first_golden_cross", _is_1st_golden[1]))
-                _is_drop_below_ma200 = is_drop_below_ma200_after_rally(_klines)
-                if _is_drop_below_ma200[0]:
-                    _golden_cross_markets.append((_market, "drop_below_ma200_after_rally", _is_drop_below_ma200[1]))
-                _is_drop_below_ma50 = is_drop_below_ma50_after_rally(_klines)
-                if _is_drop_below_ma50[0]:
-                    _golden_cross_markets.append((_market, "is_drop_below_ma50_after_rally", _is_drop_below_ma50[1]))
-                _is_fw = is_falling_wedge(_closes)
-                if _is_fw[0]:
-                    _golden_cross_markets.append((_market, "is_falling_wedge", _is_fw[1]))
-                _is_bf = is_bull_flag(_closes)
-                if _is_bf[0]:
-                    _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1]))
-                _is_tilting = is_tilting(_closes)
-                if _is_tilting[0]:
-                    _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1]))
+                _is_2nd_golden = compute_wider_interval(is_second_golden_cross, _klines)
+                if _is_2nd_golden[0] > 0:
+                    _golden_cross_markets.append(
+                        (_market, "is_second_golden_cross", _is_2nd_golden[1], _is_2nd_golden[0]))
+                _is_1st_golden = compute_wider_interval(is_first_golden_cross, _klines)
+                if _is_1st_golden[0] > 0:
+                    _golden_cross_markets.append(
+                        (_market, "is_first_golden_cross", _is_1st_golden[1], _is_1st_golden[0]))
+                _is_drop_below_ma200 = compute_wider_interval(is_drop_below_ma200_after_rally, _klines)
+                if _is_drop_below_ma200[0] > 0:
+                    _golden_cross_markets.append(
+                        (_market, "drop_below_ma200_after_rally", _is_drop_below_ma200[1], _is_drop_below_ma200[0]))
+                _is_drop_below_ma50 = compute_wider_interval(is_drop_below_ma50_after_rally, _klines)
+                if _is_drop_below_ma50[0] > 0:
+                    _golden_cross_markets.append(
+                        (_market, "is_drop_below_ma50_after_rally", _is_drop_below_ma50[1], _is_drop_below_ma50[0]))
+                _is_fw = compute_wider_interval(is_falling_wedge, _klines)
+                if _is_fw[0] > 0:
+                    _golden_cross_markets.append((_market, "is_falling_wedge", _is_fw[1], _is_fw[0]))
+                _is_bf = compute_wider_interval(is_bull_flag, _klines)
+                if _is_bf[0] > 0:
+                    _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1], _is_bf[0]))
+                _is_tradeable_strategy = compute_wider_interval(is_tradeable_strategy, _klines)
+                if _is_tradeable_strategy[0] > 0:
+                    _golden_cross_markets.append(
+                        (_market, "is_tradeable_strategy", _is_tradeable_strategy[1], _is_tradeable_strategy[0]))
+                _is_tilting = compute_wider_interval(is_tilting, _klines)
+                if _is_tilting[0] > 0:
+                    _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1], _is_tilting[0]))
 
             logger_global[0].warning(e)
             logger_global[0].warning(f"No data for market {_ticker} : {_market}")
@@ -2733,6 +2742,17 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
     logger_global[0].info(f"{_ticker} : {_info}")
     save_to_file(key_dir, _filename, _exclude_markets)
     return _golden_cross_markets
+
+
+def compute_wider_interval(_func, _klines):
+    _res = []
+    for i in range(0, 24):
+        if i == 0:
+            _res.append(_func(_klines))
+        else:
+            _res.append(_func(_klines[:-i]))
+    _trues = sum(i for i, _ in _res)
+    return _trues, _res[0][1]
 
 
 def filter_markets_by_volume(_markets, _vol_btc, _exchange, _exclude_markets, _ticker):
@@ -2917,7 +2937,8 @@ def setup_to_mongo(_setup_tuple, _ticker):
         'exchange': _exchange,
         'ticker': _ticker,
         'times': [_timestamp],
-        'types': [_setup[1]]
+        'types': [_setup[1]],
+        'trues': [_setup[3]]
     }
 
 
@@ -2936,6 +2957,7 @@ def persist_setup(_setup_tuple, _collection, _ticker):
             if _diff_in_days < 5.0:
                 _found['setup']['times'].append(_now)
                 _found['setup']['types'].append(_setup[1])
+                _found['setup']['trues'].append(_setup[3])
                 _collection.update_one({'_id': _found['_id']}, {'$set': {'setup': _found['setup']}})
             else:
                 _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
@@ -3113,7 +3135,8 @@ def check_wedge(_a, _b, _x, _y, _greater=False, _ratio=0.66):
     return np.sum(_r) / len(_r) > _ratio
 
 
-def is_bull_flag(_closes):
+def is_bull_flag(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _true = True
     _rsi = relative_strength_index(_closes)
     _r_max_val_max, _r_max_ind = find_first_maximum(_rsi, 10)
@@ -3234,7 +3257,8 @@ def index_of_max_mas_difference(_closes):
         return -1, -1, -1
 
 
-def is_tilting(_closes):
+def is_tilting(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     _ind, _rel_ind, _diff = index_of_max_mas_difference(_closes)
     _ma200 = talib.MA(_closes, timeperiod=200)
     _ma50 = talib.MA(_closes, timeperiod=50)

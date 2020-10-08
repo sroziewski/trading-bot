@@ -14,7 +14,8 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, get_pic
     is_second_golden_cross, is_first_golden_cross, find_first_golden_cross, drop_below_ma, \
     is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable, slope, bias, check_wedge, \
     is_falling_wedge, is_higher_low, get_binance_klines, get_kucoin_klines, get_kucoin_interval_unit, is_bull_flag, \
-    find_maximum_2, bull_cross, is_bull_cross_in_bull_mode, bear_cross, index_of_max_mas_difference, is_tilting
+    find_maximum_2, bull_cross, is_bull_cross_in_bull_mode, bear_cross, index_of_max_mas_difference, is_tilting, \
+    compute_wider_interval
 
 warnings.filterwarnings('error')
 
@@ -530,7 +531,7 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "ICX"
+    asset = "MTL"
     market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
@@ -542,18 +543,18 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    save_to_file("e://bin//data//", "klines-icx", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-icx")
-    _klines = _klines[:-13*24+21]
+    save_to_file("e://bin//data//", "klines-mtl", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-mtl")
+    _klines = _klines[:-3]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
     # find_valuable_alts(_closes)
 
-    _is, _1 = is_second_golden_cross(_closes)
+    _is, _1 = is_second_golden_cross(_klines)
 
-    bf = is_bull_flag(_closes)
+    bf = is_bull_flag(_klines)
     # fw0 = is_falling_wedge_0(_closes)
-    fw = is_falling_wedge(_closes)
+    fw = is_falling_wedge(_klines)
 
     macd, macdsignal, macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
     r = relative_strength_index(_closes)
@@ -562,7 +563,7 @@ def main():
 
     is_it = is_tradeable(_closes, r, macd, macdsignal)
 
-    res0 = is_second_golden_cross(_closes[:-1])
+    res0 = is_second_golden_cross(_klines[:-1])
     res = is_first_golden_cross(_klines)
     d = is_drop_below_ma50_after_rally(_klines)
     d1 = is_drop_below_ma200_after_rally(_klines)
@@ -579,6 +580,15 @@ def main():
 
     bv, bi = bear_cross(_closes)
     _ind, _rel_ind, _diff = index_of_max_mas_difference(_closes)
+    _res = []
+
+    _r = compute_wider_interval(is_tilting, _klines)
+
+    for i in range(0, 24):
+        if i == 0:
+            _res.append(is_tilting(_closes))
+        else:
+            _res.append(is_tilting(_closes[:-i]))
     _is_it = is_tilting(_closes)
     ## MACD
 
