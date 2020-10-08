@@ -74,6 +74,8 @@ type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
 collection = db.get_collection("cmc", codec_options=codec_options)
 
+logger.info("Starting global market data crawling...")
+
 while 1:
     try:
         response = session.get(url)
@@ -81,5 +83,5 @@ while 1:
         now = datetime.datetime.now().timestamp()
         collection.insert_one({'data': to_mongo(data), 'timestamp': now})
     except (ConnectionError, Timeout, TooManyRedirects) as e:
-        print(e)
+        logger.error(e)
     datetime.time.sleep(900)
