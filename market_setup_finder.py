@@ -25,6 +25,7 @@ elif type_of_scan == "short":
 
 logger = setup_logger(f"market-setup-finder-{type_of_scan}")
 logger.info(f"Starting Market-Setup-Finder...{type_of_scan}")
+logger.info(', '.join(map(str, tickers)))
 
 print(type_of_scan)
 
