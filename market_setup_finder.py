@@ -1,4 +1,5 @@
 import datetime
+import sys
 import time
 import traceback
 
@@ -11,6 +12,18 @@ from mongodb import mongo_client
 
 logger = setup_logger("market-setup-finder")
 logger.info("Starting Market-Setup-Finder...")
+
+arguments = len(sys.argv) - 1
+
+if arguments == 0:
+    print("You have to specify type of setups: for longer periods (long), and shorter (short)")
+    exit(0)
+
+type_of_scan = sys.argv[0]
+if type_of_scan == "long":
+    _tickers = [4, 8, 12, 24]
+elif type_of_scan == "short":
+    _tickers = [0.15, 0.30, 1]
 
 authorize()
 
@@ -27,8 +40,6 @@ markets_obj = Markets(binance_vol_filter, kucoin_vol_filter)
 
 while 1:
     try:
-        _tickers = [0.15, 0.30, 1, 4, 8, 12, 24]
-
         mail_content = MailContent('')
         for _t in _tickers:
             if 1 <= _t < 24:
@@ -56,7 +67,7 @@ while 1:
             process_setups(setup_tuples, collection, _binance_ticker, mail_content)
 
         if len(mail_content.content) > 0:
-            send_mail("WWW Market Setup Found WWW", mail_content.content)
+            send_mail(f"WWW Market Setup Found ({type_of_scan.upper()}) WWW", mail_content.content)
 
         time.sleep(3500)
     except Exception as err:
