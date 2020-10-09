@@ -10,7 +10,7 @@ from requests import Session
 from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 
 from config import config
-from library import setup_logger, DecimalCodec
+from library import setup_logger, DecimalCodec, get_time
 from mongodb import mongo_client
 
 logger = setup_logger("Crypto-Market-Global-Metrics")
@@ -30,7 +30,7 @@ def to_mongo(_data):
     _altcoin_volume_24h = _data['data']['quote']['USD']['altcoin_volume_24h']
     _altcoin_market_cap = _data['data']['quote']['USD']['altcoin_market_cap']
     return {
-        'timestamp': _timestamp,
+        'timestamp': get_time(_timestamp),
         'btc_dominance': _btc_dominance,
         'eth_dominance': _eth_dominance,
         'defi_volume_24h': _defi_volume_24h,
