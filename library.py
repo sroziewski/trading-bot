@@ -26,7 +26,7 @@ from bson import Decimal128
 from bson.codec_options import TypeCodec
 from kucoin.client import Client as KucoinClient, Client
 from pymongo import DESCENDING
-from pymongo.errors import PyMongoError
+from pymongo.errors import PyMongoError, InvalidDocument
 
 from Binance import Binance
 from config import config
@@ -2939,7 +2939,7 @@ def setup_to_mongo(_setup_tuple, _ticker):
         'ticker': _ticker,
         'times': [_timestamp],
         'types': [_setup[1]],
-        'trues': [_setup[3]]
+        'trues': [int(_setup[3])]
     }
 
 
@@ -2958,12 +2958,15 @@ def persist_setup(_setup_tuple, _collection, _ticker):
             if _diff_in_days < 5.0:
                 _found['setup']['times'].append(_now)
                 _found['setup']['types'].append(_setup[1])
-                _found['setup']['trues'].append(_setup[3])
+                _found['setup']['trues'].append(int(_setup[3]))
                 _collection.update_one({'_id': _found['_id']}, {'$set': {'setup': _found['setup']}})
             else:
                 _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
         else:
-            _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
+            try:
+                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
+            except InvalidDocument:
+                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
     except PyMongoError:
         time.sleep(5)
         persist_setup(_setup_tuple, _collection)
