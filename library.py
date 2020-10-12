@@ -111,8 +111,9 @@ def ticker_to_kucoin(_ticker):
     return _ticker.replace("m", "min").replace("h", "hour").replace("d", "day").replace("w", "week")
 
 
-def check_kucoin_offer_validity(_asset):
+def check_kucoin_offer_validity(_asset, return_value=False):
     _exit = False
+    _market_price = None
     if _asset.kucoin_side == KucoinClient.SIDE_BUY:
         _market_bid = float(kucoin_client.get_order_book(_asset.market)['bids'][0][0])
         if _asset.price - _market_bid >= 0.01 * sat:
@@ -126,7 +127,10 @@ def check_kucoin_offer_validity(_asset):
     if _exit:
         logger_global[0].info(
             f"{_asset.market} {_asset.kucoin_side} check_kucoin_offer_validity failed: your price {get_format_price(_asset.price)} : market price : {get_format_price(_market_price)}")
-        sys.exit(-1)
+        if return_value:
+            return _market_price + _asset.kucoin_price_increment
+        else:
+            sys.exit(-1)
 
 
 def price_increment(_price, _increment):
@@ -150,6 +154,7 @@ class Asset(object):
             self.market = "{}-BTC".format(name)
             self.ticker = ticker_to_kucoin(ticker)
             self.kucoin_increment = float(get_kucoin_symbol(self.market, 'baseIncrement'))
+            self.kucoin_price_increment = float(get_kucoin_symbol(self.market, 'priceIncrement'))
         if exchange == "binance":
             self.market = "{}BTC".format(name)
             self.price_ticker_size = get_binance_price_tick_size(self.market)
@@ -242,6 +247,50 @@ class Asset(object):
                     self.price = price_decrement(_cut_value, self.kucoin_increment)
                 cancel_kucoin_current_orders(self.market)
                 self.limit_hidden_order()
+
+    def hidden_buy_order(self):
+        _market_price = check_kucoin_offer_validity(self, return_value=True)
+        if self.cancel:
+            cancel_kucoin_current_orders(self.market)
+        _btc_value = get_remaining_btc_kucoin()
+        _useable_btc = (1 - kucoin_general_fee) * _btc_value
+        purchase_fund = self.ratio / 100 * _useable_btc
+        if self.kucoin_side == KucoinClient.SIDE_BUY:
+            size = purchase_fund / self.price
+            get_or_create_kucoin_trade_account(self.name)
+        elif self.kucoin_side == KucoinClient.SIDE_SELL:
+            size = float(get_or_create_kucoin_trade_account(self.name)['available'])
+
+        self.adjusted_size = adjust_kucoin_order_size(self, size)
+        required_size = float(get_kucoin_symbol(self.market, 'baseMinSize'))
+        _strategy = Strategy(self)
+        if self.adjusted_size >= required_size:
+            _id = None
+            if _market_price:
+                self.price = round(_market_price + delta, 10)
+
+            _id = kucoin_client.create_limit_order(self.market, self.kucoin_side, str(self.price),
+                                                   str(self.adjusted_size),
+                                                   hidden=True)['orderId']
+            logger_global[0].info(
+                "{} {}::limit_hidden_order : order_id : {} has been placed.".format(self.market, self, _id))
+            logger_global[0].info(
+                "{} {}::limit_hidden_order : {} {} @ {} BTC : {} BTC".format(self.market, self, self.adjusted_size,
+                                                                             self.name,
+                                                                             get_format_price(self.price),
+                                                                             get_format_price(
+                                                                                 self.adjusted_size * self.price)))
+            if self.stop_loss:
+                _strategy.set_stop_loss()
+            return _id
+        else:
+            logger_global[0].info(
+                "{} {}::limit_hidden_order: size too small, size: {} required_size: {}".format(self.market, self,
+                                                                                               get_format_price(
+                                                                                                   self.adjusted_size),
+                                                                                               required_size))
+            sys.exit(-1)
+
 
     def limit_hidden_order(self):
         if not self.tight:
