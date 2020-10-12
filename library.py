@@ -2801,10 +2801,10 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
         else:
             _aggregated[_setup[0]].append(_setup)
 
-    _aggregated = sorted(_aggregated, key=lambda k: len(_aggregated[k]), reverse=True)
+    _markets_sorted = list(sorted(_aggregated, key=lambda k: len(_aggregated[k]), reverse=True))
     _golden_cross_markets_out = []
-    for _, _setups in _aggregated.items():
-        for _setup in _setups:
+    for _market in _markets_sorted:
+        for _setup in _aggregated[_market]:
             _golden_cross_markets_out.append(_setup)
 
     _info = ' '.join(format_found_markets(_golden_cross_markets_out))
@@ -2815,7 +2815,7 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
 
 def compute_wider_interval(_func, _klines):
     _res = []
-    for i in range(0, 24):
+    for i in range(0, 48):
         if i == 0:
             _res.append(_func(_klines))
         else:
@@ -2971,7 +2971,7 @@ def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
 
     for _setup_tuple in _setup_tuples:
         _setup = _setup_tuple[0]
-        _setup = sorted(_setup, key=lambda x: x[3], reverse=True)
+        # _setup = sorted(_setup, key=lambda x: x[3], reverse=True)
         _exchange = _setup_tuple[1]
         if len(_setup) > 0:
             _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
