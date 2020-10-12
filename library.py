@@ -141,10 +141,11 @@ def price_decrement(_price, _increment):
 
 class Asset(object):
     def __init__(self, exchange, name, stop_loss_price=False, price_profit=False, profit=False, ticker=False,
-                 tight=False, barrier=False):
+                 tight=False, barrier=False, _stop_loss=True):
         stop_when_not_exchange(exchange)
         self.exchange = exchange
         self.name = name
+        self.stop_loss = _stop_loss
         if exchange == "kucoin":
             self.market = "{}-BTC".format(name)
             self.ticker = ticker_to_kucoin(ticker)
@@ -153,11 +154,13 @@ class Asset(object):
             self.market = "{}BTC".format(name)
             self.price_ticker_size = get_binance_price_tick_size(self.market)
             self.ticker = ticker
-        self.stop_loss_price = round(stop_loss_price + delta, 10)
+        if stop_loss_price is not None:
+            self.stop_loss_price = round(stop_loss_price + delta, 10)
         self.tight = tight
         if price_profit is not None:
             self.price_profit = round(price_profit + delta, 10)
-        self.profit = round(profit + delta, 10)  # taking profit only when it's higher than profit %
+        if profit is not None:
+            self.profit = round(profit + delta, 10)  # taking profit only when it's higher than profit %
         self.take_profit_ratio = profit * 0.632  # taking profit only when it's higher than profit % for a high-candle-sell
         self.barrier = barrier
         self.buy_price = None
@@ -270,7 +273,8 @@ class Asset(object):
                                                                              get_format_price(self.price),
                                                                              get_format_price(
                                                                                  self.adjusted_size * self.price)))
-            _strategy.set_stop_loss()
+            if self.stop_loss:
+                _strategy.set_stop_loss()
             return _id
         else:
             logger_global[0].info(
@@ -282,13 +286,14 @@ class Asset(object):
 
 
 class BuyAsset(Asset):
-    def __init__(self, exchange, name, price, stop_loss_price, price_profit, ratio=50, profit=5, tight=False,
+    def __init__(self, exchange, name, price, stop_loss_price=None, price_profit=None, ratio=50, profit=5, tight=False,
                  kucoin_side=False,
-                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, barrier=False):
-        super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
+                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, barrier=False, sleep=None, stop_loss=False):
+        super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier, stop_loss)
         self.price = round(price + delta, 10)
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
         self.kucoin_side = kucoin_side
+        self.sleep = sleep
 
     def set_btc_asset_buy_value(self, _total_btc):
         self.btc_asset_buy_value = self.ratio / 100 * _total_btc
@@ -350,7 +355,7 @@ class Strategy(object):
         self.asset = asset
 
     def set_stop_loss(self):
-        _stop_loss_maker = threading.Thread(target=stop_loss, args=(self.asset,),
+        _stop_loss_maker = threading.Thread(target=stop_loss_func, args=(self.asset,),
                                             name='_stop_loss_maker_{}'.format(self.asset.name))
         _stop_loss_maker.start()
 
@@ -1660,7 +1665,7 @@ def get_price_magnitude(_price):
     return _l + _m
 
 
-def stop_loss(_asset):
+def stop_loss_func(_asset):
     if _asset.exchange == 'binance':
         _ticker = BinanceClient.KLINE_INTERVAL_1MINUTE
         _time_interval = get_binance_interval_unit(_ticker)
