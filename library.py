@@ -2800,8 +2800,9 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
 
     _aggregated = sorted(_aggregated, key=lambda k: len(_aggregated[k]), reverse=True)
     _golden_cross_markets_out = []
-    for _, _setup in _aggregated.items():
-        _golden_cross_markets_out.append(_setup)
+    for _, _setups in _aggregated.items():
+            for _setup in _setups:
+                _golden_cross_markets_out.append(_setup)
 
     _info = ' '.join(format_found_markets(_golden_cross_markets_out))
     logger_global[0].info(f"{_ticker} : {_info}")
