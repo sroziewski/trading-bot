@@ -27,8 +27,8 @@ while 1:
             cancel_kucoin_current_orders(prev_asset.market)
         _id = buy_asset.hidden_buy_order()
         if _id:
-            logger.info("Make hidden {} LIMIT order for {} SUCCESS".format(side, buy_asset.market))
+            logger.info("{} : Make hidden {} LIMIT order for {} SUCCESS".format(buy_asset.exchange, side, buy_asset.market))
             time.sleep(buy_asset.sleep)
         else:
-            logger.info("Make hidden {} LIMIT order for {} FAILED".format(side, buy_asset.market))
+            logger.info("{} : Make hidden {} LIMIT order for {} FAILED".format(buy_asset.exchange, side, buy_asset.market))
         prev_asset = buy_asset
