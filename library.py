@@ -2729,10 +2729,12 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
                 _golden_cross_markets.append((_market, "is_first_golden_cross", _is_1st_golden[1], _is_1st_golden[0]))
             _is_drop_below_ma200 = compute_wider_interval(is_drop_below_ma200_after_rally, _klines)
             if _is_drop_below_ma200[0] > 0:
-                _golden_cross_markets.append((_market, "drop_below_ma200_after_rally", _is_drop_below_ma200[1], _is_drop_below_ma200[0]))
+                _golden_cross_markets.append(
+                    (_market, "drop_below_ma200_after_rally", _is_drop_below_ma200[1], _is_drop_below_ma200[0]))
             _is_drop_below_ma50 = compute_wider_interval(is_drop_below_ma50_after_rally, _klines)
             if _is_drop_below_ma50[0] > 0:
-                _golden_cross_markets.append((_market, "is_drop_below_ma50_after_rally", _is_drop_below_ma50[1], _is_drop_below_ma50[0]))
+                _golden_cross_markets.append(
+                    (_market, "is_drop_below_ma50_after_rally", _is_drop_below_ma50[1], _is_drop_below_ma50[0]))
             _is_fw = compute_wider_interval(is_falling_wedge, _klines)
             if _is_fw[0] > 0:
                 _golden_cross_markets.append((_market, "is_falling_wedge", _is_fw[1], _is_fw[0]))
@@ -2741,7 +2743,8 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
                 _golden_cross_markets.append((_market, "is_bull_flag", _is_bf[1], _is_bf[0]))
             _is_tradeable_strategy = compute_wider_interval(is_tradeable_strategy, _klines)
             if _is_tradeable_strategy[0] > 0:
-                _golden_cross_markets.append((_market, "is_tradeable_strategy", _is_tradeable_strategy[1], _is_tradeable_strategy[0]))
+                _golden_cross_markets.append(
+                    (_market, "is_tradeable_strategy", _is_tradeable_strategy[1], _is_tradeable_strategy[0]))
             _is_tilting = compute_wider_interval(is_tilting, _klines)
             if _is_tilting[0] > 0:
                 _golden_cross_markets.append((_market, "is_tilting", _is_tilting[1], _is_tilting[0]))
@@ -2801,8 +2804,8 @@ def analyze_markets(_filename, _ticker, _time_interval, _exchange, _markets_obj)
     _aggregated = sorted(_aggregated, key=lambda k: len(_aggregated[k]), reverse=True)
     _golden_cross_markets_out = []
     for _, _setups in _aggregated.items():
-            for _setup in _setups:
-                _golden_cross_markets_out.append(_setup)
+        for _setup in _setups:
+            _golden_cross_markets_out.append(_setup)
 
     _info = ' '.join(format_found_markets(_golden_cross_markets_out))
     logger_global[0].info(f"{_ticker} : {_info}")
