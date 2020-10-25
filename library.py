@@ -302,7 +302,7 @@ class Asset(object):
 
     def limit_hidden_order(self, is_profit=False, stop_loss=True):
         if is_profit:
-            logger_global[0].info(f" {self.market} : taking profits...")
+            logger_global[0].info(f"{self.market} : taking profits...")
             self.tight = True
             self.kucoin_side = KucoinClient.SIDE_SELL
             self.ratio = 100
