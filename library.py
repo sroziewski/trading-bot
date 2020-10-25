@@ -171,6 +171,10 @@ class Asset(object):
         self.buy_price = None
         self.cancel = True
         self.original_price = None
+        self.order_id = None
+
+    def set_order_id(self, _order_id):
+        self.order_id = _order_id
 
     def set_tight(self):
         self.tight = True
@@ -370,9 +374,6 @@ class BuyAsset(Asset):
 
     def set_ratio(self, _ratio):
         self.ratio = round(_ratio + delta, 10)
-
-    def set_order_id(self, _order_id):
-        self.order_id = _order_id
 
     def __str__(self):
         return "BuyAsset"
