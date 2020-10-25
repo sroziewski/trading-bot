@@ -9,13 +9,14 @@ from library import BuyAsset, sat, setup_logger, watch_orders, \
 side = KucoinClient.SIDE_BUY
 logger = setup_logger("kucoin-observe-hidden-order-{}".format(side))
 
-buy1 = BuyAsset("kucoin", "VIDT", 3000 * sat, 1000 * sat, 3200 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
-buy2 = BuyAsset("kucoin", "CHR", 143 * sat, 100 * sat, 200 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
-buy3 = BuyAsset("kucoin", "BEPRO", 2.5 * sat, 2 * sat, 3 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
-buy4 = BuyAsset("kucoin", "BEPRO", 2.5 * sat, 2 * sat, 3 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
+buy1 = BuyAsset("kucoin", "OLT", 33.31 * sat, 29.3 * sat, 44.4 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
+buy2 = BuyAsset("kucoin", "CHR", 212 * sat, 191 * sat, 265 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
+buy3 = BuyAsset("kucoin", "COTI", 253 * sat, 232 * sat, 298 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
+buy4 = BuyAsset("kucoin", "CRO", 763 * sat, 711 * sat, 843 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
+buy5 = BuyAsset("kucoin", "FET", 345 * sat, 310 * sat, 385 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
 
 
-assets = [buy1, buy2, buy3, buy4]
+assets = [buy1, buy2, buy3, buy4, buy5]
 
 adjust_purchase_fund(assets)
 set_kucoin_buy_orders(assets)
