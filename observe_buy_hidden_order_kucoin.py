@@ -6,10 +6,9 @@ from kucoin.client import Client as KucoinClient
 from library import BuyAsset, sat, setup_logger, watch_orders, \
     set_kucoin_buy_orders, adjust_purchase_fund, wait_until_order_is_filled, authorize, send_mail, get_format_price
 
-authorize()
-
 side = KucoinClient.SIDE_BUY
 logger = setup_logger("kucoin-observe-hidden-order-{}".format(side))
+authorize()
 
 buy1 = BuyAsset("kucoin", "OLT", 33.31 * sat, 29.3 * sat, 44.4 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
 buy2 = BuyAsset("kucoin", "CHR", 212 * sat, 191 * sat, 265 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)
