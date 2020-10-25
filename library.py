@@ -328,7 +328,7 @@ class Asset(object):
                                                  hidden=True)['orderId']
             self.set_order_id(_id)
             logger_global[0].info(
-                "{} {}::limit_hidden_order : order_id : {} has been placed.".format(self.market, self, _id))
+                "{} {}::limit_hidden_order : ratio : {} order_id : {} has been placed.".format(self.market, self,
             logger_global[0].info(
                 "{} {}::limit_hidden_order : {} {} @ {} BTC : {} BTC".format(self.market, self, self.adjusted_size,
                                                                              self.name,
