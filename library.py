@@ -255,6 +255,7 @@ class Asset(object):
                 self.ratio = 100
                 _useable_btc = (1 - kucoin_general_fee) * _remaining_btc
                 self.purchase_fund = round(self.ratio / 100 * _useable_btc, 8)
+                logger_global[0].info(f"{self.market} : computing purchase fund -- remaining BTC : {_remaining_btc}, purchase fund : {self.purchase_fund} BTC")
         _market_price = check_kucoin_offer_validity(self, return_value=True)
         if self.cancel:
             cancel_kucoin_current_orders(self.market)
@@ -277,7 +278,7 @@ class Asset(object):
                                                    hidden=True)['orderId']
             self.set_order_id(_id)
             logger_global[0].info(
-                "{} {}::limit_hidden_order : order_id : {} has been placed.".format(self.market, self, _id))
+                "{} {}::limit_hidden_order : ratio : {} order_id : {} has been placed.".format(self.market, self, self.ratio, _id))
             logger_global[0].info(
                 "{} {}::limit_hidden_order : {} {} @ {} BTC : {} BTC".format(self.market, self, self.adjusted_size,
                                                                              self.name,
@@ -314,6 +315,7 @@ class Asset(object):
             get_or_create_kucoin_trade_account(self.name)
         elif self.kucoin_side == KucoinClient.SIDE_SELL:
             size = float(get_or_create_kucoin_trade_account(self.name)['available'])
+            self.size_profit = size
 
         self.adjusted_size = adjust_kucoin_order_size(self, size)
         required_size = float(get_kucoin_symbol(self.market, 'baseMinSize'))
@@ -3435,7 +3437,7 @@ def watch_orders(_assets):
                     _filled_buy_asset = is_order_filled(_buy_asset)
                     if _filled_buy_asset:
                         return _filled_buy_asset
-        time.sleep(180)
+        time.sleep(60)
 
 
 def is_order_filled(_buy_asset):
@@ -3443,8 +3445,9 @@ def is_order_filled(_buy_asset):
     _filled_fund = sum([float(_item['funds']) for _item in _filled['items']])
     _order_filled = _buy_asset.purchase_fund - _filled_fund < 1e-5  # we are ok with a little difference, it is negligible
     if _order_filled:
+        _df = round(_buy_asset.purchase_fund - _filled_fund + delta, 10)
         logger_global[0].info(
-            f"{_buy_asset.market} : the order : {_buy_asset.order_id} has been filled, df : {get_format_price(_buy_asset.purchase_fund - _filled_fund)}")
+            f"{_buy_asset.market} : the order : {_buy_asset.order_id} has been filled, df : {get_format_price(_df)}")
         return _buy_asset
     return False
 
