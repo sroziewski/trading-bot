@@ -79,17 +79,17 @@ collection = db.get_collection("cmc", codec_options=codec_options)
 logger.info("Starting global market data crawling...")
 
 
-def get_data():
-    response = session.get(url)
+def get_data(_url):
+    response = session.get(_url)
     now = datetime.datetime.now().timestamp()
     collection.insert_one({'data': to_mongo(json.loads(response.text)), 'timestamp': now})
 
 
 while 1:
     try:
-        get_data()
+        get_data(url)
     except Exception as e:
         logger.error(e)
         sleep(5)
-        get_data()
+        get_data(url)
     sleep(900)
