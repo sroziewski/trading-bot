@@ -1,6 +1,7 @@
 import datetime
 import json
 import traceback
+from json import JSONDecodeError
 from time import sleep
 
 from bson import CodecOptions
@@ -83,6 +84,6 @@ while 1:
         data = json.loads(response.text)
         now = datetime.datetime.now().timestamp()
         collection.insert_one({'data': to_mongo(data), 'timestamp': now})
-    except (ConnectionError, Timeout, TooManyRedirects) as e:
+    except Exception as e:
         logger.error(e)
     sleep(900)
