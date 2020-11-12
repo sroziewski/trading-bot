@@ -79,6 +79,7 @@ def validate_args(_args):
     _type = sys.argv[2]
     assert 10 < _level < 90
     assert _type == "up" or _type == "down"
+    logger.info(f"All validations done : btcd :{btcd_level} type : {_type}")
 
 
 authorize()
