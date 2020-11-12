@@ -19,7 +19,7 @@ cmc_key = config.get_parameter('cmc_key')
 
 
 def to_mongo(_data):
-    _timestamp = datetime.datetime.strptime(data['status']['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ').timestamp()
+    _timestamp = datetime.datetime.strptime(_data['status']['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ').timestamp()
     _btc_dominance = _data['data']['btc_dominance']
     _eth_dominance = _data['data']['eth_dominance']
     _defi_volume_24h = _data['data']['defi_volume_24h']
