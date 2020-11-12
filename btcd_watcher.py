@@ -74,10 +74,19 @@ def manage_notification(_url, _level, _type):
         notify_when_break_down(_url, _level)
 
 
+def validate_args(_args):
+    _level = float(sys.argv[1])
+    _type = sys.argv[2]
+    assert 10 < _level < 90
+    assert _type == "up" or _type == "down"
+
+
 authorize()
 
 btcd_level = float(sys.argv[1])
 breakout_type = sys.argv[2]
+
+validate_args(sys.argv)
 
 logger.info(f"BTC.D level to watch : {btcd_level}")
 
