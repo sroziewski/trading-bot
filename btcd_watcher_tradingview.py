@@ -6,7 +6,7 @@ import cv2
 from pytesseract import pytesseract
 
 import config
-from library import setup_logger, send_mail
+from library import setup_logger, send_mail, authorize
 
 logger = setup_logger("BTC-Dominance-Watcher")
 
@@ -79,15 +79,13 @@ def break_line(_btcd_open1, _btcd_open2, _dt, _type):
     return _res
 
 
-# authorize()
-
-
+authorize()
 
 btcd_level = float(sys.argv[1])
 breakout_type = sys.argv[2]
 
 # break_line(url, 65.26, 65.41, 3, "down")
-break_line(65.37, 65.47, 8, "up")
+break_line(64.99, 65.11, 25, "up")
 
 validate_args(sys.argv)
 
