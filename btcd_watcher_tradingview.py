@@ -1,11 +1,10 @@
-import datetime
-import json
 import sys
 from time import sleep
+
 import cv2
 from pytesseract import pytesseract
 
-import config
+from config import config
 from library import setup_logger, send_mail, authorize
 
 logger = setup_logger("BTC-Dominance-Watcher")
