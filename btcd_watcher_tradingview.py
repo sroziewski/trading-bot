@@ -32,7 +32,7 @@ def get_current_btcd():
     return float(pytesseract.image_to_string(crop))
 
 
-def notify_when_break_up(_url, _level):
+def notify_when_break_up(_level):
     _btcd = get_current_btcd()
     if _btcd > _level:
         send_mail(f"ZZZ BTC.D level {_level} BREAK UP ZZZ", f"Current BTC.D : {_btcd} > observed : {_level}")
