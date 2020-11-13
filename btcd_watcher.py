@@ -1,6 +1,7 @@
 import datetime
 import json
 import sys
+import urllib
 from time import sleep
 
 from bson import CodecOptions
@@ -82,10 +83,34 @@ def validate_args(_args):
     logger.info(f"All validations done : btcd : {btcd_level} type : {_type}")
 
 
-authorize()
+def get_line(_btcd_open1, _btcd_open2, _dt):
+    _b = _btcd_open1
+    _a = (_btcd_open2 - _btcd_open1)/_dt
+    return _a, _b
+
+
+def break_line(_url, _btcd_open1, _btcd_open2, _dt, _type):
+    _a, _b = get_line(_btcd_open1, _btcd_open2, _dt)
+    _btcd = round(get_current_cmc_cap(_url), 3)
+
+    _res = False
+    if _type == "down":
+        _res = True if 0 < _a * (_dt + 1) + _b - _btcd else False
+    else:
+        _res = True if 0 > _a * (_dt + 1) + _b - _btcd else False
+
+    return _res
+
+
+# authorize()
+
+
 
 btcd_level = float(sys.argv[1])
 breakout_type = sys.argv[2]
+
+# break_line(url, 65.26, 65.41, 3, "down")
+break_line(url, 65.37, 65.47, 8, "up")
 
 validate_args(sys.argv)
 

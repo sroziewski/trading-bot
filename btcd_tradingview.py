@@ -16,8 +16,8 @@ class Screenshot(QWebEngineView):
         self.loadFinished.connect(self.on_loaded)
         # Create hidden view without scrollbars
         self.setAttribute(Qt.WA_DontShowOnScreen)
-        self.page().settings().setAttribute(
-            QWebEngineSettings.ShowScrollBars, False)
+        # self.page().settings().setAttribute(
+        #     QWebEngineSettings.ShowScrollBars, False)
         self.show()
 
     def on_loaded(self):
@@ -29,9 +29,6 @@ class Screenshot(QWebEngineView):
     def take_screenshot(self):
         self.grab().save(self.output_file, b'PNG')
         self.app.quit()
-
-
-
 
 
 app = QApplication(sys.argv)
