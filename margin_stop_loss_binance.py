@@ -12,9 +12,9 @@ stop_price_in_satoshi = 3020
 stop_price = stop_price_in_satoshi * sat
 sell_asset_binance = SellAsset('binance', name, stop_price, tight=True)
 
-logger = setup_logger(sell_asset_binance.name)
-logger.info("Starting {} stop-loss maker on {}".format(sell_asset_binance.market, sell_asset_binance.exchange))
-logger.info("Stop price is set up to : {:.8f} BTC".format(stop_price))
+logger = setup_logger(f"margin-stop-loss-{sell_asset_binance.name}")
+logger.info("Starting {} margin stop-loss maker on {}".format(sell_asset_binance.market, sell_asset_binance.exchange))
+logger.info("Margin stop price is set up to : {:.8f} BTC".format(stop_price))
 
 while 1:
     try:
