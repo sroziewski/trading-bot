@@ -7,7 +7,7 @@ import requests
 from library import stop_signal, sat, setup_logger, SellAsset, sell_margin_limit_stop_loss
 
 name = "CRV"
-stop_price_in_satoshi = 3300
+stop_price_in_satoshi = 3020
 
 stop_price = stop_price_in_satoshi * sat
 sell_asset_binance = SellAsset('binance', name, stop_price, tight=True)
