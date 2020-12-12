@@ -5,12 +5,8 @@ from binance.client import Client as BinanceClient
 from kucoin.client import Client as KucoinClient
 
 
-def observe_kucoin_asset(_assets):
-    pass
-
-
 side = KucoinClient.SIDE_BUY
-logger = setup_logger("kucoin-observe-hidden-order-{}".format(side))
+logger = setup_logger("kucoin-observe-hidden-order-loop-{}".format(side))
 
 buy1 = BuyAsset("kucoin", "VIDT", 4173 * sat, ratio=100, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, sleep=180, stop_loss=False)
 buy2 = BuyAsset("kucoin", "CHR", 243 * sat, ratio=100, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, sleep=180, stop_loss=False)

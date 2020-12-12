@@ -7,7 +7,7 @@ from library import BuyAsset, sat, setup_logger, watch_orders, \
     set_kucoin_buy_orders, adjust_purchase_fund, wait_until_order_is_filled, authorize, send_mail, get_format_price
 
 side = KucoinClient.SIDE_BUY
-logger = setup_logger("kucoin-make-hidden-orders-and-observe{}".format(side))
+logger = setup_logger("kucoin-observe-and-make-hidden-orders-{}".format(side))
 authorize()
 
 buy1 = BuyAsset("kucoin", "OLT", 33.31 * sat, 29.3 * sat, 44.4 * sat, kucoin_side=side, ticker=BinanceClient.KLINE_INTERVAL_5MINUTE, stop_loss=False)

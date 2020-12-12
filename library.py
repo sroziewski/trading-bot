@@ -1535,6 +1535,13 @@ def cancel_binance_orders(open_orders, symbol):
     return all(_c["status"] == "CANCELED" for _c in _resp)
 
 
+def cancel_binance_margin_orders(_open_margin_orders, symbol):
+    _resp = []
+    for _order in _open_margin_orders:
+        _resp.append((binance_client.cancel_margin_order(symbol=symbol, orderId=_order['orderId'], isIsolated=True), _order['origQty']))
+    return _resp
+
+
 def cancel_kucoin_orders(open_orders):
     _resp = []
     for _order in open_orders['items']:
@@ -1558,6 +1565,26 @@ def cancel_binance_current_orders(market):
         logger_global[0].error("{} Orders not cancelled properly".format(market))
 
 
+def cancel_binance_current_margin_orders(market):
+    _open_margin_orders = binance_client.get_open_margin_orders(symbol=market, isIsolated=True)
+    logger_global[0].info("{} orders to cancel : {}".format(market, len(_open_margin_orders)))
+    _cancelled_ok = True
+    _available_margin_asset = -1
+    if len(_open_margin_orders) > 0:
+        _cancelled_ok = False
+        _response = cancel_binance_margin_orders(_open_margin_orders, market)
+        _cancelled_ok = all(_c[0]["status"] == "CANCELED" for _c in _response)
+        _available_margin_asset = sum(map(lambda x: float(x[1]), _response))
+    else:
+        logger_global[0].warning("{} No isolated margin orders to CANCEL".format(market))
+        return _available_margin_asset
+    if _cancelled_ok:
+        logger_global[0].info("{} Isolated margin orders cancelled correctly".format(market))
+    else:
+        logger_global[0].error("{} Isolated margin orders not cancelled properly".format(market))
+    return _available_margin_asset
+
+
 def cancel_kucoin_current_orders(market):
     _open_orders = kucoin_client.get_orders(symbol=market, status='active')
     logger_global[0].info("{} orders to cancel : {}".format(market, _open_orders['totalNum']))
@@ -1576,6 +1603,10 @@ def cancel_kucoin_current_orders(market):
 
 
 def get_asset_quantity_binance(currency):
+    return float(binance_client.get_asset_balance(currency)['free'])
+
+
+def get_margin_asset_quantity_binance(currency):
     return float(binance_client.get_asset_balance(currency)['free'])
 
 
@@ -1665,7 +1696,30 @@ def _sell_order(market, _sell_price, _quantity):
         "{} Sell limit order placed: price={} BTC, quantity={} DONE".format(market, _sell_price_str, _quantity))
 
 
+def _sell_margin_order(market, _sell_price, _quantity):
+    _sell_price_str = price_to_string(_sell_price)
+    logger_global[0].info(
+        "{} Sell margin limit order to be placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
+    _resp = binance_client.create_margin_order(symbol=market, quantity=_quantity, price=_sell_price_str, side="SELL", type="LIMIT", isIsolated=True, timeInForce="GTC")
+    logger_global[0].info(
+        "{} Sell margin limit order placed: price={} BTC, quantity={} DONE".format(market, _sell_price_str, _quantity))
+
+
 def sell_limit(market, asset_name, price):
+    cancel_binance_current_orders(market)
+    _quantity = get_asset_quantity_binance(asset_name)
+    _lot_size_params = get_lot_size_params(market)
+    _quantity = adjust_quantity(_quantity, _lot_size_params)
+    if _quantity:
+        logger_global[0].info("{} : {} : {}".format(market, price, _quantity))
+        _sell_order(market, price, _quantity)
+        return _quantity
+    else:
+        logger_global[0].error("{} No quantity to SELL".format(market))
+        return False
+
+
+def sell_margin_limit(market, asset_name, price):
     cancel_binance_current_orders(market)
     _quantity = get_asset_quantity_binance(asset_name)
     _lot_size_params = get_lot_size_params(market)
@@ -1695,6 +1749,16 @@ def sell_limit_stop_loss(market, asset):
         if _amount == 0.0:
             raise AccountHoldingZero("You don't have any amount to sell for market: {}".format(asset.market))
         kucoin_client.create_market_order(asset.market, KucoinClient.SIDE_SELL, size=_amount)
+
+
+def sell_margin_limit_stop_loss(market, asset):
+    if asset.exchange == 'binance':
+        _available_margin_asset = cancel_binance_current_margin_orders(market)
+        _sell_price = get_sell_price(asset)
+        _lot_size_params = get_lot_size_params(market)
+        _quantity = _available_margin_asset
+        if _quantity:
+            _sell_margin_order(market, _sell_price, _quantity)
 
 
 def get_or_create_kucoin_trade_account(_currency):
