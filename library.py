@@ -1524,7 +1524,7 @@ def check_horizontal_price_level(_asset, _type, _times=1):
 
 def get_last_closing_price(_asset):
     stop_when_not_exchange(_asset.exchange)
-    if not _asset.line:
+    if not _asset.line and (not _asset.horizon or _asset.buy_price == 0):
         return False
     if _asset.exchange == 'kucoin':
         _klines = get_kucoin_klines(_asset.market, _asset.ticker, get_kucoin_interval_unit(_asset.ticker))
