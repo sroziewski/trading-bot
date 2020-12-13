@@ -1,21 +1,37 @@
 import datetime
 import json
 import traceback
-from json import JSONDecodeError
 from time import sleep
 
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from pymongo.errors import PyMongoError
 from requests import Session
-from requests.exceptions import ConnectionError, Timeout, TooManyRedirects
 
 from config import config
 from library import setup_logger, DecimalCodec, get_time
 from mongodb import mongo_client
 
+from pytesseract import pytesseract
+
+import cv2
+
+
 logger = setup_logger("Crypto-Market-Global-Metrics")
 cmc_key = config.get_parameter('cmc_key')
+
+
+def get_trading_view_btdc():
+    image = cv2.imread('/home/simon/btcd.png')
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
+    y=451
+    x=188
+    h=32
+    w=100
+    crop = image[y:y+h, x:x+w]
+    pytesseract.tesseract_cmd = "tesseract"
+
+    return float(pytesseract.image_to_string(crop))
 
 
 def to_mongo(_data):
@@ -34,6 +50,7 @@ def to_mongo(_data):
         'timestamp': _timestamp,
         'datetime': get_time(_timestamp),
         'btc_dominance': _btc_dominance,
+        'btc_dominance_trading_view': get_trading_view_btdc(),
         'eth_dominance': _eth_dominance,
         'defi_volume_24h': _defi_volume_24h,
         'defi_24h_percentage_change': _defi_24h_percentage_change,
