@@ -6,6 +6,8 @@ import requests
 from library import ObserveAsset, sat, check_price_slope, check_horizontal_price_level, setup_logger, Line, send_mail, \
     authorize, get_last_closing_price, price_to_string
 
+from binance.client import Client as BinanceClient
+
 logger = setup_logger("binance_pattern_watcher")
 logger.info("Starting binance pattern watcher" )
 
@@ -54,6 +56,7 @@ assets = [
             ObserveAsset("binance", "OMG", 17950* sat, line=None, horizon="up"),
             ObserveAsset("binance", "HARD", 5891* sat, line=None, horizon="up"),
             ObserveAsset("binance", "MDT", 113* sat, line=None, horizon="up"),
+            ObserveAsset("binance", "MDT", 153* sat, line=None, horizon="up", ticker=BinanceClient.KLINE_INTERVAL_1WEEK),
             ObserveAsset("binance", "CTSI", 283* sat, line=None, horizon="up"),
             ObserveAsset("binance", "FET", 361* sat, line=None, horizon="up"),
             ObserveAsset("binance", "FLM", 1312* sat, line=None, horizon="up"),
@@ -69,7 +72,7 @@ while 1:
             slope = check_price_slope(asset)
             if horizon or slope:
                 closing_price = get_last_closing_price(asset)
-                found_assets.append(f"{asset.name} : {price_to_string(closing_price)} BTC")
+                found_assets.append(f"{asset.name} : {price_to_string(closing_price)} BTC ticker : {asset.ticker}")
         except Exception as err:
             if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
                 logger.error("Connection problem...")
