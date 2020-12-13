@@ -31,7 +31,8 @@ def get_trading_view_btdc():
     crop = image[y:y+h, x:x+w]
     pytesseract.tesseract_cmd = "tesseract"
 
-    return float(pytesseract.image_to_string(crop))
+    _btcd = float(pytesseract.image_to_string(crop))
+    return _btcd if 0<_btcd<100 else None
 
 
 def to_mongo(_data):
