@@ -12,7 +12,7 @@ logger.info("Starting binance pattern watcher" )
 authorize()
 
 assets = [
-            ObserveAsset("binance", "CRV", 3050 * sat, line=Line(4390*sat, 3200*sat, 55, "up")),
+            # ObserveAsset("binance", "CRV", 3050 * sat, line=Line(4390*sat, 3200*sat, 55, "up")),
             ObserveAsset("binance", "DIA", 7900 * sat, line=Line(9390*sat, 7850*sat, 26, "up"), horizon="up"),
             ObserveAsset("binance", "TRB", 128400 * sat, line=Line(184000*sat, 133100*sat, 103, "up"), horizon="up"),
             ObserveAsset("binance", "BZRX", 0 * sat, line=Line(1869*sat, 1550*sat, 60, "up")),
