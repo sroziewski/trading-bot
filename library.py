@@ -3579,6 +3579,8 @@ def get_line(_price_open1, _price_open2, _dt):
 
 def break_line(_asset):
     _line = _asset.line
+    if not _line:
+        return False
     _a, _b = get_line(_line.p1, _line.p2, _line.dt)
     _res = False
     _closing_price = get_last_closing_price(_asset)
