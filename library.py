@@ -259,7 +259,8 @@ class Asset(object):
                 self.ratio = 100
                 _useable_btc = (1 - kucoin_general_fee) * _remaining_btc
                 self.purchase_fund = round(self.ratio / 100 * _useable_btc, 8)
-                logger_global[0].info(f"{self.market} : computing purchase fund -- remaining BTC : {_remaining_btc}, purchase fund : {self.purchase_fund} BTC")
+                logger_global[0].info(
+                    f"{self.market} : computing purchase fund -- remaining BTC : {_remaining_btc}, purchase fund : {self.purchase_fund} BTC")
         _market_price = check_kucoin_offer_validity(self, return_value=True)
         if self.cancel:
             cancel_kucoin_current_orders(self.market)
@@ -282,7 +283,8 @@ class Asset(object):
                                                    hidden=True)['orderId']
             self.set_order_id(_id)
             logger_global[0].info(
-                "{} {}::limit_hidden_order : ratio : {} order_id : {} has been placed.".format(self.market, self, self.ratio, _id))
+                "{} {}::limit_hidden_order : ratio : {} order_id : {} has been placed.".format(self.market, self,
+                                                                                               self.ratio, _id))
             logger_global[0].info(
                 "{} {}::limit_hidden_order : {} {} @ {} BTC : {} BTC".format(self.market, self, self.adjusted_size,
                                                                              self.name,
@@ -332,7 +334,8 @@ class Asset(object):
                                                  hidden=True)['orderId']
             self.set_order_id(_id)
             logger_global[0].info(
-                "{} {}::limit_hidden_order : ratio : {} order_id : {} has been placed.".format(self.market, self, self.ratio, _id))
+                "{} {}::limit_hidden_order : ratio : {} order_id : {} has been placed.".format(self.market, self,
+                                                                                               self.ratio, _id))
 
             logger_global[0].info(
                 "{} {}::limit_hidden_order : {} {} @ {} BTC : {} BTC".format(self.market, self, self.adjusted_size,
@@ -394,11 +397,13 @@ class SellAsset(Asset):
 
 
 class ObserveAsset(Asset):
-    def __init__(self, name, buy_price, stop_loss_price, price_profit, profit=5, tight=False,
-                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE,
-                 barrier=False):
-        super().__init__(name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
+    def __init__(self, exchange, name, buy_price, stop_loss_price=None, price_profit=None, profit=5, tight=False,
+                 ticker=BinanceClient.KLINE_INTERVAL_4HOUR,
+                 barrier=False, line=None, horizon=None):
+        super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.buy_price = buy_price
+        self.line = line
+        self.horizon = horizon
 
 
 class TradeAsset(BuyAsset):
@@ -1499,6 +1504,35 @@ def stop_signal(_exchange, _market, _ticker, _stop_price, _times=4):
     return False
 
 
+def check_horizontal_price_level(_asset, _type, _times=1):
+    stop_when_not_exchange(_asset.exchange)
+    if not _asset.horizon:
+        return False
+    if _asset.exchange == 'kucoin':
+        _klines = get_kucoin_klines(_asset.market, _asset.ticker, get_kucoin_interval_unit(_asset.ticker))
+    elif _asset.exchange == "binance":
+        _klines = get_binance_klines(_asset.market, _asset.ticker, get_binance_interval_unit(_asset.ticker))
+    if len(_klines) > 0:
+        if _type == "up":
+            return True if _klines[-2].closing >= _asset.buy_price else False
+        elif _type == "down":
+            return True if _klines[-2].closing <= _asset.buy_price else False
+    return False
+
+
+def get_last_closing_price(_asset):
+    stop_when_not_exchange(_asset.exchange)
+    if not _asset.line:
+        return False
+    if _asset.exchange == 'kucoin':
+        _klines = get_kucoin_klines(_asset.market, _asset.ticker, get_kucoin_interval_unit(_asset.ticker))
+    elif _asset.exchange == "binance":
+        _klines = get_binance_klines(_asset.market, _asset.ticker, get_binance_interval_unit(_asset.ticker))
+    if len(_klines) > 0:
+        return _klines[-2].closing
+    return False
+
+
 def stop_when_not_exchange(_name):
     if _name not in ['kucoin', 'binance']:
         sys.exit("You must provide exchange parameter value: [binance, kucoin]")
@@ -1538,7 +1572,8 @@ def cancel_binance_orders(open_orders, symbol):
 def cancel_binance_margin_orders(_open_margin_orders, symbol):
     _resp = []
     for _order in _open_margin_orders:
-        _resp.append((binance_client.cancel_margin_order(symbol=symbol, orderId=_order['orderId'], isIsolated=True), _order['origQty']))
+        _resp.append((binance_client.cancel_margin_order(symbol=symbol, orderId=_order['orderId'], isIsolated=True),
+                      _order['origQty']))
     return _resp
 
 
@@ -1699,8 +1734,10 @@ def _sell_order(market, _sell_price, _quantity):
 def _sell_margin_order(market, _sell_price, _quantity):
     _sell_price_str = price_to_string(_sell_price)
     logger_global[0].info(
-        "{} Sell margin limit order to be placed: price={} BTC, quantity={} ".format(market, _sell_price_str, _quantity))
-    _resp = binance_client.create_margin_order(symbol=market, quantity=_quantity, price=_sell_price_str, side="SELL", type="LIMIT", isIsolated=True, timeInForce="GTC")
+        "{} Sell margin limit order to be placed: price={} BTC, quantity={} ".format(market, _sell_price_str,
+                                                                                     _quantity))
+    _resp = binance_client.create_margin_order(symbol=market, quantity=_quantity, price=_sell_price_str, side="SELL",
+                                               type="LIMIT", isIsolated=True, timeInForce="GTC")
     logger_global[0].info(
         "{} Sell margin limit order placed: price={} BTC, quantity={} DONE".format(market, _sell_price_str, _quantity))
 
@@ -3481,7 +3518,7 @@ def analyze_valuable_alts(_filename, _exchange, _ticker, _time_interval, _market
 
 def adjust_purchase_fund(_assets):
     _assets_size = len(_assets)
-    list(map(lambda _asset: _asset.set_ratio(_asset.ratio/_assets_size), _assets))
+    list(map(lambda _asset: _asset.set_ratio(_asset.ratio / _assets_size), _assets))
     list(map(lambda _asset: cancel_kucoin_current_orders(_asset.market), _assets))
     _remaining_btc = get_remaining_btc_kucoin()
     list(map(lambda _asset: _asset.set_purchase_fund(_remaining_btc), _assets))
@@ -3495,7 +3532,8 @@ def watch_orders(_assets):
             if len(_filled['items']) > 0:
                 _filled_market = _filled['items'][0]['symbol']
                 list(filter(lambda x: x.market != _filled_market, _assets))
-                list(map(lambda z: cancel_kucoin_current_orders(z), map(lambda y: y.market, filter(lambda x: x.market != _filled_market, _assets))))
+                list(map(lambda z: cancel_kucoin_current_orders(z),
+                         map(lambda y: y.market, filter(lambda x: x.market != _filled_market, _assets))))
                 logger_global[0].info(f"Creating one final order for {_filled_market}")
                 _buy_asset.hidden_buy_order(compute_purchase_fund=True)
                 while 1:
@@ -3527,3 +3565,34 @@ def wait_until_order_is_filled(_asset):
 def set_kucoin_buy_orders(_assets):
     for _buy_asset in _assets:
         _buy_asset.hidden_buy_order()
+
+
+def check_price_slope(_asset):
+    return break_line(_asset)
+
+
+def get_line(_price_open1, _price_open2, _dt):
+    _b = _price_open1
+    _a = (_price_open2 - _price_open1) / _dt
+    return _a, _b
+
+
+def break_line(_asset):
+    _line = _asset.line
+    _a, _b = get_line(_line.p1, _line.p2, _line.dt)
+    _res = False
+    _closing_price = get_last_closing_price(_asset)
+    if _line.type == "down":
+        _res = True if 0 < _a * (_line.dt + 1) + _b - _closing_price else False
+    else:
+        _res = True if 0 > _a * (_line.dt + 1) + _b - _closing_price else False
+
+    return _res
+
+
+class Line(object):
+    def __init__(self, _p1, _p2, _dt, _type) -> None:
+        self.p1 = _p1
+        self.p2 = _p2
+        self.dt = _dt
+        self.type = _type
