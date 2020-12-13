@@ -37,8 +37,8 @@ def get_trading_view_btdc():
 
 def to_mongo(_data):
     _timestamp = datetime.datetime.strptime(_data['status']['timestamp'], '%Y-%m-%dT%H:%M:%S.%fZ').timestamp()
-    _btc_dominance = round(_data['data']['btc_dominance'], 4)
-    _eth_dominance = round(_data['data']['eth_dominance'], 4)
+    _btc_dominance = round(_data['data']['btc_dominance'], 2)
+    _eth_dominance = round(_data['data']['eth_dominance'], 2)
     _defi_volume_24h = _data['data']['defi_volume_24h']
     _defi_24h_percentage_change = _data['data']['defi_24h_percentage_change']
     _derivatives_volume_24h = _data['data']['derivatives_volume_24h']
