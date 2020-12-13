@@ -79,4 +79,5 @@ while 1:
     if len(found_assets):
         mail_content = '<BR/>'.join(found_assets)
         send_mail(f"QQQ Binance Pattern Found QQQ", mail_content)
+        logger.info(mail_content)
     time.sleep(3600*4-60*5)
