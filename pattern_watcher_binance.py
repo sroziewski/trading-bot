@@ -9,7 +9,7 @@ from library import ObserveAsset, sat, check_price_slope, check_horizontal_price
 logger = setup_logger("binance_pattern_watcher")
 logger.info("Starting binance pattern watcher" )
 
-# authorize()
+authorize()
 
 assets = [
             ObserveAsset("binance", "CRV", 3230 * sat, line=Line(4410*sat, 315*sat, 58, "up")),
