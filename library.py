@@ -1506,6 +1506,8 @@ def stop_signal(_exchange, _market, _ticker, _stop_price, _times=4):
 
 def check_horizontal_price_level(_asset, _type, _times=1):
     stop_when_not_exchange(_asset.exchange)
+    if _asset.buy_price==0:
+        return False
     if not _asset.horizon:
         return False
     if _asset.exchange == 'kucoin':
