@@ -21,7 +21,7 @@ assets = [
             ObserveAsset("binance", "PERL", 0 * sat, line=Line(142*sat, 125*sat, 90, "up")),
             ObserveAsset("binance", "DOCK", 0 * sat, line=Line(90*sat, 76*sat, 155, "up")),
             ObserveAsset("binance", "IRIS", 309 * sat, line=Line(369*sat, 306*sat, 88, "up"), horizon="up"),
-            ObserveAsset("binance", "COTI", 289 * sat, line=Line(369*sat, 306*sat, 88, "up"), horizon="up"),
+            ObserveAsset("binance", "COTI", 275 * sat, line=Line(369*sat, 306*sat, 88, "up"), horizon="down"),
             ObserveAsset("binance", "RSR", 114 * sat, line=Line(132*sat, 114*sat, 92, "up"), horizon="up"),
             ObserveAsset("binance", "RUNE", 5126 * sat, line=Line(9475*sat, 5852*sat, 557, "up"), horizon="up"),
             ObserveAsset("binance", "OXT", 1485 * sat, line=Line(1935*sat, 1686*sat, 87, "up"), horizon="up"),
