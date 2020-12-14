@@ -1,7 +1,7 @@
 import datetime
 import json
 import traceback
-from time import sleep
+from time import sleep, time
 
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
@@ -30,8 +30,12 @@ def get_trading_view_btdc():
     w=100
     crop = image[y:y+h, x:x+w]
     pytesseract.tesseract_cmd = "tesseract"
-
-    _btcd = float(pytesseract.image_to_string(crop))
+    try:
+        _btcd = float(pytesseract.image_to_string(crop))
+    except ValueError as err:
+        logger.exception(err.__traceback__)
+        sleep(60)
+        return get_trading_view_btdc()
     return _btcd if 0<_btcd<100 else None
 
 
