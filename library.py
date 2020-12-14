@@ -1467,6 +1467,7 @@ def get_binance_interval_unit(_ticker):
         BinanceClient.KLINE_INTERVAL_12HOUR: "75 days ago",
         BinanceClient.KLINE_INTERVAL_1DAY: "150 days ago",
         BinanceClient.KLINE_INTERVAL_3DAY: "350 days ago",
+        BinanceClient.KLINE_INTERVAL_1WEEK: "350 days ago",
     }[_ticker]
 
 
