@@ -74,7 +74,7 @@ while 1:
             if horizon or slope:
                 closing_price = get_last_closing_price(asset)
                 types = ' '.join([i for sub in breakout_type for i in sub])
-                found_assets.append(f"{asset.name} : {price_to_string(closing_price)} BTC ticker : {asset.ticker} type : {types}")
+                found_assets.append(f"{asset.name} : {price_to_string(closing_price)} BTC --- ticker : {asset.ticker} --- type : {types}")
         except Exception as err:
             if isinstance(err, requests.exceptions.ConnectionError) or isinstance(err, requests.exceptions.ReadTimeout):
                 logger.error("Connection problem...")
