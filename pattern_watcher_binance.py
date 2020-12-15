@@ -34,7 +34,7 @@ assets = [
             ObserveAsset("binance", "XLM", 0* sat, line=Line(1239*sat, 963*sat, 71, "up")),
             ObserveAsset("binance", "BAL", 0* sat, line=Line(94220*sat, 73220*sat, 84, "up")),
             ObserveAsset("binance", "LTC", 0* sat, line=Line(473100*sat, 441400*sat, 38, "up")),
-            ObserveAsset("binance", "ANKR", 0* sat, line=Line(58*sat, 48*sat, 99, "up")),
+            ObserveAsset("binance", "ANKR", 48* sat, line=Line(58*sat, 48*sat, 99, "up"), horizon="down"),
             ObserveAsset("binance", "AKRO", 0* sat, line=Line(77*sat, 67*sat, 30, "up")),
             ObserveAsset("binance", "AUDIO", 0* sat, line=Line(1159*sat, 1012*sat, 20, "up")),
             ObserveAsset("binance", "AVA", 0* sat, line=Line(6430*sat, 5170*sat, 149, "up")),
