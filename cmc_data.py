@@ -32,7 +32,7 @@ def get_trading_view_btdc():
     pytesseract.tesseract_cmd = "tesseract"
     try:
         _btcd = float(pytesseract.image_to_string(crop))
-    except ValueError as err:
+    except Exception as err:
         logger.exception(err.__traceback__)
         sleep(60)
         return get_trading_view_btdc()
