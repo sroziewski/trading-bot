@@ -34,7 +34,7 @@ def get_trading_view_btdc():
         _btcd = float(pytesseract.image_to_string(crop))
     except Exception as err:
         logger.exception(err.__traceback__)
-        sleep(60)
+        sleep(110)
         return get_trading_view_btdc()
     return _btcd if 0<_btcd<100 else None
 
