@@ -21,7 +21,7 @@ logger = setup_logger("Crypto-Market-Global-Metrics")
 cmc_key = config.get_parameter('cmc_key')
 
 
-def get_trading_view_btdc():
+def get_trading_view_btdc(_count=0):
     image = cv2.imread('/home/simon/btcd.png')
     image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     y=451
@@ -34,8 +34,10 @@ def get_trading_view_btdc():
         _btcd = float(pytesseract.image_to_string(crop))
     except Exception as err:
         logger.exception(err.__traceback__)
+        if _count == 10:
+            return None
         sleep(110)
-        return get_trading_view_btdc()
+        return get_trading_view_btdc(_count+1)
     return _btcd if 0<_btcd<100 else None
 
 

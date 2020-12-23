@@ -385,11 +385,13 @@ class BuyAsset(Asset):
 
 class SellAsset(Asset):
     def __init__(self, exchange, name, stop_loss_price, tight=False,
-                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False, kucoin_side=False):
+                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False, kucoin_side=False, stop_loss_volume=None, delta_price=False):
         super().__init__(exchange, name, stop_loss_price, None, 0, ticker, tight=tight)
         self.price = round(price + delta, 10)
         self.original_price = self.price
         self.kucoin_side = kucoin_side
+        self.stop_loss_volume = stop_loss_volume
+        self.delta_price = delta_price
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
     def __str__(self):
@@ -1505,6 +1507,19 @@ def stop_signal(_exchange, _market, _ticker, _stop_price, _times=4):
     return False
 
 
+def stop_signal_ext(_sell_asset):
+    _price, _volume = get_first_bid(_sell_asset.market)
+    if _price < _sell_asset.stop_loss_price - _sell_asset.delta_price:
+        return True
+    return _price <= _sell_asset.stop_loss_price and _volume <= _sell_asset.stop_loss_volume
+
+
+def get_first_bid(_market):
+    _price = float(binance_client.get_order_book(symbol=_market, limit=5)['bids'][0][0])
+    _volume = float(binance_client.get_order_book(symbol=_market, limit=5)['bids'][0][1])
+    return _price, _volume
+
+
 def check_horizontal_price_level(_asset, _type, _times=1):
     stop_when_not_exchange(_asset.exchange)
     if _asset.buy_price==0:
@@ -1791,14 +1806,14 @@ def sell_limit_stop_loss(market, asset):
         kucoin_client.create_market_order(asset.market, KucoinClient.SIDE_SELL, size=_amount)
 
 
-def sell_margin_limit_stop_loss(market, asset):
-    if asset.exchange == 'binance':
-        _available_margin_asset = cancel_binance_current_margin_orders(market)
-        _sell_price = get_sell_price(asset)
-        _lot_size_params = get_lot_size_params(market)
+def sell_margin_limit_stop_loss(_asset):
+    if _asset.exchange == 'binance':
+        _available_margin_asset = cancel_binance_current_margin_orders(_asset.market)
+        _sell_price = get_sell_price(_asset)
+        _lot_size_params = get_lot_size_params(_asset.market)
         _quantity = _available_margin_asset
         if _quantity:
-            _sell_margin_order(market, _sell_price, _quantity)
+            _sell_margin_order(_asset.market, _sell_price, _quantity)
 
 
 def get_or_create_kucoin_trade_account(_currency):
