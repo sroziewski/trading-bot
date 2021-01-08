@@ -3674,7 +3674,7 @@ def read_pattern_matcher_csv():
 def skip_commented_lines(_lines):
     _res = []
     for _line in _lines:
-        if not _line[0][0] == "#":
+        if _line and not _line[0][0] == "#":
             _res.append(_line)
     return _res
 
