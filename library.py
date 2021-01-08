@@ -3715,3 +3715,18 @@ def extract_horizon(_pattern):
         _horizon_index = _pattern.index("horizon")
         return _pattern[_horizon_index+1]
     return False
+
+
+def log_assets(_assets):
+    logger_global[0].info("Assets currently being observed")
+    for _asset in _assets:
+        if _asset.horizon:
+            logger_global[0].info(f"{_asset.market} horizon {_asset.horizon}")
+        if _asset.line:
+            logger_global[0].info(f"{_asset.market} line {_asset.line.type}")
+        if _asset.mas:
+            logger_global[0].info(f"{_asset.market} {mas_to_string(_asset.mas)}")
+
+
+def mas_to_string(_mas):
+    return ' '.join([str(x) for x in _mas])

@@ -5,7 +5,7 @@ import requests
 
 from library import check_price_slope, check_horizontal_price_level, setup_logger, send_mail, \
     authorize, get_last_closing_price, price_to_string, get_klines_asset, check_mas, \
-    create_observe_assets
+    create_observe_assets, log_assets
 
 logger = setup_logger("binance_pattern_watcher")
 logger.info("Starting binance pattern watcher" )
@@ -13,6 +13,8 @@ logger.info("Starting binance pattern watcher" )
 authorize()
 
 assets = create_observe_assets()
+
+log_assets(assets)
 
 while 1:
     mail_content = None
