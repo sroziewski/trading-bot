@@ -5,7 +5,7 @@ api_key = 'xxx'
 api_secret = 'xxx'
 client = Client(api_key, api_secret)
 
-for i in range(1, 10):
+for i in range(1, 1000):
     local_time1 = int(time.time() * 1000)
     server_time = client.get_server_time()
     diff1 = server_time['serverTime'] - local_time1

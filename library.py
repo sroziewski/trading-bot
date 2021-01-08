@@ -1,3 +1,4 @@
+import csv
 import datetime
 import hashlib
 import logging
@@ -27,6 +28,7 @@ from bson.codec_options import TypeCodec
 from kucoin.client import Client as KucoinClient, Client
 from pymongo import DESCENDING
 from pymongo.errors import PyMongoError, InvalidDocument
+from urllib3.exceptions import ReadTimeoutError
 
 from Binance import Binance
 from config import config
@@ -385,7 +387,8 @@ class BuyAsset(Asset):
 
 class SellAsset(Asset):
     def __init__(self, exchange, name, stop_loss_price, tight=False,
-                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False, kucoin_side=False, stop_loss_volume=None, delta_price=False):
+                 ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False, kucoin_side=False,
+                 stop_loss_volume=None, delta_price=False):
         super().__init__(exchange, name, stop_loss_price, None, 0, ticker, tight=tight)
         self.price = round(price + delta, 10)
         self.original_price = self.price
@@ -401,11 +404,12 @@ class SellAsset(Asset):
 class ObserveAsset(Asset):
     def __init__(self, exchange, name, buy_price, stop_loss_price=None, price_profit=None, profit=5, tight=False,
                  ticker=BinanceClient.KLINE_INTERVAL_4HOUR,
-                 barrier=False, line=None, horizon=None):
+                 barrier=False, line=None, horizon=None, mas=None):
         super().__init__(exchange, name, stop_loss_price, price_profit, profit, ticker, tight, barrier)
         self.buy_price = buy_price
         self.line = line
         self.horizon = horizon
+        self.mas = mas
 
 
 class TradeAsset(BuyAsset):
@@ -1463,7 +1467,7 @@ def get_binance_interval_unit(_ticker):
         BinanceClient.KLINE_INTERVAL_30MINUTE: "75 hours ago",
         BinanceClient.KLINE_INTERVAL_1HOUR: "150 hours ago",
         BinanceClient.KLINE_INTERVAL_2HOUR: "300 hours ago",
-        BinanceClient.KLINE_INTERVAL_4HOUR: "600 hours ago",
+        BinanceClient.KLINE_INTERVAL_4HOUR: "820 hours ago",
         BinanceClient.KLINE_INTERVAL_6HOUR: "900 hours ago",
         BinanceClient.KLINE_INTERVAL_8HOUR: "1200 hours ago",
         BinanceClient.KLINE_INTERVAL_12HOUR: "75 days ago",
@@ -1520,21 +1524,26 @@ def get_first_bid(_market):
     return _price, _volume
 
 
-def check_horizontal_price_level(_asset, _type, _times=1):
+def get_klines_asset(_asset):
     stop_when_not_exchange(_asset.exchange)
-    if _asset.buy_price==0:
-        return False
-    if not _asset.horizon:
-        return False
     if _asset.exchange == 'kucoin':
         _klines = get_kucoin_klines(_asset.market, _asset.ticker, get_kucoin_interval_unit(_asset.ticker))
     elif _asset.exchange == "binance":
         _klines = get_binance_klines(_asset.market, _asset.ticker, get_binance_interval_unit(_asset.ticker))
+    return _klines
+
+
+def check_horizontal_price_level(_asset, _type, _klines):
+    if _asset.buy_price == 0:
+        return False
+    if not _asset.horizon:
+        return False
     if len(_klines) > 0:
+        _closing_price = get_last_closing_price2(_klines)
         if _type == "up":
-            return True if _klines[-2].closing >= _asset.buy_price else False
+            return True if _closing_price >= _asset.buy_price else False
         elif _type == "down":
-            return True if _klines[-2].closing <= _asset.buy_price else False
+            return True if _closing_price <= _asset.buy_price else False
     return False
 
 
@@ -1546,9 +1555,11 @@ def get_last_closing_price(_asset):
         _klines = get_kucoin_klines(_asset.market, _asset.ticker, get_kucoin_interval_unit(_asset.ticker))
     elif _asset.exchange == "binance":
         _klines = get_binance_klines(_asset.market, _asset.ticker, get_binance_interval_unit(_asset.ticker))
-    if len(_klines) > 0:
-        return _klines[-2].closing
-    return False
+    return _klines[-2].closing if len(_klines) > 0 else False
+
+
+def get_last_closing_price2(_klines):
+    return _klines[-2].closing if len(_klines) > 0 else False
 
 
 def stop_when_not_exchange(_name):
@@ -2048,6 +2059,10 @@ def rsi_falling_condition(_rsi_max, _curr_rsi, _local_rsi_max_value):
 
 def get_closes(_klines):
     return np.array(list(map(lambda _x: float(_x[4]), _klines)))
+
+
+def get_closes2(_klines):
+    return np.array(list(map(lambda _x: float(_x.closing), _klines)))
 
 
 def get_highs(_klines):
@@ -3092,10 +3107,13 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
                 _klines = get_binance_klines(_market, _ticker, _time_interval)
             if not _klines:
                 logger_global[0].warning(f"Trying for market : {_market} ... {_ii}")
-                time.sleep(1)
+                time.sleep(10)
+        except ReadTimeoutError as e:
+            logger_global[0].warning(e)
+            time.sleep(300)
         except Exception as e:
             logger_global[0].warning(e)
-            time.sleep(1)
+            time.sleep(10)
         if _klines:
             return _klines
     raise RuntimeError(f"No klines for market {_market}")
@@ -3585,8 +3603,8 @@ def set_kucoin_buy_orders(_assets):
         _buy_asset.hidden_buy_order()
 
 
-def check_price_slope(_asset):
-    return break_line(_asset)
+def check_price_slope(_asset, _klines):
+    return break_line(_asset, _klines)
 
 
 def get_line(_price_open1, _price_open2, _dt):
@@ -3595,13 +3613,13 @@ def get_line(_price_open1, _price_open2, _dt):
     return _a, _b
 
 
-def break_line(_asset):
+def break_line(_asset, _klines):
     _line = _asset.line
     if not _line:
         return False
     _a, _b = get_line(_line.p1, _line.p2, _line.dt)
     _res = False
-    _closing_price = get_last_closing_price(_asset)
+    _closing_price = get_last_closing_price2(_klines)
     if _line.type == "down":
         _res = True if 0 < _a * (_line.dt + 1) + _b - _closing_price else False
     else:
@@ -3616,3 +3634,76 @@ class Line(object):
         self.p2 = _p2
         self.dt = _dt
         self.type = _type
+
+
+class MovingAverage(object):
+    def __init__(self, period, direction):
+        self.period = period
+        self.direction = direction
+
+    def __repr__(self):
+        return f"MA{self.period} {self.direction}"
+
+
+def check_mas(_asset, _klines):
+    if not _asset.mas:
+        return False
+    _closes = get_closes2(_klines)
+    _last_close = get_last_closing_price2(_klines)
+    _response = []
+    for _ma in _asset.mas:
+        _last_ma = talib.MA(_closes, timeperiod=_ma.period)[-2]
+        if _ma.direction == "up" and _last_close > _last_ma:
+            _response.append(_ma)
+        if _ma.direction == "down" and _last_close < _last_ma:
+            _response.append(_ma)
+    return _response if len(_response)>0 else False
+
+
+def read_pattern_matcher_csv():
+    _csv_file = config.get_parameter('pattern_macther_csv')
+    try:
+        with open(_csv_file, newline='') as f:
+            reader = csv.reader(f)
+            return list(reader)
+    except Exception as err:
+        traceback.print_tb(err.__traceback__)
+        logger_global[0].exception(err.__traceback__)
+        
+
+def create_observe_assets():
+    _patterns = read_pattern_matcher_csv()
+    _assets = []
+    for _pattern in _patterns:
+        _assets.append(ObserveAsset(_pattern[0], _pattern[1], float(_pattern[2]) * sat, line=extract_line(_pattern),
+                     mas=extract_mas(_pattern), horizon=extract_horizon(_pattern)))
+    return _assets
+
+
+def extract_line(_pattern):
+    return Line(float(_pattern[4]) * sat, float(_pattern[5]) * sat, float(_pattern[6]), _pattern[7]) if 'line' in _pattern else False
+
+
+def extract_mas(_pattern):
+    _mas = []
+    if 'ma20' in _pattern:
+        _ma20_index = _pattern.index("ma20")
+        _mas.append(MovingAverage(20, _pattern[_ma20_index+1]))
+    if 'ma50' in _pattern:
+        _ma50_index = _pattern.index("ma50")
+        _mas.append(MovingAverage(50, _pattern[_ma50_index+1]))
+    if 'ma100' in _pattern:
+        _ma100_index = _pattern.index("ma100")
+        _mas.append(MovingAverage(100, _pattern[_ma100_index+1]))
+    if 'ma200' in _pattern:
+        _ma200_index = _pattern.index("ma200")
+        _mas.append(MovingAverage(200, _pattern[_ma200_index+1]))
+
+    return _mas if len(_mas)>0 else False
+
+
+def extract_horizon(_pattern):
+    if 'horizon' in _pattern:
+        _horizon_index = _pattern.index("horizon")
+        return _pattern[_horizon_index+1]
+    return False
