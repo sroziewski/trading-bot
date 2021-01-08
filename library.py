@@ -3683,13 +3683,13 @@ def create_observe_assets():
     _patterns = read_pattern_matcher_csv()
     _assets = []
     for _pattern in _patterns:
-        _assets.append(ObserveAsset(_pattern[0], _pattern[1], float(_pattern[2]) * sat, line=extract_line(_pattern),
+        _assets.append(ObserveAsset("binance", _pattern[0], float(_pattern[1]) * sat, line=extract_line(_pattern),
                      mas=extract_mas(_pattern), horizon=extract_horizon(_pattern)))
     return _assets
 
 
 def extract_line(_pattern):
-    return Line(float(_pattern[4]) * sat, float(_pattern[5]) * sat, float(_pattern[6]), _pattern[7]) if 'line' in _pattern else False
+    return Line(float(_pattern[3]) * sat, float(_pattern[4]) * sat, float(_pattern[5]), _pattern[6]) if 'line' in _pattern else False
 
 
 def extract_mas(_pattern):
