@@ -3665,11 +3665,19 @@ def read_pattern_matcher_csv():
     try:
         with open(_csv_file, newline='') as f:
             reader = csv.reader(f)
-            return list(reader)
+            return skip_commented_lines(list(reader))
     except Exception as err:
         traceback.print_tb(err.__traceback__)
         logger_global[0].exception(err.__traceback__)
         
+
+def skip_commented_lines(_lines):
+    _res = []
+    for _line in _lines:
+        if not _line[0][0] == "#":
+            _res.append(_line)
+    return _res
+
 
 def create_observe_assets():
     _patterns = read_pattern_matcher_csv()
