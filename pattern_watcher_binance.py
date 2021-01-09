@@ -12,11 +12,9 @@ logger.info("Starting binance pattern watcher" )
 
 authorize()
 
-assets = create_observe_assets()
-
-log_assets(assets)
-
 while 1:
+    assets = create_observe_assets()
+    log_assets(assets)
     mail_content = None
     found_assets = []
     for asset in assets:
