@@ -3718,7 +3718,7 @@ def extract_horizon(_pattern):
 
 
 def log_assets(_assets):
-    logger_global[0].info("Assets currently being observed")
+    logger_global[0].info(f"Assets currently being observed : {len(_assets)}")
     for _asset in _assets:
         if _asset.horizon:
             logger_global[0].info(f"{_asset.market} horizon {_asset.horizon}")
