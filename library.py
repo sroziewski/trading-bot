@@ -388,13 +388,14 @@ class BuyAsset(Asset):
 class SellAsset(Asset):
     def __init__(self, exchange, name, stop_loss_price, tight=False,
                  ticker=BinanceClient.KLINE_INTERVAL_1MINUTE, price=False, ratio=False, kucoin_side=False,
-                 stop_loss_volume=None, delta_price=False):
+                 stop_loss_volume=None, delta_price=False, market_sell=False):
         super().__init__(exchange, name, stop_loss_price, None, 0, ticker, tight=tight)
         self.price = round(price + delta, 10)
         self.original_price = self.price
         self.kucoin_side = kucoin_side
         self.stop_loss_volume = stop_loss_volume
         self.delta_price = delta_price
+        self.market_sell = market_sell
         self.ratio = ratio  # buying ratio [%] of all possessed BTC
 
     def __str__(self):
@@ -1771,6 +1772,16 @@ def _sell_margin_order(market, _sell_price, _quantity):
         "{} Sell margin limit order placed: price={} BTC, quantity={} DONE".format(market, _sell_price_str, _quantity))
 
 
+def _sell_margin_market(market, _sell_price, _quantity):
+    _sell_price_str = price_to_string(_sell_price)
+    logger_global[0].info(
+        "{} Sell margin market order to be placed: quantity={} ".format(market, _quantity))
+    _resp = binance_client.create_margin_order(symbol=market, quantity=_quantity, side="SELL",
+                                               type="MARKET", isIsolated=True)
+    logger_global[0].info(
+        "{} Sell margin market order placed: price={} BTC, quantity={} DONE".format(market, _sell_price_str, _quantity))
+
+
 def sell_limit(market, asset_name, price):
     cancel_binance_current_orders(market)
     _quantity = get_asset_quantity_binance(asset_name)
@@ -1823,7 +1834,9 @@ def sell_margin_limit_stop_loss(_asset):
         _sell_price = get_sell_price(_asset)
         _lot_size_params = get_lot_size_params(_asset.market)
         _quantity = _available_margin_asset
-        if _quantity:
+        if _asset.market_sell and _quantity:
+            _sell_margin_market(_asset.market, _sell_price, _quantity)
+        elif _quantity:
             _sell_margin_order(_asset.market, _sell_price, _quantity)
 
 
@@ -3718,7 +3731,7 @@ def extract_horizon(_pattern):
 
 
 def log_assets(_assets):
-    logger_global[0].info(f"Assets currently being observed : {len(_assets)}")
+    logger_global[0].info(f"Patterns currently being observed : {len(_assets)}")
     for _asset in _assets:
         if _asset.horizon:
             logger_global[0].info(f"{_asset.market} horizon {_asset.horizon}")

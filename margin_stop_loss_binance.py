@@ -6,11 +6,11 @@ import requests
 
 from library import stop_signal, sat, setup_logger, SellAsset, sell_margin_limit_stop_loss
 
-name = "CRV"
-stop_price_in_satoshi = 3020
+name = "SAND"
+stop_price_in_satoshi = 500
 
 stop_price = stop_price_in_satoshi * sat
-sell_asset_binance = SellAsset('binance', name, stop_price, tight=True)
+sell_asset_binance = SellAsset('binance', name, stop_price, market_sell=True)
 
 logger = setup_logger(f"margin-stop-loss-{sell_asset_binance.name}")
 logger.info("Starting {} margin stop-loss maker on {}".format(sell_asset_binance.market, sell_asset_binance.exchange))
