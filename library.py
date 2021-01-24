@@ -60,7 +60,7 @@ class DecimalCodec(TypeCodec):
 
 
 class Kline(object):
-    def __init__(self, start_time, opening, closing, highest, lowest, volume, btc_volume, time_str):
+    def __init__(self, start_time, opening, closing, highest, lowest, volume, btc_volume, time_str, ticker=None):
         self.start_time = start_time
         self.opening = opening
         self.closing = closing
@@ -69,6 +69,8 @@ class Kline(object):
         self.volume = volume
         self.btc_volume = btc_volume
         self.time_str = time_str
+        if ticker:
+            self.ticker = ticker
 
     def add_buy_depth(self, _bd):
         self.bid_depth = _bd
@@ -78,6 +80,15 @@ class Kline(object):
 
     def add_market(self, _market):
         self.market = _market
+
+    def add_exchange(self, exchange):
+        self.exchange = exchange
+
+    def add_trade_volumes(self, _vc):
+        self.buy_btc_volume = _vc.buy_btc_volume
+        self.buy_quantity = _vc.buy_quantity
+        self.sell_btc_volume = _vc.sell_btc_volume
+        self.sell_quantity = _vc.sell_quantity
 
 
 def from_kucoin_klines(klines):
@@ -89,8 +100,12 @@ def from_kucoin_klines(klines):
         return []
 
 
-def from_binance_klines(klines):
-    if klines:
+def from_binance_klines(klines, ticker=None):
+    if klines and ticker:
+        return list(
+            map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]),
+                                get_time_from_binance_tmstmp(x[0])), klines), ticker)
+    elif klines:
         return list(
             map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]),
                                 get_time_from_binance_tmstmp(x[0])), klines))
@@ -106,7 +121,7 @@ def get_kucoin_klines(market, ticker, start=None):
 
 def get_binance_klines(market, ticker, start=None):
     _data = get_klines(market, ticker, start)
-    return from_binance_klines(_data)
+    return from_binance_klines(_data, ticker)
 
 
 def ticker_to_kucoin(_ticker):
@@ -3675,14 +3690,23 @@ def check_mas(_asset, _klines):
 
 def read_pattern_matcher_csv():
     _csv_file = config.get_parameter('pattern_macther_csv')
+    return file_reader(_csv_file)
+        
+
+def read_collections_file():
+    _file = config.get_parameter('collections_file')
+    return file_reader(_file)
+
+
+def file_reader(_file):
     try:
-        with open(_csv_file, newline='') as f:
+        with open(_file, newline='') as f:
             reader = csv.reader(f)
             return skip_commented_lines(list(reader))
     except Exception as err:
         traceback.print_tb(err.__traceback__)
         logger_global[0].exception(err.__traceback__)
-        
+
 
 def skip_commented_lines(_lines):
     _res = []
@@ -3743,3 +3767,30 @@ def log_assets(_assets):
 
 def mas_to_string(_mas):
     return ' '.join([str(x) for x in _mas])
+
+
+class TradeMsg(object):
+    def __init__(self, msg) -> None:
+        self.market = msg['s']
+        self.type = msg['e']
+        self.price = float(msg['p'])
+        self.quantity = float(msg['q'])
+        self.timestamp = msg['T']
+        self.timestamp_str = get_time_from_binance_tmstmp(msg['T'])
+        self.buy = not msg['m']
+        self.sell = msg['m']
+        self.btc_volume = round(self.price * self.quantity, 8)
+
+
+def flatten(_list):
+    return [item for sublist in _list for item in sublist]
+
+
+def get_last_db_record(_collection):
+    try:
+        return _collection.find_one(sort=[('_id', DESCENDING)])
+    except PyMongoError as err:
+        traceback.print_tb(err.__traceback__)
+        logger_global[0].exception("get_last_db_record : find_one: {}".format(err.__traceback__))
+        time.sleep(5)
+        return get_last_db_record(_collection)

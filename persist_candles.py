@@ -9,9 +9,11 @@ from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from pymongo import DESCENDING
 from pymongo.errors import PyMongoError
+from binance.websockets import BinanceSocketManager
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines
+    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, get_time, \
+    get_time_from_binance_tmstmp, TradeMsg, get_last_db_record
 from mongodb import mongo_client
 
 logger = setup_logger("Kline-Crawl-Manager-15")
@@ -21,9 +23,12 @@ decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
 
+trades = {}
+
 
 def to_mongo(_kline):
     return {
+        'ticker': _kline.ticker,
         'start_time': _kline.start_time,
         'opening': _kline.opening,
         'closing': _kline.closing,
@@ -35,6 +40,10 @@ def to_mongo(_kline):
         'market': _kline.market,
         'bid_price': _kline.bid_depth.bid_price,
         'ask_price': _kline.ask_depth.ask_price,
+        'buy_btc_volume': _kline.buy_btc_volume,
+        'buy_quantity': _kline.buy_quantity,
+        'sell_btc_volume': _kline.sell_btc_volume,
+        'sell_quantity': _kline.sell_quantity,
         'bid_depth': {
             'p5': _kline.bid_depth.p5,
             'p10': _kline.bid_depth.p10,
@@ -80,16 +89,6 @@ def persist_kline(_kline, _collection):
         persist_kline(_kline, _collection)
 
 
-def get_last_db_record(_collection):
-    try:
-        return _collection.find_one(sort=[('_id', DESCENDING)])
-    except PyMongoError as err:
-        traceback.print_tb(err.__traceback__)
-        logger.exception("get_last_db_record : find_one: {}".format(err.__traceback__))
-        sleep(5)
-        return get_last_db_record(_collection)
-
-
 def filter_current_klines(_klines, _collection_name, _collection):
     _last_record = get_last_db_record(_collection)
     logger.info(
@@ -108,7 +107,7 @@ def persist_klines(_klines, _collection):
 
 
 class Schedule(object):
-    def __init__(self, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _no_depths):
+    def __init__(self, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _vc, _no_depths):
         self.market = _market
         self.collection_name = _collection_name
         self.ticker = _ticker
@@ -116,6 +115,7 @@ class Schedule(object):
         self.exchange = _exchange
         self.depth_crawl = _dc
         self.no_depths = _no_depths
+        self.volume_crawl = _vc
 
 
 class MarketDepth(object):
@@ -174,6 +174,25 @@ class DepthCrawl(object):
             self.sell_depth = self.sell_depth[-_size:]
 
 
+class VolumeCrawl(object):
+    def __init__(self, _market, _exchange):
+        self.market = _market
+        self.exchange = _exchange
+        self.buy_btc_volume = False
+        self.buy_quantity = False
+        self.sell_btc_volume = False
+        self.sell_quantity = False
+    #
+    # def add_volumes(self, _bv, _sv):
+    #     _size = 1440010 # 1000 per minute, 24hrs -- that's a maximum
+    #     self.buy_volume.append(_bv)
+    #     self.sell_volume.append(_sv)
+    #     if len(self.buy_volume) > _size:
+    #         self.buy_volume = self.buy_volume[-_size:]
+    #     if len(self.sell_volume) > _size:
+    #         self.sell_volume = self.sell_volume[-_size:]
+
+
 def _do_depth_crawl(_dc):
     while True:
         sleep(randrange(10))
@@ -194,9 +213,66 @@ def _do_depth_crawl(_dc):
         sleep(3 * 60)
 
 
+def filter_current_trades(_vc):
+    _yesterday_time = (datetime.datetime.now().timestamp() - 2*(60*60))*1000
+    trades[_vc.market] = list(filter(lambda x: x.timestamp > _yesterday_time, trades[_vc.market]))
+
+
+def _do_volume_crawl(_vc):
+    trades[_vc.market] = []
+    _bm = BinanceSocketManager(binance_obj.client)
+    _conn_key = _bm.start_aggtrade_socket(_vc.market, process_trade_socket_message)
+    _bm.start()
+    while True:
+        filter_current_trades(_vc)
+        sleep(2*60*60)
+
+
 def manage_depth_crawling(_dc):
     _crawler = threading.Thread(target=_do_depth_crawl, args=(_dc,),
                                 name='_do_depth_crawl : {}'.format(_dc.market))
+    _crawler.start()
+
+
+def get_trade_volume(_schedule):
+    _diff = None
+    if _schedule.ticker == "15min":
+        _diff = 15 * 60 * 1000
+    if _schedule.ticker == "30min":
+        _diff = 30 * 60 * 1000
+    if _schedule.ticker == "1h":
+        _diff = 60 * 60 * 1000
+    if _schedule.ticker == "4h":
+        _diff = 4 * 60 * 60 * 1000
+    if _schedule.ticker == "8h":
+        _diff = 8 * 60 * 60 * 1000
+    if _schedule.ticker == "12h":
+        _diff = 12 * 60 * 60 * 1000
+    if _schedule.ticker == "24h":
+        _diff = 24 * 60 * 60 * 1000
+
+    _current_time = datetime.datetime.now().timestamp() * 1000 # to binance tmstmp
+    _trades_list = list(filter(lambda x: _current_time - x.timestamp <= _diff, trades[_schedule.volume_crawl.market]))
+    add_volumes(_trades_list, _schedule.volume_crawl)
+
+
+def add_volumes(_trades_msgs, _vc):
+    _buys = list(filter(lambda x: x.buy, _trades_msgs))
+    _sells = list(filter(lambda x: x.sell, _trades_msgs))
+    _vc.buy_btc_volume = round(sum([_msg.btc_volume for _msg in _buys]), 4)
+    _vc.buy_quantity = round(sum([_msg.quantity for _msg in _buys]), 4)
+    _vc.sell_btc_volume = round(sum([_msg.btc_volume for _msg in _sells]), 4)
+    _vc.sell_quantity = round(sum([_msg.quantity for _msg in _sells]), 4)
+
+
+def process_trade_socket_message(_msg):
+    _trade_msg = TradeMsg(_msg)
+    trades[_trade_msg.market].append(_trade_msg)
+
+
+def manage_volume_crawling(_vc):
+    _crawler = threading.Thread(target=_do_volume_crawl, args=(_vc,),
+                                name='_do_volume_crawl : {}'.format(_vc.market))
     _crawler.start()
 
 
@@ -216,7 +292,7 @@ def compute_depth_percentages(_depth, _type):
     _60p_d = (0, 0)
     _65p_d = (0, 0)
     _70p_d = (0, 0)
-    if _start_price > 5000:  # we assume we have BTC here ;)
+    if _start_price > 10000:  # we assume we have BTC here ;)
         _divisor = 100.0
     else:
         _divisor = 1.0
@@ -383,6 +459,9 @@ def _do_schedule(_schedule):
         list(map(lambda x: x.add_buy_depth(bd), current_klines))
         list(map(lambda x: x.add_sell_depth(sd), current_klines))
         list(map(lambda x: x.add_market(market), current_klines))
+        if _schedule.exchange == "binance":
+            list(map(lambda x: x.add_trade_volumes(_schedule.volume_crawl), current_klines))
+        list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
         persist_klines(current_klines, collection)
         sleep(_schedule.sleep)
 
@@ -394,10 +473,15 @@ def get_binance_schedules(_asset):
     else:
         _market = "{}BTC".format(_asset.upper())
     _dc = DepthCrawl(_market, _exchange)
-    manage_depth_crawling(_dc)
+    _vc = VolumeCrawl(_market, _exchange)
+    # manage_depth_crawling(_dc)
+    if _exchange == "binance":
+        manage_volume_crawling(_vc)
+    get_trade_volume(Schedule(_market, '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * (60 - 15), _exchange, _dc, _vc,
+                 20))
     return [
         Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
-                 60 * 60 * 23, _exchange, _dc, 20 * 24),
+                 60 * 60 * 23, _exchange, _dc, _vc, 20 * 24),
         Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 11, _exchange, _dc,
                  20 * 12),
         Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 7, _exchange, _dc,
@@ -429,45 +513,70 @@ def get_kucoin_schedules(_asset):
     ]
 
 
-schedules = get_binance_schedules("btc")
-schedules.extend(get_binance_schedules("coti"))
-schedules.extend(get_binance_schedules("vet"))
-schedules.extend(get_binance_schedules("sxp"))
-schedules.extend(get_binance_schedules("dot"))
-schedules.extend(get_binance_schedules("xem"))
-schedules.extend(get_binance_schedules("bzrx"))
-schedules.extend(get_binance_schedules("omg"))
-schedules.extend(get_binance_schedules("ftm"))
-schedules.extend(get_binance_schedules("bnb"))
-schedules.extend(get_binance_schedules("ltc"))
-schedules.extend(get_binance_schedules("wnxm"))
-schedules.extend(get_binance_schedules("trx"))
-schedules.extend(get_binance_schedules("srm"))
-schedules.extend(get_binance_schedules("crv"))
-schedules.extend(get_binance_schedules("band"))
-schedules.extend(get_binance_schedules("trb"))
-schedules.extend(get_binance_schedules("neo"))
-schedules.extend(get_binance_schedules("xtz"))
-schedules.extend(get_binance_schedules("zil"))
-schedules.extend(get_binance_schedules("ren"))
-schedules.extend(get_binance_schedules("fet"))
-schedules.extend(get_binance_schedules("ocean"))
-schedules.extend(get_binance_schedules("sc"))
-schedules.extend(get_binance_schedules("rune"))
-schedules.extend(get_binance_schedules("eth"))
-schedules.extend(get_binance_schedules("theta"))
-schedules.extend(get_binance_schedules("tomo"))
-schedules.extend(get_binance_schedules("dgb"))
+# def process_message(msg):
+#     print("message type: {}".format(msg['e']))
+#     print(msg)
+#     # do something
+#
+#
+# trades = {}
+# trades['ONTBTC'] = []
+#
+#
+# def process_trade_socket_message2(_msg):
+#     _trade_msg = TradeMsg(_msg)
+#     trades[_trade_msg.market].append(_trade_msg)
+#     print(_msg)
 
-schedules.extend(get_kucoin_schedules("bepro"))
-schedules.extend(get_kucoin_schedules("vidt"))
-schedules.extend(get_kucoin_schedules("chr"))
-schedules.extend(get_kucoin_schedules("dag"))
-schedules.extend(get_kucoin_schedules("vra"))
-schedules.extend(get_kucoin_schedules("loki"))
-schedules.extend(get_kucoin_schedules("tel"))
-schedules.extend(get_kucoin_schedules("soul"))
-schedules.extend(get_kucoin_schedules("ankr"))
-schedules.extend(get_kucoin_schedules("utk"))
 
-manage_crawling(schedules)
+# bm = BinanceSocketManager(binance_obj.client)
+# # start any sockets here, i.e a trade socket
+# conn_key = bm.start_aggtrade_socket('ONTBTC', process_trade_socket_message2)
+# # then start the socket manager
+# bm.start()
+
+
+i  =1
+
+schedules = get_binance_schedules("ont")
+# schedules.extend(get_binance_schedules("coti"))
+# schedules.extend(get_binance_schedules("vet"))
+# schedules.extend(get_binance_schedules("sxp"))
+# schedules.extend(get_binance_schedules("dot"))
+# schedules.extend(get_binance_schedules("xem"))
+# schedules.extend(get_binance_schedules("bzrx"))
+# schedules.extend(get_binance_schedules("omg"))
+# schedules.extend(get_binance_schedules("ftm"))
+# schedules.extend(get_binance_schedules("bnb"))
+# schedules.extend(get_binance_schedules("ltc"))
+# schedules.extend(get_binance_schedules("wnxm"))
+# schedules.extend(get_binance_schedules("trx"))
+# schedules.extend(get_binance_schedules("srm"))
+# schedules.extend(get_binance_schedules("crv"))
+# schedules.extend(get_binance_schedules("band"))
+# schedules.extend(get_binance_schedules("trb"))
+# schedules.extend(get_binance_schedules("neo"))
+# schedules.extend(get_binance_schedules("xtz"))
+# schedules.extend(get_binance_schedules("zil"))
+# schedules.extend(get_binance_schedules("ren"))
+# schedules.extend(get_binance_schedules("fet"))
+# schedules.extend(get_binance_schedules("ocean"))
+# schedules.extend(get_binance_schedules("sc"))
+# schedules.extend(get_binance_schedules("rune"))
+# schedules.extend(get_binance_schedules("eth"))
+# schedules.extend(get_binance_schedules("theta"))
+# schedules.extend(get_binance_schedules("tomo"))
+# schedules.extend(get_binance_schedules("dgb"))
+#
+# schedules.extend(get_kucoin_schedules("bepro"))
+# schedules.extend(get_kucoin_schedules("vidt"))
+# schedules.extend(get_kucoin_schedules("chr"))
+# schedules.extend(get_kucoin_schedules("dag"))
+# schedules.extend(get_kucoin_schedules("vra"))
+# schedules.extend(get_kucoin_schedules("loki"))
+# schedules.extend(get_kucoin_schedules("tel"))
+# schedules.extend(get_kucoin_schedules("soul"))
+# schedules.extend(get_kucoin_schedules("ankr"))
+# schedules.extend(get_kucoin_schedules("utk"))
+
+# manage_crawling(schedules)
