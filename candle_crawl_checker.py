@@ -1,25 +1,21 @@
-import csv
 import datetime
-import traceback
 from time import sleep
 
 from bson.codec_options import TypeRegistry, CodecOptions
 
-from library import setup_logger, authorize, skip_commented_lines, logger_global, read_collections_file, flatten, \
+from library import setup_logger, authorize, read_collections_file, flatten, \
     get_last_db_record, DecimalCodec, send_mail
-from config import config
 from mongodb import mongo_client
 
 logger = setup_logger("candle_crawl_checker")
 logger.info("Starting candle crawl checker" )
 
-# authorize()
+authorize()
 
 db = mongo_client.klines
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
-
 
 while 1:
     outdated = []
@@ -38,6 +34,5 @@ while 1:
 
     sleep(_12h/1000)
 
-i = 1
 
 
