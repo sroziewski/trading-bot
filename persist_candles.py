@@ -473,7 +473,7 @@ def _do_schedule(_schedule):
             list(map(lambda x: x.add_trade_volumes(_schedule.volume_crawl), current_klines))
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
         persist_klines(current_klines, collection)
-        sleep(_schedule.sleep)
+        sleep(_schedule.sleep+randrange(round(_schedule.sleep/2)))
 
 
 def get_binance_schedules(_asset):
