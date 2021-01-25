@@ -237,6 +237,7 @@ def _do_volume_crawl(_vc):
     _bm.start()
     while True:
         filter_current_trades(_vc)
+        logger.info(f"last trading volume : {trades[_vc.market][-1].timestamp_str}")
         sleep(60*60)
 
 
