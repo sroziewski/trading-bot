@@ -24,8 +24,18 @@ codec_options = CodecOptions(type_registry=type_registry)
 trades = {}
 
 
+def to_mongo_binance(_kline):
+    _data = to_mongo(_kline)
+    _data['buy_btc_volume'] = _kline.buy_btc_volume
+    _data['buy_quantity'] = _kline.buy_quantity
+    _data['sell_btc_volume'] = _kline.sell_btc_volume
+    _data['sell_quantity'] = _kline.sell_quantity
+    return _data
+
+
 def to_mongo(_kline):
     return {
+        'exchange': _kline.exchange,
         'ticker': _kline.ticker,
         'start_time': _kline.start_time,
         'opening': _kline.opening,
@@ -38,10 +48,6 @@ def to_mongo(_kline):
         'market': _kline.market,
         'bid_price': _kline.bid_depth.bid_price,
         'ask_price': _kline.ask_depth.ask_price,
-        'buy_btc_volume': _kline.buy_btc_volume,
-        'buy_quantity': _kline.buy_quantity,
-        'sell_btc_volume': _kline.sell_btc_volume,
-        'sell_quantity': _kline.sell_quantity,
         'bid_depth': {
             'p5': _kline.bid_depth.p5,
             'p10': _kline.bid_depth.p10,
@@ -79,7 +85,10 @@ def to_mongo(_kline):
 
 def persist_kline(_kline, _collection):
     try:
-        _collection.insert_one({'kline': to_mongo(_kline), 'timestamp': _kline.start_time})
+        if _kline.exchange == "binance":
+            _collection.insert_one({'kline': to_mongo_binance(_kline), 'timestamp': _kline.start_time})
+        else:
+            _collection.insert_one({'kline': to_mongo(_kline), 'timestamp': _kline.start_time})
     except PyMongoError as err:
         traceback.print_tb(err.__traceback__)
         logger.exception("{} {}".format(_kline['market'], err.__traceback__))
