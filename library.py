@@ -3138,7 +3138,7 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
             elif _exchange == "binance":
                 _klines = get_binance_klines(_market, _ticker, _time_interval)
             if not _klines:
-                logger_global[0].warning(f"Trying for market : {_market} ... {_ii}")
+                logger_global[0].warning(f"Trying for market : {_market} {_ticker} ... {_ii}")
                 time.sleep(10)
         except ReadTimeoutError as e:
             logger_global[0].warning(e)
