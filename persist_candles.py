@@ -463,7 +463,7 @@ def _do_schedule(_schedule):
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         logger.info("Storing to collection : {} : {} ".format(_schedule.exchange, collection_name))
         current_klines = filter_current_klines(klines, collection_name, collection)
-        sleep(5)
+        sleep(10)
         bd, sd = get_average_depths(_schedule.depth_crawl, _schedule.no_depths)
         list(map(lambda x: x.add_buy_depth(bd), current_klines))
         list(map(lambda x: x.add_sell_depth(sd), current_klines))
