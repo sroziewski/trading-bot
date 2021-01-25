@@ -590,6 +590,5 @@ schedules.extend(get_kucoin_schedules("soul"))
 schedules.extend(get_kucoin_schedules("ewt"))
 schedules.extend(get_kucoin_schedules("nwc"))
 schedules.extend(get_kucoin_schedules("cro"))
-schedules.extend(get_kucoin_schedules("bsv"))
 
 manage_crawling(schedules)
