@@ -10,7 +10,7 @@ from mongodb import mongo_client
 logger = setup_logger("candle_crawl_checker")
 logger.info("Starting candle crawl checker" )
 
-# authorize()
+authorize()
 
 db = mongo_client.klines
 decimal_codec = DecimalCodec()
