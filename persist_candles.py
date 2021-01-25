@@ -5,6 +5,7 @@ from random import randrange
 from time import sleep
 
 from binance.client import Client as BinanceClient
+from binance.exceptions import BinanceAPIException
 from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
@@ -202,12 +203,16 @@ class VolumeCrawl(object):
 
 def _do_depth_crawl(_dc):
     while True:
-        sleep(randrange(10))
+        sleep(randrange(60))
         try:
             if _dc.exchange == "binance":
                 _order = binance_obj.client.get_order_book(symbol=_dc.market, limit=1000)
             elif _dc.exchange == "kucoin":
                 _order = kucoin_client.get_full_order_book(_dc.market)
+        except BinanceAPIException as err:
+            traceback.print_tb(err.__traceback__)
+            logger.exception("BinanceAPIException -> sleeping{} {}".format(_dc.market, err.__traceback__))
+            sleep(60)
         except Exception as err:
             traceback.print_tb(err.__traceback__)
             logger.exception("{} {}".format(_dc.market, err.__traceback__))
