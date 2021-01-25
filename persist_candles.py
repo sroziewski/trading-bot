@@ -498,10 +498,10 @@ def get_binance_schedules(_asset):
         #          20 * 4, _vc),
         # Schedule(_market, '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * 60 * 8, _exchange, _dc,
         #          20, _vc)
-        Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), _exchange, _dc, _vc,
-                 10),
-        Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), _exchange, _dc, _vc,
-                 5),
+        Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), _exchange, _dc,
+                 10, _vc,),
+        Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), _exchange, _dc,
+                 5, _vc,)
     ]
 
 
