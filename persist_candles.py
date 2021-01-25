@@ -102,7 +102,7 @@ def filter_current_klines(_klines, _collection_name, _collection):
         "{} : last kline : {} ".format(_collection_name, _last_record['kline']['time_str'] if _last_record else "None"))
     _out = None
     if _last_record:
-        _out = list(filter(lambda x: x.start_time > int(_last_record['timestamp']), _klines))
+        _out = list(filter(lambda x: int(x.start_time) > int(_last_record['timestamp']), _klines))
     else:
         _out = _klines
         logger.info("{} : first kline : {} ".format(_collection_name, _out[0].time_str if _out else "None"))
