@@ -3798,3 +3798,14 @@ def get_last_db_record(_collection):
         logger_global[0].exception("get_last_db_record : find_one: {}".format(err.__traceback__))
         time.sleep(5)
         return get_last_db_record(_collection)
+
+
+def extract_collection_name(_text):
+    _f = _text.index("\"") + 1
+    _l = len(_text) - 1 - _text[::-1].index("\"")
+
+    if "binance" in _text:
+        _exchange = "binance"
+    elif "kucoin" in _text:
+        _exchange = "kucoin"
+    return _text[_f:_l], _exchange
