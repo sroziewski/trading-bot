@@ -235,23 +235,25 @@ def manage_depth_crawling(_dc):
 def set_trade_volume(_schedule):
     _diff = None
     if _schedule.ticker == "15min":
-        _diff = 15 * 60 * 1000
+        _diff = 15 * 60
     if _schedule.ticker == "30min":
-        _diff = 30 * 60 * 1000
+        _diff = 30 * 60
     if _schedule.ticker == "1h":
-        _diff = 60 * 60 * 1000
+        _diff = 60 * 60
     if _schedule.ticker == "4h":
-        _diff = 4 * 60 * 60 * 1000
+        _diff = 4 * 60 * 60
     if _schedule.ticker == "8h":
-        _diff = 8 * 60 * 60 * 1000
+        _diff = 8 * 60 * 60
     if _schedule.ticker == "12h":
-        _diff = 12 * 60 * 60 * 1000
-    if _schedule.ticker == "24h":
-        _diff = 24 * 60 * 60 * 1000
+        _diff = 12 * 60 * 60
+    if _schedule.ticker == "1d":
+        _diff = 24 * 60 * 60
+    _diff *= 1000 # to binance msec timestamp
 
-    _current_time = datetime.datetime.now().timestamp() * 1000 # to binance tmstmp
-    _trades_list = list(filter(lambda x: _current_time - x.timestamp <= _diff, trades[_schedule.volume_crawl.market]))
-    add_volumes(_trades_list, _schedule.volume_crawl)
+    _current_time = datetime.datetime.now().timestamp() * 1000  # to binance tmstmp
+    if len(trades[_schedule.volume_crawl.market]) > 0:
+        _trades_list = list(filter(lambda x: _current_time - x.timestamp <= _diff, trades[_schedule.volume_crawl.market]))
+        add_volumes(_trades_list, _schedule.volume_crawl)
 
 
 def add_volumes(_trades_msgs, _vc):
@@ -478,7 +480,7 @@ def get_binance_schedules(_asset):
         manage_volume_crawling(_vc)
     return [
         Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
-                 60 * 60 * 24, _exchange, _dc, _vc, 20 * 24),
+                 60 * 60 * 24, _exchange, _dc, 20 * 24, _vc),
         Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 12, _exchange, _dc,
                  20 * 12, _vc),
         Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 8, _exchange, _dc,
@@ -511,74 +513,74 @@ def get_kucoin_schedules(_asset):
 
 
 schedules = get_binance_schedules("btc")
-schedules.extend(get_binance_schedules("coti"))
-schedules.extend(get_binance_schedules("vet"))
-schedules.extend(get_binance_schedules("sxp"))
-schedules.extend(get_binance_schedules("dot"))
-schedules.extend(get_binance_schedules("xem"))
-schedules.extend(get_binance_schedules("bzrx"))
-schedules.extend(get_binance_schedules("omg"))
-schedules.extend(get_binance_schedules("ftm"))
-schedules.extend(get_binance_schedules("bnb"))
-schedules.extend(get_binance_schedules("ltc"))
-schedules.extend(get_binance_schedules("wnxm"))
-schedules.extend(get_binance_schedules("trx"))
-schedules.extend(get_binance_schedules("srm"))
-schedules.extend(get_binance_schedules("crv"))
-schedules.extend(get_binance_schedules("band"))
-schedules.extend(get_binance_schedules("trb"))
-schedules.extend(get_binance_schedules("neo"))
-schedules.extend(get_binance_schedules("xtz"))
-schedules.extend(get_binance_schedules("zil"))
-schedules.extend(get_binance_schedules("ren"))
-schedules.extend(get_binance_schedules("fet"))
-schedules.extend(get_binance_schedules("ocean"))
-schedules.extend(get_binance_schedules("sc"))
-schedules.extend(get_binance_schedules("rune"))
-schedules.extend(get_binance_schedules("eth"))
-schedules.extend(get_binance_schedules("theta"))
-schedules.extend(get_binance_schedules("tomo"))
-schedules.extend(get_binance_schedules("dgb"))
-schedules.extend(get_binance_schedules("doge"))
-schedules.extend(get_binance_schedules("sushi"))
-schedules.extend(get_binance_schedules("sand"))
-schedules.extend(get_binance_schedules("rsr"))
-schedules.extend(get_binance_schedules("vidt"))
-schedules.extend(get_binance_schedules("1inch"))
-schedules.extend(get_binance_schedules("axs"))
-schedules.extend(get_binance_schedules("audio"))
-schedules.extend(get_binance_schedules("utk"))
-schedules.extend(get_binance_schedules("chr"))
-schedules.extend(get_binance_schedules("ankr"))
-schedules.extend(get_binance_schedules("akro"))
-schedules.extend(get_binance_schedules("ogn"))
-schedules.extend(get_binance_schedules("xlm"))
-schedules.extend(get_binance_schedules("ada"))
-schedules.extend(get_binance_schedules("bch"))
-schedules.extend(get_binance_schedules("inj"))
-schedules.extend(get_binance_schedules("egld"))
-schedules.extend(get_binance_schedules("iota"))
-schedules.extend(get_binance_schedules("iotx"))
-schedules.extend(get_binance_schedules("grt"))
-schedules.extend(get_binance_schedules("waves"))
-schedules.extend(get_binance_schedules("snx"))
-schedules.extend(get_binance_schedules("aave"))
-schedules.extend(get_binance_schedules("dia"))
-schedules.extend(get_binance_schedules("tfuel"))
-schedules.extend(get_binance_schedules("xvs"))
-schedules.extend(get_binance_schedules("yfi"))
-schedules.extend(get_binance_schedules("dock"))
-schedules.extend(get_binance_schedules("perl"))
+# schedules.extend(get_binance_schedules("coti"))
+# schedules.extend(get_binance_schedules("vet"))
+# schedules.extend(get_binance_schedules("sxp"))
+# schedules.extend(get_binance_schedules("dot"))
+# schedules.extend(get_binance_schedules("xem"))
+# schedules.extend(get_binance_schedules("bzrx"))
+# schedules.extend(get_binance_schedules("omg"))
+# schedules.extend(get_binance_schedules("ftm"))
+# schedules.extend(get_binance_schedules("bnb"))
+# schedules.extend(get_binance_schedules("ltc"))
+# schedules.extend(get_binance_schedules("wnxm"))
+# schedules.extend(get_binance_schedules("trx"))
+# schedules.extend(get_binance_schedules("srm"))
+# schedules.extend(get_binance_schedules("crv"))
+# schedules.extend(get_binance_schedules("band"))
+# schedules.extend(get_binance_schedules("trb"))
+# schedules.extend(get_binance_schedules("neo"))
+# schedules.extend(get_binance_schedules("xtz"))
+# schedules.extend(get_binance_schedules("zil"))
+# schedules.extend(get_binance_schedules("ren"))
+# schedules.extend(get_binance_schedules("fet"))
+# schedules.extend(get_binance_schedules("ocean"))
+# schedules.extend(get_binance_schedules("sc"))
+# schedules.extend(get_binance_schedules("rune"))
+# schedules.extend(get_binance_schedules("eth"))
+# schedules.extend(get_binance_schedules("theta"))
+# schedules.extend(get_binance_schedules("tomo"))
+# schedules.extend(get_binance_schedules("dgb"))
+# schedules.extend(get_binance_schedules("doge"))
+# schedules.extend(get_binance_schedules("sushi"))
+# schedules.extend(get_binance_schedules("sand"))
+# schedules.extend(get_binance_schedules("rsr"))
+# schedules.extend(get_binance_schedules("vidt"))
+# schedules.extend(get_binance_schedules("1inch"))
+# schedules.extend(get_binance_schedules("axs"))
+# schedules.extend(get_binance_schedules("audio"))
+# schedules.extend(get_binance_schedules("utk"))
+# schedules.extend(get_binance_schedules("chr"))
+# schedules.extend(get_binance_schedules("ankr"))
+# schedules.extend(get_binance_schedules("akro"))
+# schedules.extend(get_binance_schedules("ogn"))
+# schedules.extend(get_binance_schedules("xlm"))
+# schedules.extend(get_binance_schedules("ada"))
+# schedules.extend(get_binance_schedules("bch"))
+# schedules.extend(get_binance_schedules("inj"))
+# schedules.extend(get_binance_schedules("egld"))
+# schedules.extend(get_binance_schedules("iota"))
+# schedules.extend(get_binance_schedules("iotx"))
+# schedules.extend(get_binance_schedules("grt"))
+# schedules.extend(get_binance_schedules("waves"))
+# schedules.extend(get_binance_schedules("snx"))
+# schedules.extend(get_binance_schedules("aave"))
+# schedules.extend(get_binance_schedules("dia"))
+# schedules.extend(get_binance_schedules("tfuel"))
+# schedules.extend(get_binance_schedules("xvs"))
+# schedules.extend(get_binance_schedules("yfi"))
+# schedules.extend(get_binance_schedules("dock"))
+# schedules.extend(get_binance_schedules("perl"))
 #
-schedules.extend(get_kucoin_schedules("bepro"))
-schedules.extend(get_kucoin_schedules("dag"))
-schedules.extend(get_kucoin_schedules("vra"))
-schedules.extend(get_kucoin_schedules("loki"))
-schedules.extend(get_kucoin_schedules("tel"))
-schedules.extend(get_kucoin_schedules("soul"))
-schedules.extend(get_kucoin_schedules("ewt"))
-schedules.extend(get_kucoin_schedules("nwc"))
-schedules.extend(get_kucoin_schedules("cro"))
-schedules.extend(get_kucoin_schedules("bsv"))
+# schedules.extend(get_kucoin_schedules("bepro"))
+# schedules.extend(get_kucoin_schedules("dag"))
+# schedules.extend(get_kucoin_schedules("vra"))
+# schedules.extend(get_kucoin_schedules("loki"))
+# schedules.extend(get_kucoin_schedules("tel"))
+# schedules.extend(get_kucoin_schedules("soul"))
+# schedules.extend(get_kucoin_schedules("ewt"))
+# schedules.extend(get_kucoin_schedules("nwc"))
+# schedules.extend(get_kucoin_schedules("cro"))
+# schedules.extend(get_kucoin_schedules("bsv"))
 
 manage_crawling(schedules)

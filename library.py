@@ -104,7 +104,7 @@ def from_binance_klines(klines, ticker=None):
     if klines and ticker:
         return list(
             map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]),
-                                get_time_from_binance_tmstmp(x[0])), klines), ticker)
+                                get_time_from_binance_tmstmp(x[0]), ticker), klines))
     elif klines:
         return list(
             map(lambda x: Kline(x[0], float(x[1]), float(x[4]), float(x[2]), float(x[3]), float(x[5]), float(x[7]),
