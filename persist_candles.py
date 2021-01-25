@@ -105,7 +105,7 @@ def persist_klines(_klines, _collection):
 
 
 class Schedule(object):
-    def __init__(self, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _vc, _no_depths):
+    def __init__(self, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _no_depths, _vc=False):
         self.market = _market
         self.collection_name = _collection_name
         self.ticker = _ticker
@@ -479,14 +479,14 @@ def get_binance_schedules(_asset):
     return [
         Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
                  60 * 60 * 24, _exchange, _dc, _vc, 20 * 24),
-        Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 12, _exchange, _dc, _vc,
-                 20 * 12),
-        Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 8, _exchange, _dc, _vc,
-                 20 * 8),
-        Schedule(_market, '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 8, _exchange, _dc, _vc,
-                 20 * 4),
-        Schedule(_market, '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * 60 * 8, _exchange, _dc, _vc,
-                 20),
+        Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 12, _exchange, _dc,
+                 20 * 12, _vc),
+        Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 8, _exchange, _dc,
+                 20 * 8, _vc),
+        Schedule(_market, '{}4h'.format(_asset), BinanceClient.KLINE_INTERVAL_4HOUR, 60 * 60 * 8, _exchange, _dc,
+                 20 * 4, _vc),
+        Schedule(_market, '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * 60 * 8, _exchange, _dc,
+                 20, _vc)
         # Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * (30 - 20), _exchange, _dc, _vc,
         #          10),
         # Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * (15 - 5), _exchange, _dc, _vc,
