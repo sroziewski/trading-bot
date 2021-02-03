@@ -248,7 +248,7 @@ def manage_depth_crawling(_dc):
     _crawler.start()
 
 
-def set_trade_volume(_schedule):
+def set_trade_volume(_schedule, _kline):
     _diff = None
     if _schedule.ticker == "15m":
         _diff = 15 * 60
@@ -266,19 +266,21 @@ def set_trade_volume(_schedule):
         _diff = 24 * 60 * 60
     _diff *= 1000 # to binance msec timestamp
 
-    _current_time = datetime.datetime.now().timestamp() * 1000  # to binance tmstmp
+    # _current_time = datetime.datetime.now().timestamp() * 1000  # to binance tmstmp
+    _kline_timestamp = _kline.start_time
     if len(trades[_schedule.volume_crawl.market]) > 0:
-        _trades_list = list(filter(lambda x: _current_time - x.timestamp <= _diff, trades[_schedule.volume_crawl.market]))
-        add_volumes(_trades_list, _schedule.volume_crawl)
+        _trades_list = list(filter(lambda x: _kline_timestamp - x.timestamp <= _diff, trades[_schedule.volume_crawl.market]))
+        add_volumes(_trades_list, _kline)
 
 
-def add_volumes(_trades_msgs, _vc):
+def add_volumes(_trades_msgs, _kline):
     _buys = list(filter(lambda x: x.buy, _trades_msgs))
     _sells = list(filter(lambda x: x.sell, _trades_msgs))
-    _vc.buy_btc_volume = round(sum([_msg.btc_volume for _msg in _buys]), 4)
-    _vc.buy_quantity = round(sum([_msg.quantity for _msg in _buys]), 4)
-    _vc.sell_btc_volume = round(sum([_msg.btc_volume for _msg in _sells]), 4)
-    _vc.sell_quantity = round(sum([_msg.quantity for _msg in _sells]), 4)
+    _buy_btc_volume = round(sum([_msg.btc_volume for _msg in _buys]), 4)
+    _buy_quantity = round(sum([_msg.quantity for _msg in _buys]), 4)
+    _sell_btc_volume = round(sum([_msg.btc_volume for _msg in _sells]), 4)
+    _sell_quantity = round(sum([_msg.quantity for _msg in _sells]), 4)
+    _kline.add_trade_volumes(_buy_btc_volume, _buy_quantity, _sell_btc_volume, _sell_quantity)
 
 
 def process_trade_socket_message(_msg):
@@ -476,8 +478,7 @@ def _do_schedule(_schedule):
         list(map(lambda x: x.add_sell_depth(sd), current_klines))
         list(map(lambda x: x.add_market(market), current_klines))
         if _schedule.exchange == "binance":
-            set_trade_volume(_schedule)
-            list(map(lambda x: x.add_trade_volumes(_schedule.volume_crawl), current_klines))
+            list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
         persist_klines(current_klines, collection)
         sleep(_schedule.sleep+randrange(round(_schedule.sleep/2)))

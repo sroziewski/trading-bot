@@ -84,11 +84,11 @@ class Kline(object):
     def add_exchange(self, exchange):
         self.exchange = exchange
 
-    def add_trade_volumes(self, _vc):
-        self.buy_btc_volume = _vc.buy_btc_volume
-        self.buy_quantity = _vc.buy_quantity
-        self.sell_btc_volume = _vc.sell_btc_volume
-        self.sell_quantity = _vc.sell_quantity
+    def add_trade_volumes(self, buy_btc_volume, buy_quantity, sell_btc_volume, sell_quantity):
+        self.buy_btc_volume = buy_btc_volume
+        self.buy_quantity = buy_quantity
+        self.sell_btc_volume = sell_btc_volume
+        self.sell_quantity = sell_quantity
 
 
 def from_kucoin_klines(klines, ticker=None):
