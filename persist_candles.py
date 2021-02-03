@@ -12,8 +12,7 @@ from bson.codec_options import TypeRegistry
 from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, \
-    get_time_from_binance_tmstmp
+    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record
 from mongodb import mongo_client
 
 logger = setup_logger("Kline-Crawl-Manager-LTF")
@@ -268,7 +267,6 @@ def set_trade_volume(_schedule, _kline):
     _diff *= 1000 # to binance msec timestamp
 
     _kline_timestamp = _kline.start_time
-    _t = get_time_from_binance_tmstmp(_kline_timestamp)
     if len(trades[_schedule.volume_crawl.market]) > 0:
         _trades_list = list(filter(lambda x: x.timestamp - _kline_timestamp <= _diff, trades[_schedule.volume_crawl.market]))
         add_volumes(_trades_list, _kline)
