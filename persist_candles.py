@@ -368,6 +368,8 @@ def get_average_depths(_dc, _number_of_elements):
         _number_of_elements = len(_dc.buy_depth)
     if _number_of_elements == 1:
         return divide_dc(_dc.buy_depth[0], 1), divide_dc(_dc.sell_depth[0], 1)
+    if len(_dc.buy_depth) == 0:
+        sleep(20)
     _bd = add_dc(_dc.buy_depth[-_number_of_elements:][0], _dc.buy_depth[-_number_of_elements:][1])
     for _i in range(2, _number_of_elements):
         _bd = add_dc(_bd, _dc.buy_depth[-_number_of_elements:][_i])
