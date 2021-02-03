@@ -238,7 +238,7 @@ def _do_volume_crawl(_vc):
     while True:
         filter_current_trades(_vc)
         if len(trades[_vc.market]) > 0:
-            logger.info(f"last trading volume : {trades[_vc.market][-1].timestamp_str}")
+            logger.info(f"last trading volume : {trades[_vc.market][-1].timestamp_str} {_vc.market}")
         sleep(60*60)
 
 
