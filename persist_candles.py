@@ -499,8 +499,8 @@ def get_binance_schedules(_asset):
         manage_volume_crawling(_vc)
     return [
         # Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
-        #          60 * 60 * 24, _exchange, _dc, 20 * 24, _vc),
-        # Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 12, _exchange, _dc,
+        #          60 * 60 * 8, _exchange, _dc, 20 * 24, _vc),
+        # Schedule(_market, '{}12h'.format(_asset), BinanceClient.KLINE_INTERVAL_12HOUR, 60 * 60 * 8, _exchange, _dc,
         #          20 * 12, _vc),
         # Schedule(_market, '{}8h'.format(_asset), BinanceClient.KLINE_INTERVAL_8HOUR, 60 * 60 * 8, _exchange, _dc,
         #          20 * 8, _vc),
@@ -508,8 +508,8 @@ def get_binance_schedules(_asset):
         #          20 * 4, _vc),
         # Schedule(_market, '{}1h'.format(_asset), BinanceClient.KLINE_INTERVAL_1HOUR, 60 * 60 * 8, _exchange, _dc,
         #          20, _vc)
-        # Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * 60 * 8, _exchange, _dc,
-        #          10, _vc,),
+        Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * 60 * 8, _exchange, _dc,
+                 10, _vc,),
         Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * 60 * 8, _exchange, _dc,
                  5, _vc,)
     ]
