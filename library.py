@@ -69,6 +69,10 @@ class Kline(object):
         self.volume = volume
         self.btc_volume = btc_volume
         self.time_str = time_str
+        self.buy_btc_volume = 0
+        self.buy_quantity = 0
+        self.sell_btc_volume = 0
+        self.sell_quantity = 0
         if ticker:
             self.ticker = ticker
 
