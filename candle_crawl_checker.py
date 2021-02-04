@@ -35,7 +35,7 @@ while 1:
             if ticker == "8h":
                 _time_gap = 24 * 60 * 60 * 1000
             if ticker == "15m" or ticker == "30m":
-                _time_gap = 6 * 60 * 60 * 1000
+                _time_gap = 8 * 60 * 60 * 1000
 
             if exchange == "binance":
                 if _current_time - record['timestamp'] > _time_gap:
