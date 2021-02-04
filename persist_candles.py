@@ -213,6 +213,10 @@ def _do_depth_crawl(_dc):
             traceback.print_tb(err.__traceback__)
             logger.exception("BinanceAPIException -> sleeping{} {}".format(_dc.market, err.__traceback__))
             sleep(60)
+        except ConnectionError as err:
+            traceback.print_tb(err.__traceback__)
+            logger.exception("ConnectionError -> sleeping{} {}".format(_dc.market, err.__traceback__))
+            sleep(60)
         except Exception as err:
             traceback.print_tb(err.__traceback__)
             logger.exception("{} {}".format(_dc.market, err.__traceback__))
@@ -282,6 +286,7 @@ def add_volumes(_trades_msgs, _kline):
     _sell_btc_volume = round(sum([_msg.btc_volume for _msg in _sells]), 4)
     _sell_quantity = round(sum([_msg.quantity for _msg in _sells]), 4)
     _kline.add_trade_volumes(_buy_btc_volume, _buy_quantity, _sell_btc_volume, _sell_quantity)
+    logger.info(f"_buy_btc_volume: {_buy_btc_volume} _sell_btc_volume: {_sell_btc_volume} _buy_quantity: {_buy_quantity} _sell_quantity {_sell_quantity}")
 
 
 def process_trade_socket_message(_msg):
