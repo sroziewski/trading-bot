@@ -538,7 +538,7 @@ def get_kucoin_schedules(_asset):
     ]
 
 
-schedules = get_binance_schedules("doge")
+schedules = get_binance_schedules("ogn")
 # schedules.extend(get_binance_schedules("coti"))
 # schedules.extend(get_binance_schedules("vet"))
 # schedules.extend(get_binance_schedules("sxp"))
