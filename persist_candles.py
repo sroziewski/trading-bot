@@ -12,7 +12,7 @@ from bson.codec_options import TypeRegistry
 from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record
+    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, get_time
 from mongodb import mongo_client
 
 logger = setup_logger("Kline-Crawl-Manager-LTF")
@@ -286,7 +286,7 @@ def add_volumes(_trades_msgs, _kline):
     _sell_btc_volume = round(sum([_msg.btc_volume for _msg in _sells]), 4)
     _sell_quantity = round(sum([_msg.quantity for _msg in _sells]), 4)
     _kline.add_trade_volumes(_buy_btc_volume, _buy_quantity, _sell_btc_volume, _sell_quantity)
-    logger.info(f"_buy_btc_volume: {_buy_btc_volume} _sell_btc_volume: {_sell_btc_volume} _buy_quantity: {_buy_quantity} _sell_quantity {_sell_quantity}")
+    logger.info(f"kline_time: {get_time(_kline.start_time)} current_time:{get_time(datetime.datetime.now().timestamp())} _buy_btc_volume: {_buy_btc_volume} _sell_btc_volume: {_sell_btc_volume} _buy_quantity: {_buy_quantity} _sell_quantity {_sell_quantity}")
 
 
 def process_trade_socket_message(_msg):
@@ -517,7 +517,7 @@ def get_binance_schedules(_asset):
         #          20, _vc)
         # Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * 60 * 8, _exchange, _dc,
         #          10, _vc,),
-        Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * 60 * 8, _exchange, _dc,
+        Schedule(_market, '{}15m'.format(_asset), BinanceClient.KLINE_INTERVAL_15MINUTE, 60 * 60 * 2, _exchange, _dc,
                  5, _vc,)
     ]
 
