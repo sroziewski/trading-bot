@@ -12,7 +12,7 @@ from bson.codec_options import TypeRegistry
 from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, get_time
+    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, get_time, get_time_from_binance_tmstmp
 from mongodb import mongo_client
 
 logger = setup_logger("Kline-Crawl-Manager-LTF")
@@ -272,9 +272,9 @@ def set_trade_volume(_schedule, _kline):
 
     _kline_timestamp = _kline.start_time
     if len(trades[_schedule.volume_crawl.market]) > 0:
-        _trades_list = list(filter(lambda x: x.timestamp - _kline_timestamp <= _diff, trades[_schedule.volume_crawl.market]))
+        _trades_list = list(filter(lambda x: _kline_timestamp - x.timestamp  <= _diff, trades[_schedule.volume_crawl.market]))
         for _trade in _trades_list:
-            logger.info(f"{_trade.market} {_trade.timestamp_str} {_trade.price} {_trade.quantity}")
+            logger.info(f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp-_trade.timestamp} {_trade.price} {_trade.quantity}")
         add_volumes(_trades_list, _kline)
 
 
@@ -286,7 +286,7 @@ def add_volumes(_trades_msgs, _kline):
     _sell_btc_volume = round(sum([_msg.btc_volume for _msg in _sells]), 4)
     _sell_quantity = round(sum([_msg.quantity for _msg in _sells]), 4)
     _kline.add_trade_volumes(_buy_btc_volume, _buy_quantity, _sell_btc_volume, _sell_quantity)
-    logger.info(f"kline_time: {get_time(_kline.start_time)} current_time:{get_time(datetime.datetime.now().timestamp())} _buy_btc_volume: {_buy_btc_volume} _sell_btc_volume: {_sell_btc_volume} _buy_quantity: {_buy_quantity} _sell_quantity {_sell_quantity}")
+    logger.info(f"kline_time: {get_time_from_binance_tmstmp(_kline.start_time)} current_time:{get_time(datetime.datetime.now().timestamp())} _buy_btc_volume: {_buy_btc_volume} _sell_btc_volume: {_sell_btc_volume} _buy_quantity: {_buy_quantity} _sell_quantity {_sell_quantity}")
 
 
 def process_trade_socket_message(_msg):
