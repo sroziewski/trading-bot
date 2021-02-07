@@ -272,16 +272,16 @@ def set_trade_volume(_schedule, _kline):
 
     _kline_timestamp = _kline.start_time
     if len(trades[_schedule.volume_crawl.market]) > 0:
-        _trades_list0 = list(filter(lambda x: 0 <= x.timestamp - _kline_timestamp <= _diff, trades[_schedule.volume_crawl.market]))
-        _trades_list = []
-        for _trade in trades[_schedule.volume_crawl.market]:
-            if 0 <= _trade.timestamp - _kline_timestamp <= _diff:
-                _trades_list.append(_trade)
-                logger.info(f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp-_trade.timestamp} {_trade.price} {_trade.quantity}")
-        logger.info("AAAAAAAAAAAAAA")
-        for _trade in _trades_list0:
-            logger.info(
-                f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp - _trade.timestamp} {_trade.price} {_trade.quantity}")
+        _trades_list = list(filter(lambda x: 0 <= x.timestamp - _kline_timestamp <= _diff, trades[_schedule.volume_crawl.market]))
+        # _trades_list = []
+        # for _trade in trades[_schedule.volume_crawl.market]:
+        #     if 0 <= _trade.timestamp - _kline_timestamp <= _diff:
+        #         _trades_list.append(_trade)
+        #         logger.info(f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp-_trade.timestamp} {_trade.price} {_trade.quantity}")
+        # logger.info("AAAAAAAAAAAAAA")
+        # for _trade in _trades_list0:
+        #     logger.info(
+        #         f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp - _trade.timestamp} {_trade.price} {_trade.quantity}")
         add_volumes(_trades_list, _kline)
 
 
@@ -473,11 +473,13 @@ def _do_schedule(_schedule):
         if _schedule.exchange == "binance":
             try:
                 klines = try_get_klines(_schedule.exchange, market, ticker, get_binance_interval_unit(ticker))
+                klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
                 logger.exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
                 sleep(randrange(30))
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
+                klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
         elif _schedule.exchange == "kucoin":
             try:
                 klines = try_get_klines(_schedule.exchange, market, ticker, get_kucoin_interval_unit(ticker))
