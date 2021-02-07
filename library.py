@@ -3164,6 +3164,10 @@ def format_found_markets(_markets_tuple):
     return [f"{x[0]} : {x[1]}({x[3]})" for x in _markets_tuple]
 
 
+def format_found_tuples(_tuples):
+    return [f"{x[1]} : {x[0]}" for x in _tuples]
+
+
 def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
     _mail_content.content += f"<BR/><hr/><BR/><B>{_ticker}</B><BR/>"
     process_setup_tuples(_setup_tuples[0], _collection, _ticker)
@@ -3176,6 +3180,15 @@ def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
         if len(_setup) > 0:
             _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
             _mail_content.content += ' '.join(format_found_markets(_setup))
+
+
+def process_entries(_entries_tuples, _exchange, _collection, _ticker, _mail_content):
+    _mail_content.content += f"<BR/><hr/><BR/><B>{_ticker}</B><BR/>"
+    process_entry_tuples(_entries_tuples, _exchange, _collection, _ticker)
+
+    if len(_entries_tuples) > 0:
+        _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
+        _mail_content.content += ' '.join(format_found_markets(_entries_tuples))
 
 
 def process_valuable_alts(_valuable_tuples, _exchange, _ticker, _mail_content):
@@ -3212,6 +3225,25 @@ def setup_to_mongo(_setup_tuple, _ticker):
     }
 
 
+def process_entry_tuples(_entry_tuples, _exchange, _collection, _ticker):
+    for _bid_tuple in _entry_tuples:
+        persist_entry(_bid_tuple, _exchange, _collection, _ticker)
+
+
+def entry_to_mongo(_bid_tuple, _exchange, _ticker):
+    _bid_price = _bid_tuple[0]
+    _market = _bid_tuple[1]
+    _timestamp = datetime.datetime.now().timestamp()
+    return {
+        'start_time': _timestamp,
+        'start_time_str': get_time(_timestamp),
+        '_bid_price': _bid_price,
+        '_market': _market,
+        'exchange': _exchange,
+        'ticker': _ticker,
+    }
+
+
 def persist_setup(_setup_tuple, _collection, _ticker):
     try:
         _setup = _setup_tuple[0]
@@ -3239,6 +3271,30 @@ def persist_setup(_setup_tuple, _collection, _ticker):
     except PyMongoError:
         time.sleep(5)
         persist_setup(_setup_tuple, _collection)
+
+
+def persist_entry(_bid_tuple, _exchange, _collection, _ticker):
+    _bid_price = _bid_tuple[0]
+    _bid_market = _bid_tuple[1]
+    try:
+        _found = _collection.find_one(
+            filter={'bid.market': _bid_market, 'bid.exchange': _exchange, 'setup.ticker': _ticker},
+            sort=[('_id', DESCENDING)])
+
+        if _found:
+            _last_update = _found['bid']['timestamp']
+            _now = datetime.datetime.now().timestamp()
+            _diff_in_days = (_now - _last_update) / 60 / 60 / 24
+            if _diff_in_days > 2.0:
+                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
+        else:
+            try:
+                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
+            except InvalidDocument:
+                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
+    except PyMongoError:
+        time.sleep(5)
+        persist_bid(_bid_tuple, _exchange, _collection, _ticker)
 
 
 def to_mongo_dict(_kline):
@@ -3813,3 +3869,80 @@ def extract_collection_name(_text):
     elif "kucoin" in _text:
         _exchange = "kucoin"
     return _text[_f:_l], _exchange
+
+
+def check_ma_crossing(_ma, _highs, _n=5):
+    for _i in range(_n):
+        if _highs[-_i] > _ma[-_i] or (_ma[-_i] - _highs[-_i])/_highs[-_i] < 0.015 :
+            return True
+    return False
+
+
+def find_zero(_data):
+    for _i in range(len(_data)):
+        if _data[len(_data) - _i - 1] > 0 > _data[len(_data) - _i - 2]:
+            return _i
+    return -1
+
+
+def get_bid_price(_data, _lows):
+    _ind = find_zero(_data)
+    return np.min(_lows[len(_lows)-_ind-3:len(_lows)-_ind+1])
+
+
+def get_setup_entry(_klines):
+    _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
+    _opens = np.array(list(map(lambda _x: float(_x.opening), _klines)))
+    _highs = list(map(lambda _x: float(_x.highest), _klines))
+    _lows = list(map(lambda _x: float(_x.lowest), _klines))
+
+    _ma40 = talib.MA(_closes, timeperiod=40)
+
+    _crossed = check_ma_crossing(_ma40, _highs)
+
+    if _crossed:
+        _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+        return get_bid_price(_macd - _macdsignal, _lows)
+    return -1
+
+
+def analyze_40ma(_filename, _exchange, _ticker, _time_interval, _markets_obj):
+    _bids = []
+    _exclude_markets = {}
+    if path.isfile(key_dir + _filename + ".pkl"):
+        _exclude_markets = get_pickled(key_dir, _filename)
+    else:
+        _exclude_markets[_ticker] = []
+    if _ticker in _exclude_markets:
+        _markets_raw = get_markets(_exchange, _ticker, _exclude_markets)
+    else:
+        _markets_raw = get_markets(_exchange)
+
+    _markets = get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets, _ticker)
+
+    logger_global[0].info(
+        f"We are analyzing {len(_markets)} markets on {_exchange} ( with at least btc volume: {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
+
+    for _market in _markets:
+        try:
+            if _exchange == 'kucoin':
+                _klines = try_get_klines("kucoin", f"{_market}-BTC", _ticker, _time_interval)
+            elif _exchange == "binance":
+                _klines = try_get_klines("binance", _market, _ticker, _time_interval)
+        except Exception as err:
+            traceback.print_tb(err.__traceback__)
+            logger_global[0].exception("{} ".format(err.__traceback__))
+
+            logger_global[0].warning(f"No data for market {_ticker} : {_market}")
+            if _ticker in _exclude_markets:
+                _exclude_markets[_ticker].append(_market)
+            else:
+                _exclude_markets[_ticker] = [_market]
+
+        _bid_price = get_setup_entry(_klines)
+        _bids.append((_bid_price, _market))
+        _info = ' '.join(format_found_tuples(_bids))
+        logger_global[0].info(f"{_ticker} : {_info}")
+        save_to_file(key_dir, _filename, _exclude_markets)
+
+        return _bids
