@@ -3286,15 +3286,15 @@ def persist_entry(_bid_tuple, _exchange, _collection, _ticker):
             _now = datetime.datetime.now().timestamp()
             _diff_in_days = (_now - _last_update) / 60 / 60 / 24
             if _diff_in_days > 2.0:
-                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
+                _collection.insert_one({'setup': entry_to_mongo(_bid_tuple, _exchange, _ticker)})
         else:
             try:
-                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
+                _collection.insert_one({'setup': entry_to_mongo(_bid_tuple, _exchange, _ticker)})
             except InvalidDocument:
-                _collection.insert_one({'setup': setup_to_mongo(_setup_tuple, _ticker)})
+                _collection.insert_one({'setup': entry_to_mongo(_bid_tuple, _exchange, _ticker)})
     except PyMongoError:
         time.sleep(5)
-        persist_bid(_bid_tuple, _exchange, _collection, _ticker)
+        persist_entry(_bid_tuple, _exchange, _collection, _ticker)
 
 
 def to_mongo_dict(_kline):
