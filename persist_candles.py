@@ -273,8 +273,9 @@ def set_trade_volume(_schedule, _kline):
     _kline_timestamp = _kline.start_time
     if len(trades[_schedule.volume_crawl.market]) > 0:
         _trades_list = list(filter(lambda x: 0 <= _kline_timestamp - x.timestamp <= _diff, trades[_schedule.volume_crawl.market]))
-        for _trade in _trades_list:
-            logger.info(f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp-_trade.timestamp} {_trade.price} {_trade.quantity}")
+        for _trade in trades[_schedule.volume_crawl.market]:
+            if 0 <= _kline_timestamp - _trade.timestamp <= _diff:
+                logger.info(f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp-_trade.timestamp} {_trade.price} {_trade.quantity}")
         add_volumes(_trades_list, _kline)
 
 
