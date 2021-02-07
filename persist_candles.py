@@ -279,7 +279,7 @@ def set_trade_volume(_schedule, _kline):
                 _trades_list.append(_trade)
                 logger.info(f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp-_trade.timestamp} {_trade.price} {_trade.quantity}")
         logger.info("AAAAAAAAAAAAAA")
-        for _trade in _trades_list:
+        for _trade in _trades_list0:
             logger.info(
                 f"{_trade.market} trade: {_trade.timestamp_str} kline: {_kline_timestamp} trade: {_trade.timestamp} kline: {get_time_from_binance_tmstmp(_kline_timestamp)} diff: {_kline_timestamp - _trade.timestamp} {_trade.price} {_trade.quantity}")
         add_volumes(_trades_list, _kline)
