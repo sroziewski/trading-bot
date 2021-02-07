@@ -15,7 +15,7 @@ from library import binance_obj, get_binance_interval_unit, AssetTicker, get_pic
     is_drop_below_ma200_after_rally, is_drop_below_ma50_after_rally, is_tradeable, slope, bias, check_wedge, \
     is_falling_wedge, is_higher_low, get_binance_klines, get_kucoin_klines, get_kucoin_interval_unit, is_bull_flag, \
     find_maximum_2, bull_cross, is_bull_cross_in_bull_mode, bear_cross, index_of_max_mas_difference, is_tilting, \
-    compute_wider_interval
+    compute_wider_interval, get_setup_entry
 
 warnings.filterwarnings('error')
 
@@ -525,26 +525,46 @@ def find_valuable_alts(_closes):
     _max = np.max(_closes)
     return (_max-_min_val)/_min_val > 3
 
+
+def check_ma_crossing(_ma, _highs, _n=5):
+    for _i in range(_n):
+        if _highs[-_i] > _ma[-_i] or (_ma[-_i] - _highs[-_i])/_highs[-_i] < 0.015 :
+            return True
+    return False
+
+
+def find_zero(_data):
+    for _i in range(len(_data)):
+        if _data[len(_data) - _i - 1] > 0 > _data[len(_data) - _i - 2]:
+            return _i
+    return -1
+
+
+def get_bid_price(_data, _lows):
+    _ind = find_zero(_data)
+    return np.min(_lows[len(_lows)-_ind-3:len(_lows)-_ind+1])
+
+
 def main():
     # asset = Asset(exchange="binance", name="LINK", ticker=BinanceClient.KLINE_INTERVAL_1HOUR)
     # is_bullish_setup(asset)
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "MTL"
+    asset = "KSM"
     market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
-    time_interval = "10 weeks ago"
+    time_interval = "2 weeks ago"
 
-    _klines = get_binance_klines(market, ticker, time_interval)
+    # _klines = get_binance_klines(market, ticker, time_interval)
     _kucoin_ticker = "1day"
     # _klines = get_kucoin_klines(market, _kucoin_ticker, get_kucoin_interval_unit(_kucoin_ticker, 400))
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    save_to_file("e://bin//data//", "klines-mtl", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-mtl")
+    # save_to_file("e://bin//data//", "klines-ksm", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-ksm")
     _klines = _klines[:-3]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
@@ -584,16 +604,16 @@ def main():
 
     _r = compute_wider_interval(is_tilting, _klines)
 
-    for i in range(0, 24):
-        if i == 0:
-            _res.append(is_tilting(_closes))
-        else:
-            _res.append(is_tilting(_closes[:-i]))
-    _is_it = is_tilting(_closes)
+    # for i in range(0, 24):
+    #     if i == 0:
+    #         _res.append(is_tilting(_closes))
+    #     else:
+    #         _res.append(is_tilting(_closes[:-i]))
+    # _is_it = is_tilting(_closes)
     ## MACD
 
-    _out = is_second_golden_cross(_closes)
-    _first = is_first_golden_cross(_klines)
+    # _out = is_second_golden_cross(_closes)
+    # _first = is_first_golden_cross(_klines)
     #
     start = 0
     # stop = -5*60-30-32
@@ -601,7 +621,7 @@ def main():
     # stop = -2650
     # save_to_file("/juno/", "klines-theta", _klines[start:stop:1])
 
-    out = is_second_golden_cross(_closes[:stop])
+    # out = is_second_golden_cross(_closes[:stop])
 
     # t = is_tradeable(_closes, r, macd, macdsignal)
 
@@ -624,6 +644,21 @@ def main():
     # plt.axhline(y=0, color='b', linestyle='-')
     plt.subplot2grid((3, 1), (1, 0))
     plt.plot(r[start:stop:1], 'red', lw=1)
+
+    ma40 = talib.MA(_closes, timeperiod=40)
+
+    plt.subplot2grid((3, 1), (2, 0))
+    plt.plot(ma40[start:stop:1], 'black', lw=1)
+    plt.plot(_closes[start:stop:1], 'green', lw=1)
+
+    _outcome = check_ma_crossing(ma40, _high)
+    _zero = find_zero(macd[start:stop:1] - macdsignal[start:stop:1])
+
+    _price = get_bid_price(macd[start:stop:1] - macdsignal[start:stop:1], _low)
+
+    _p = get_setup_entry(_klines)
+
+    plt.show()
 
     ma200 = talib.MA(_closes, timeperiod=200)
     # ma100 = talib.MA(_closes, timeperiod=100)

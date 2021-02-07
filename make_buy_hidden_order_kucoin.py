@@ -9,8 +9,10 @@ exchange = 'kucoin'
 side = KucoinClient.SIDE_BUY
 logger = setup_logger("kucoin-hidden-order-{}".format(side))
 
-currency = 'DOT'
-price = 53907
+# currency = 'VIDT'
+# price = 4173
+currency = 'VRA'
+price = 4.43
 # currency = 'DOCK'
 # price = 246
 stop_loss_price = 2

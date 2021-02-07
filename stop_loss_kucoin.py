@@ -7,8 +7,8 @@ import requests
 from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, SellAsset, AccountHoldingZero
 from binance.client import Client as BinanceClient
 
-name = "VIDT"
-stop_price_in_satoshi = 2600
+name = "VRA"
+stop_price_in_satoshi = 6.3
 
 stop_price = stop_price_in_satoshi * sat
 

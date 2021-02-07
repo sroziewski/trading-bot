@@ -3188,7 +3188,7 @@ def process_entries(_entries_tuples, _exchange, _collection, _ticker, _mail_cont
 
     if len(_entries_tuples) > 0:
         _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
-        _mail_content.content += ' '.join(format_found_markets(_entries_tuples))
+        _mail_content.content += ' '.join(format_found_tuples(_entries_tuples))
 
 
 def process_valuable_alts(_valuable_tuples, _exchange, _ticker, _mail_content):

@@ -6,8 +6,8 @@ import requests
 
 from library import stop_signal, sat, sell_limit_stop_loss, setup_logger, SellAsset, get_binance_interval_unit
 
-name = "HOT"
-stop_price_in_satoshi = 2975
+name = "CRV"
+stop_price_in_satoshi = 3300
 
 stop_price = stop_price_in_satoshi * sat
 sell_asset_binance = SellAsset('binance', name, stop_price)

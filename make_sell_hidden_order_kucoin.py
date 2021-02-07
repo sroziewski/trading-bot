@@ -3,14 +3,17 @@ import time
 from kucoin.client import Client as KucoinClient
 
 from library import setup_logger, \
-    get_format_price, SellAsset, sat, round_float_price
+    get_format_price, SellAsset, sat
 
 exchange = 'kucoin'
 side = KucoinClient.SIDE_SELL
 logger = setup_logger("kucoin-hidden-order-{}".format(side))
 
-currency = 'DOT'
-price = 60529
+# currency = 'VIDT'
+# price = 2640
+currency = 'VRA'
+price = 8.49
+
 stop_loss_price = 2
 profit_price = 5700.99
 ratio = 1
