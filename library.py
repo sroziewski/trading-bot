@@ -3874,7 +3874,8 @@ def extract_collection_name(_text):
 
 def check_ma_crossing(_ma, _highs, _n=5):
     for _i in range(_n):
-        if _highs[-_i] > _ma[-_i] or (_ma[-_i] - _highs[-_i])/_highs[-_i] < 0.015 :
+        _f = 0.015
+        if (_highs[-_i]-_ma[-_i])/_ma[-_i] < _f or (_ma[-_i] - _highs[-_i])/_highs[-_i] < _f:
             return True
     return False
 
