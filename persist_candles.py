@@ -300,7 +300,7 @@ def add_volumes(_trades_msgs, _kline):
     _sell_btc_volume = round(sum([_msg.btc_volume for _msg in _sells]), 4)
     _sell_quantity = round(sum([_msg.quantity for _msg in _sells]), 4)
     _kline.add_trade_volumes(_buy_btc_volume, _buy_quantity, _sell_btc_volume, _sell_quantity)
-    logger.info(f"kline_time: {get_time_from_binance_tmstmp(_kline.start_time)} current_time:{get_time(datetime.datetime.now().timestamp())} _buy_btc_volume: {_buy_btc_volume} _sell_btc_volume: {_sell_btc_volume} _buy_quantity: {_buy_quantity} _sell_quantity {_sell_quantity}")
+    # logger.info(f"kline_time: {get_time_from_binance_tmstmp(_kline.start_time)} current_time:{get_time(datetime.datetime.now().timestamp())} _buy_btc_volume: {_buy_btc_volume} _sell_btc_volume: {_sell_btc_volume} _buy_quantity: {_buy_quantity} _sell_quantity {_sell_quantity}")
 
 
 def process_trade_socket_message(_msg):
