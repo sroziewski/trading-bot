@@ -221,6 +221,7 @@ def _do_depth_crawl(_dc):
         except KucoinAPIException as err:
             traceback.print_tb(err.__traceback__)
             logger.exception("KucoinAPIException -> sleeping{} {}".format(_dc.market, err.__traceback__))
+            _order = "sleeping"
             sleep(60)
             _order = kucoin_client.get_full_order_book(_dc.market)
         except Exception as err:
