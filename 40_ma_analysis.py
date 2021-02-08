@@ -13,7 +13,7 @@ from mongodb import mongo_client
 logger = setup_logger(f"40-ma-analysis")
 logger.info(f"Starting 40-ma-analysis")
 
-# authorize()
+authorize()
 
 db = mongo_client.setups
 decimal_codec = DecimalCodec()
