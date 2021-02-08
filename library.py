@@ -3135,7 +3135,7 @@ def get_filtered_markets(_exchange, _markets_obj, _markets_raw, _exclude_markets
 def try_get_klines(_exchange, _market, _ticker, _time_interval):
     _ii = 0
     _klines = []
-    for _ii in range(0, 5):
+    for _ii in range(0, 1):
         try:
             if _exchange == 'kucoin':
                 _klines = get_kucoin_klines(_market, _ticker, _time_interval)
@@ -3934,6 +3934,8 @@ def analyze_40ma(_filename, _exchange, _ticker, _time_interval, _markets_obj):
         f"We are analyzing {len(_markets)} markets on {_exchange} ( with at least btc volume: {_markets_obj.binance_btc_vol} <- binance, {_markets_obj.kucoin_btc_vol} <- kucoin )")
 
     for _market in _markets:
+        # if "AVAX" in _market:
+        #     i=1
         try:
             if _exchange == 'kucoin':
                 _klines = try_get_klines("kucoin", f"{_market}-BTC", _ticker, _time_interval)
