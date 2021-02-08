@@ -3886,9 +3886,16 @@ def find_zero(_data):
     return -1
 
 
-def get_bid_price(_data, _lows):
-    _ind = find_zero(_data)
+def get_bid_price(_lows, _ind):
     return np.min(_lows[len(_lows)-_ind-3:len(_lows)-_ind+1])
+
+
+def check_macd(_data, _span=48):
+    _ind = find_zero(_data)
+    if _ind > _span or _ind < 2:
+        return False
+    else:
+        return _ind
 
 
 def get_setup_entry(_klines):
@@ -3900,10 +3907,11 @@ def get_setup_entry(_klines):
     _ma40 = talib.MA(_closes, timeperiod=40)
 
     _crossed = check_ma_crossing(_ma40, _highs)
+    _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
+    _macd_ind = check_macd(_macd - _macdsignal)
 
-    if _crossed:
-        _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
-        return get_bid_price(_macd - _macdsignal, _lows)
+    if _crossed and _macd_ind:
+        return get_bid_price(_lows, _macd_ind)
     return -1
 
 
