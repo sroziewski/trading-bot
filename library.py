@@ -3907,6 +3907,10 @@ def get_setup_entry(_klines):
 
     _ma40 = talib.MA(_closes, timeperiod=40)
 
+    _current_low_price = get_bid_price(_lows, 1)
+    _lesser_than_ma40 = (_ma40[-1] - _current_low_price) / _current_low_price > 0.05
+    if _lesser_than_ma40:
+        return _current_low_price
     _crossed = check_ma_crossing(_ma40, _highs)
     _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
     _macd_ind = check_macd(_macd - _macdsignal)
