@@ -9,6 +9,7 @@ from binance.exceptions import BinanceAPIException
 from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
+from kucoin.exceptions import KucoinAPIException
 from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
@@ -217,6 +218,11 @@ def _do_depth_crawl(_dc):
             traceback.print_tb(err.__traceback__)
             logger.exception("ConnectionError -> sleeping{} {}".format(_dc.market, err.__traceback__))
             sleep(60)
+        except KucoinAPIException as err:
+            traceback.print_tb(err.__traceback__)
+            logger.exception("KucoinAPIException -> sleeping{} {}".format(_dc.market, err.__traceback__))
+            sleep(60)
+            _order = kucoin_client.get_full_order_book(_dc.market)
         except Exception as err:
             traceback.print_tb(err.__traceback__)
             logger.exception("{} {}".format(_dc.market, err.__traceback__))
