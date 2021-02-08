@@ -3164,8 +3164,8 @@ def format_found_markets(_markets_tuple):
     return [f"{x[0]} : {x[1]}({x[3]})" for x in _markets_tuple]
 
 
-def format_found_tuples(_tuples):
-    return [f"{x[1]} : {x[0]}" for x in _tuples]
+def format_found_tuples(_tuples, _mark=""):
+    return [f"{x[1]} : {x[0]} {_mark}" for x in _tuples]
 
 
 def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
@@ -3189,7 +3189,7 @@ def process_entries(_entries_tuples, _exchange, _collection, _ticker, _mail_cont
 
         if len(_entries_tuples) > 0:
             _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
-            _mail_content.content += ' '.join(format_found_tuples(_entries_tuples))
+            _mail_content.content += ' '.join(format_found_tuples(_entries_tuples, "<BR/>"))
 
 
 def process_valuable_alts(_valuable_tuples, _exchange, _ticker, _mail_content):
@@ -3954,7 +3954,7 @@ def analyze_40ma(_filename, _exchange, _ticker, _time_interval, _markets_obj):
             _market_entries.append((_bid_price, _market))
 
     if len(_market_entries):
-        _info = ' '.join(format_found_tuples(_market_entries))
+        _info = ' '.join(format_found_tuples(_market_entries, "\n"))
         logger_global[0].info(f"{_ticker} : {_info}")
         return _market_entries
 
