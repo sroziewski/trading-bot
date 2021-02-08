@@ -3183,12 +3183,13 @@ def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
 
 
 def process_entries(_entries_tuples, _exchange, _collection, _ticker, _mail_content):
-    _mail_content.content += f"<BR/><hr/><BR/><B>{_ticker}</B><BR/>"
-    process_entry_tuples(_entries_tuples, _exchange, _collection, _ticker)
+    if len(_entries_tuples)>0:
+        _mail_content.content += f"<BR/><hr/><BR/><B>{_ticker}</B><BR/>"
+        process_entry_tuples(_entries_tuples, _exchange, _collection, _ticker)
 
-    if len(_entries_tuples) > 0:
-        _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
-        _mail_content.content += ' '.join(format_found_tuples(_entries_tuples))
+        if len(_entries_tuples) > 0:
+            _mail_content.content += f"<BR/><B>{_exchange}</B><BR/>"
+            _mail_content.content += ' '.join(format_found_tuples(_entries_tuples))
 
 
 def process_valuable_alts(_valuable_tuples, _exchange, _ticker, _mail_content):
@@ -3907,7 +3908,7 @@ def get_setup_entry(_klines):
 
 
 def analyze_40ma(_filename, _exchange, _ticker, _time_interval, _markets_obj):
-    _bids = []
+    _market_entries = []
     _exclude_markets = {}
     if path.isfile(key_dir + _filename + ".pkl"):
         _exclude_markets = get_pickled(key_dir, _filename)
@@ -3940,9 +3941,14 @@ def analyze_40ma(_filename, _exchange, _ticker, _time_interval, _markets_obj):
                 _exclude_markets[_ticker] = [_market]
 
         _bid_price = get_setup_entry(_klines)
-        _bids.append((_bid_price, _market))
-        _info = ' '.join(format_found_tuples(_bids))
-        logger_global[0].info(f"{_ticker} : {_info}")
-        save_to_file(key_dir, _filename, _exclude_markets)
+        if _bid_price>0:
+            _market_entries.append((_bid_price, _market))
 
-        return _bids
+    if len(_market_entries):
+        _info = ' '.join(format_found_tuples(_market_entries))
+        logger_global[0].info(f"{_ticker} : {_info}")
+        return _market_entries
+
+    save_to_file(key_dir, _filename, _exclude_markets)
+
+    return False
