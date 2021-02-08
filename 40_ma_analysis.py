@@ -22,7 +22,7 @@ codec_options = CodecOptions(type_registry=type_registry)
 collection = db.get_collection("40ma", codec_options=codec_options)
 # manage_verifying_setup(collection)
 
-binance_vol_filter = 20.0
+binance_vol_filter = 40.0
 kucoin_vol_filter = 2.0
 markets_obj = Markets(binance_vol_filter, kucoin_vol_filter)
 
