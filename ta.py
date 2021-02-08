@@ -551,7 +551,7 @@ def main():
     # analyze_markets()
     # get_most_volatile_market()
 
-    asset = "KSM"
+    asset = "NEO"
     market = "{}BTC".format(asset)
     # ticker = BinanceClient.KLINE_INTERVAL_30MINUTE
     ticker = BinanceClient.KLINE_INTERVAL_1HOUR
@@ -563,8 +563,8 @@ def main():
 
     # _klines = get_klines(market, ticker, time_interval)
 
-    # save_to_file("e://bin//data//", "klines-ksm", _klines)
-    _klines = get_pickled('e://bin/data//', "klines-ksm")
+    # save_to_file("e://bin//data//", "klines-neo", _klines)
+    _klines = get_pickled('e://bin/data//', "klines-neo")
     _klines = _klines[:-3]
 
     _closes = np.array(list(map(lambda _x: float(_x.closing), _klines)))
@@ -653,6 +653,8 @@ def main():
 
     _outcome = check_ma_crossing(ma40, _high)
     _zero = find_zero(macd[start:stop:1] - macdsignal[start:stop:1])
+
+    _min_val, _min_ind = find_first_minimum(macd[start:stop:1] - macdsignal[start:stop:1], _window=1)
 
     _price = get_bid_price(macd[start:stop:1] - macdsignal[start:stop:1], _low)
 

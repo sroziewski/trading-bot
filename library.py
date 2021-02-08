@@ -3911,8 +3911,14 @@ def get_setup_entry(_klines):
     _macd, _macdsignal, _macdhist = talib.MACD(_closes, fastperiod=12, slowperiod=26, signalperiod=9)
     _macd_ind = check_macd(_macd - _macdsignal)
 
-    if _crossed and _macd_ind:
-        return get_bid_price(_lows, _macd_ind)
+    _min_val, _min_ind = find_first_minimum(_macd - _macdsignal, _window=1)
+
+    _index = _macd_ind
+    if _closes[-_min_ind] < _lows[-_macd_ind]:
+        _index = _min_ind
+        return get_bid_price(_closes, _index)
+    elif _crossed and _macd_ind:
+        return get_bid_price(_lows, _index)
     return -1
 
 
