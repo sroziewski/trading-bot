@@ -3165,7 +3165,7 @@ def format_found_markets(_markets_tuple):
 
 
 def format_found_tuples(_tuples, _mark=""):
-    return [f"{x[1]} : {x[0]} {_mark}" for x in _tuples]
+    return [f"{x[1]} : {get_format_price(x[0])} {_mark}" for x in _tuples]
 
 
 def process_setups(_setup_tuples, _collection, _ticker, _mail_content):
