@@ -114,6 +114,6 @@ while 1:
         get_data(url)
     except Exception as e:
         logger.error(e)
-        sleep(5)
+        sleep(50)
         get_data(url)
     sleep(900)
