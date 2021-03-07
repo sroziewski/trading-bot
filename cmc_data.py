@@ -57,7 +57,7 @@ def to_mongo(_data):
         'timestamp': _timestamp,
         'datetime': get_time(_timestamp),
         'btc_dominance': _btc_dominance,
-        'btc_dominance_trading_view': get_trading_view_btdc(),
+        # 'btc_dominance_trading_view': get_trading_view_btdc(),
         'eth_dominance': _eth_dominance,
         'defi_volume_24h': _defi_volume_24h,
         'defi_24h_percentage_change': _defi_24h_percentage_change,
