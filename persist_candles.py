@@ -628,6 +628,7 @@ schedules.extend(get_binance_schedules("om"))
 schedules.extend(get_binance_schedules("dego"))
 schedules.extend(get_binance_schedules("front"))
 schedules.extend(get_binance_schedules("super"))
+schedules.extend(get_binance_schedules("lit"))
 
 # schedules.extend(get_kucoin_schedules("bepro"))
 # schedules.extend(get_kucoin_schedules("dag"))
