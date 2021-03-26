@@ -16,7 +16,7 @@ from library import get_binance_klines, get_binance_interval_unit, setup_logger,
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, get_time, get_time_from_binance_tmstmp
 from mongodb import mongo_client
 
-logger = setup_logger("Kline-Crawl-Manager-LTF")
+logger = setup_logger("Kline-Crawl-Manager-HTF")
 
 db = mongo_client.klines
 decimal_codec = DecimalCodec()
