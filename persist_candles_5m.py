@@ -434,7 +434,12 @@ def get_average_depths(_dc, _number_of_elements):
 
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
-        return BuyDepth(round(_dc.bid_price / _by, 10), (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
+        return BuyDepth(round(_dc.bid_price / _by, 10),
+                        (round(_dc.p1[0] / _by, 4), round(_dc.p1[1] / _by, 4)),
+                        (round(_dc.p2[0] / _by, 4), round(_dc.p2[1] / _by, 4)),
+                        (round(_dc.p3[0] / _by, 4), round(_dc.p3[1] / _by, 4)),
+                        (round(_dc.p4[0] / _by, 4), round(_dc.p4[1] / _by, 4)),
+                        (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
                         (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
                         (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
                         (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
@@ -449,7 +454,12 @@ def divide_dc(_dc, _by):
                         (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
                         (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
     elif isinstance(_dc, SellDepth):
-        return SellDepth(round(_dc.ask_price / _by, 10), (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
+        return SellDepth(round(_dc.ask_price / _by, 10),
+                         (round(_dc.p1[0] / _by, 4), round(_dc.p1[1] / _by, 4)),
+                         (round(_dc.p2[0] / _by, 4), round(_dc.p2[1] / _by, 4)),
+                         (round(_dc.p3[0] / _by, 4), round(_dc.p3[1] / _by, 4)),
+                         (round(_dc.p4[0] / _by, 4), round(_dc.p4[1] / _by, 4)),
+                         (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
                          (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
                          (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
                          (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
@@ -467,7 +477,12 @@ def divide_dc(_dc, _by):
 
 def add_dc(_dc1, _dc2):
     if isinstance(_dc1, BuyDepth):
-        return BuyDepth(_dc1.bid_price + _dc2.bid_price, (_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
+        return BuyDepth(_dc1.bid_price + _dc2.bid_price,
+                        (_dc1.p1[0] + _dc2.p1[0], _dc1.p1[1] + _dc2.p1[1]),
+                        (_dc1.p2[0] + _dc2.p2[0], _dc1.p2[1] + _dc2.p2[1]),
+                        (_dc1.p3[0] + _dc2.p3[0], _dc1.p3[1] + _dc2.p3[1]),
+                        (_dc1.p4[0] + _dc2.p4[0], _dc1.p4[1] + _dc2.p4[1]),
+                        (_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
                         (_dc1.p10[0] + _dc2.p10[0], _dc1.p10[1] + _dc2.p10[1]),
                         (_dc1.p15[0] + _dc2.p15[0], _dc1.p15[1] + _dc2.p15[1]),
                         (_dc1.p20[0] + _dc2.p20[0], _dc1.p20[1] + _dc2.p20[1]),
@@ -482,7 +497,12 @@ def add_dc(_dc1, _dc2):
                         (_dc1.p65[0] + _dc2.p65[0], _dc1.p65[1] + _dc2.p65[1]),
                         (_dc1.p70[0] + _dc2.p70[0], _dc1.p70[1] + _dc2.p70[1]))
     elif isinstance(_dc1, SellDepth):
-        return SellDepth(_dc1.ask_price + _dc2.ask_price, (_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
+        return SellDepth(_dc1.ask_price + _dc2.ask_price,
+                         (_dc1.p1[0] + _dc2.p1[0], _dc1.p1[1] + _dc2.p1[1]),
+                         (_dc1.p2[0] + _dc2.p2[0], _dc1.p2[1] + _dc2.p2[1]),
+                         (_dc1.p3[0] + _dc2.p3[0], _dc1.p3[1] + _dc2.p3[1]),
+                         (_dc1.p4[0] + _dc2.p4[0], _dc1.p4[1] + _dc2.p4[1]),
+                         (_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
                          (_dc1.p10[0] + _dc2.p10[0], _dc1.p10[1] + _dc2.p10[1]),
                          (_dc1.p15[0] + _dc2.p15[0], _dc1.p15[1] + _dc2.p15[1]),
                          (_dc1.p20[0] + _dc2.p20[0], _dc1.p20[1] + _dc2.p20[1]),
