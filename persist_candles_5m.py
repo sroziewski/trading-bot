@@ -233,7 +233,7 @@ def _do_depth_crawl(_dc):
             _order['asks'].reverse()
         _sd = compute_depth_percentages(_order['asks'], "asks")
         _dc.add_depths(_bd, _sd)
-        sleep(3 * 60)
+        sleep(5 * 60)
 
 
 def filter_current_trades(_vc):
@@ -541,7 +541,7 @@ def get_binance_schedules(_asset):
         # Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * 60 * 8, _exchange, _dc,
         #          10, _vc,),
         Schedule(_market, '{}5m'.format(_asset), BinanceClient.KLINE_INTERVAL_5MINUTE, 60 * 60, _exchange, _dc,
-                 3, _vc,)
+                 1, _vc,)
     ]
 
 
