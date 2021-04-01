@@ -51,6 +51,10 @@ def to_mongo(_kline):
         'bid_price': _kline.bid_depth.bid_price,
         'ask_price': _kline.ask_depth.ask_price,
         'bid_depth': {
+            'p1': _kline.bid_depth.p1,
+            'p2': _kline.bid_depth.p2,
+            'p3': _kline.bid_depth.p3,
+            'p4': _kline.bid_depth.p4,
             'p5': _kline.bid_depth.p5,
             'p10': _kline.bid_depth.p10,
             'p15': _kline.bid_depth.p15,
@@ -67,6 +71,10 @@ def to_mongo(_kline):
             'p70': _kline.bid_depth.p70
         },
         'ask_depth': {
+            'p1': _kline.ask_depth.p1,
+            'p2': _kline.ask_depth.p2,
+            'p3': _kline.ask_depth.p3,
+            'p4': _kline.ask_depth.p4,
             'p5': _kline.ask_depth.p5,
             'p10': _kline.ask_depth.p10,
             'p15': _kline.ask_depth.p15,
@@ -128,7 +136,11 @@ class Schedule(object):
 
 
 class MarketDepth(object):
-    def __init__(self, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
+    def __init__(self, _1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
+        self.p1 = _1p
+        self.p2 = _2p
+        self.p3 = _3p
+        self.p4 = _4p
         self.p5 = _5p
         self.p10 = _10p
         self.p15 = _15p
@@ -147,14 +159,14 @@ class MarketDepth(object):
 
 
 class SellDepth(MarketDepth):
-    def __init__(self, _start_price, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
-        super().__init__(_5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p)
+    def __init__(self, _start_price, _1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
+        super().__init__(_1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p)
         self.ask_price = _start_price
 
 
 class BuyDepth(MarketDepth):
-    def __init__(self, _start_price, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
-        super().__init__(_5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p)
+    def __init__(self, _start_price, _1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p):
+        super().__init__(_1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p, _70p)
         self.bid_price = _start_price
 
 
@@ -323,6 +335,10 @@ def manage_volume_crawling(_vc):
 
 def compute_depth_percentages(_depth, _type):
     _start_price = float(_depth[0][0])
+    _1p_d = (0, 0)
+    _2p_d = (0, 0)
+    _3p_d = (0, 0)
+    _4p_d = (0, 0)
     _5p_d = (0, 0)
     _10p_d = (0, 0)
     _15p_d = (0, 0)
@@ -349,6 +365,15 @@ def compute_depth_percentages(_depth, _type):
             _ratio = (_start_price - _price) / _start_price
         elif _type == "asks":
             _ratio = (_price - _start_price) / _start_price
+
+        if _ratio < 0.01 / _divisor:
+            _1p_d = (_1p_d[0] + _amount, _1p_d[1] + _amount * _price)
+        if _ratio < 0.02 / _divisor:
+            _2p_d = (_2p_d[0] + _amount, _2p_d[1] + _amount * _price)
+        if _ratio < 0.03 / _divisor:
+            _3p_d = (_3p_d[0] + _amount, _3p_d[1] + _amount * _price)
+        if _ratio < 0.04 / _divisor:
+            _4p_d = (_4p_d[0] + _amount, _4p_d[1] + _amount * _price)
         if _ratio < 0.05 / _divisor:
             _5p_d = (_5p_d[0] + _amount, _5p_d[1] + _amount * _price)
         if _ratio < 0.10 / _divisor:
@@ -378,12 +403,12 @@ def compute_depth_percentages(_depth, _type):
         if _ratio < 0.7 / _divisor:
             _70p_d = (_70p_d[0] + _amount, _70p_d[1] + _amount * _price)
     if _type == "bids":
-        _md = BuyDepth(_start_price, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d,
+        _md = BuyDepth(_start_price, _1p_d, _2p_d, _3p_d, _4p_d, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d,
                        _55p_d, _60p_d,
                        _65p_d,
                        _70p_d)
     elif _type == "asks":
-        _md = SellDepth(_start_price, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d,
+        _md = SellDepth(_start_price, _1p_d, _2p_d, _3p_d, _4p_d, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d, _40p_d, _45p_d, _50p_d,
                         _55p_d, _60p_d,
                         _65p_d,
                         _70p_d)
