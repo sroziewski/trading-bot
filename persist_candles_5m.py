@@ -265,6 +265,8 @@ def manage_depth_crawling(_dc):
 
 def set_trade_volume(_schedule, _kline):
     _diff = None
+    if _schedule.ticker == "5m":
+        _diff = 5 * 60
     if _schedule.ticker == "15m":
         _diff = 15 * 60
     if _schedule.ticker == "30m":
