@@ -525,6 +525,7 @@ def get_binance_schedules(_asset):
     manage_depth_crawling(_dc)
     if _exchange == "binance":
         manage_volume_crawling(_vc)
+
     return [
         # Schedule(_market, '{}1d'.format(_asset), BinanceClient.KLINE_INTERVAL_1DAY,
         #          60 * 60 * 8, _exchange, _dc, 20 * 24, _vc),
