@@ -121,6 +121,10 @@ def from_binance_klines(klines, ticker=None):
         return []
 
 
+def from_binance_socket_kline(_kline_msg):
+    return Kline(_kline_msg['t'], float(_kline_msg['o']), float(_kline_msg['c']), float(_kline_msg['h']), float(_kline_msg['l']), float(_kline_msg['v']), float(_kline_msg['q']), get_time_from_binance_tmstmp(_kline_msg['t']), _kline_msg['i'])
+
+
 def get_kucoin_klines(market, ticker, start=None):
     _data = from_kucoin_klines(kucoin_client.get_kline_data(market, ticker, start), ticker)
     _data.reverse()
