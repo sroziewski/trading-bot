@@ -218,6 +218,7 @@ class VolumeCrawl(object):
 
 
 def _do_depth_crawl(_dc):
+    sleep(randrange(600))
     while True:
         sleep(randrange(60))
         try:
