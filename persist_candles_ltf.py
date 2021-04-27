@@ -175,6 +175,7 @@ class BuyDepth(MarketDepth):
 def manage_crawling(_schedules):
     sleep(5)
     for _schedule in _schedules:
+        klines_socket[_schedule.market] = {}
         _scheduler = threading.Thread(target=_do_schedule, args=(_schedule,),
                                       name='_do_schedule : {}'.format(_schedule.collection_name))
         _scheduler.start()
@@ -567,10 +568,11 @@ def _do_schedule(_schedule):
     collection = db.get_collection(collection_name, codec_options=codec_options)
     sleep(1)
 
-    klines_socket[market] = {}
     klines_socket[market][ticker] = {}
     klines_socket[market][ticker]['properties'] = [_schedule, collection_name, collection]
     klines_socket[market][ticker]['klines'] = []
+
+    logger.info(f"Scheduling for {market} : {ticker}")
 
     bm = BinanceSocketManager(binance_obj.client)
     bm.start_kline_socket(market, process_kline_socket_message, interval=ticker)
