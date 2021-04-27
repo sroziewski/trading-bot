@@ -547,17 +547,18 @@ def add_dc(_dc1, _dc2):
 
 def handle_klines(_klines, _schedule, _collection_name, _collection):
     current_klines = filter_current_klines(_klines, _collection_name, _collection)
-    sleep(15)
-    bd, sd = get_average_depths(_schedule.depth_crawl, _schedule.no_depths)
-    list(map(lambda x: x.add_buy_depth(bd), current_klines))
-    list(map(lambda x: x.add_sell_depth(sd), current_klines))
-    list(map(lambda x: x.add_market(_schedule.market), current_klines))
-    if _schedule.exchange == "binance":
-        list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
-    list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
-    persist_klines(current_klines, _collection)
-    logger.info("Stored into collection : {} : {} ".format(_schedule.exchange, _collection_name))
-    # sleep(_schedule.sleep+randrange(round(_schedule.sleep/2)))
+    if len(current_klines) > 0:
+        sleep(15)
+        bd, sd = get_average_depths(_schedule.depth_crawl, _schedule.no_depths)
+        list(map(lambda x: x.add_buy_depth(bd), current_klines))
+        list(map(lambda x: x.add_sell_depth(sd), current_klines))
+        list(map(lambda x: x.add_market(_schedule.market), current_klines))
+        if _schedule.exchange == "binance":
+            list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
+        list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
+        persist_klines(current_klines, _collection)
+        logger.info("Stored into collection : {} : {} ".format(_schedule.exchange, _collection_name))
+        # sleep(_schedule.sleep+randrange(round(_schedule.sleep/2)))
 
 
 def _do_schedule(_schedule):
