@@ -422,7 +422,7 @@ def compute_depth_percentages(_depth, _type):
 def get_average_depths(_dc, _number_of_elements):
     while len(_dc.buy_depth) == 0:
         logger.info(f"{_dc.market} get_average_depths sleeping : len(_dc.buy_depth) == 0")
-        sleep(20)
+        sleep(20+randrange(100))
     if len(_dc.buy_depth) < _number_of_elements:
         _number_of_elements = len(_dc.buy_depth)
     if _number_of_elements == 1:
