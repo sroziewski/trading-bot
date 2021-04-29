@@ -13,7 +13,8 @@ from kucoin.exceptions import KucoinAPIException
 from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record
+    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, \
+    get_time_from_binance_tmstmp
 from mongodb import mongo_client
 
 logger = setup_logger("Kline-Crawl-Manager-LTF-5m")
@@ -96,7 +97,7 @@ def to_mongo(_kline):
 def persist_kline(_kline, _collection):
     try:
         if _kline.exchange == "binance":
-            _collection.insert_one({'kline': to_mongo_binance(_kline), 'timestamp': _kline.start_time})
+            _collection.insert_one({'kline': to_mongo_binance(_kline), 'timestamp': _kline.start_time, 'timestamp_str': get_time_from_binance_tmstmp(_kline.start_time)})
         else:
             _collection.insert_one({'kline': to_mongo(_kline), 'timestamp': _kline.start_time})
     except PyMongoError as err:
@@ -250,7 +251,9 @@ def _do_depth_crawl(_dc):
 
 def filter_current_trades(_vc):
     _yesterday_time = (datetime.datetime.now().timestamp() - 24*60*60)*1000
-    trades[_vc.market] = list(filter(lambda x: x.timestamp > _yesterday_time, trades[_vc.market]))
+    _tmp_trades = list(filter(lambda x: x.timestamp > _yesterday_time, trades[_vc.market])).copy()
+    del trades[_vc.market]
+    trades[_vc.market] = _tmp_trades
 
 
 def _do_volume_crawl(_vc):
@@ -585,7 +588,7 @@ def get_binance_schedules(_asset):
         #          20, _vc)
         # Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * 60 * 8, _exchange, _dc,
         #          10, _vc,),
-        Schedule(_market, '{}5m'.format(_asset), BinanceClient.KLINE_INTERVAL_5MINUTE, 60 * 60, _exchange, _dc,
+        Schedule(_market, '{}5m'.format(_asset), BinanceClient.KLINE_INTERVAL_5MINUTE, 60 * 5, _exchange, _dc,
                  1, _vc,)
     ]
 
