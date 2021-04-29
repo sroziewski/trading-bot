@@ -252,7 +252,10 @@ def _do_depth_crawl(_dc):
 
 def filter_current_trades(_vc):
     _yesterday_time = (datetime.datetime.now().timestamp() - 24*60*60)*1000
-    trades[_vc.market] = list(filter(lambda x: x.timestamp > _yesterday_time, trades[_vc.market]))
+    _tmp_trades = list(filter(lambda x: x.timestamp > _yesterday_time, trades[_vc.market])).copy()
+    del trades[_vc.market]
+    trades[_vc.market] = _tmp_trades
+
 
 
 def _do_volume_crawl(_vc):
