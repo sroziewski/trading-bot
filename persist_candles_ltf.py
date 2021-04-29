@@ -13,7 +13,8 @@ from kucoin.exceptions import KucoinAPIException
 from pymongo.errors import PyMongoError
 
 from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record
+    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, \
+    get_time_from_binance_tmstmp
 from mongodb import mongo_client
 
 logger = setup_logger("Kline-Crawl-Manager-LTF")
@@ -96,7 +97,7 @@ def to_mongo(_kline):
 def persist_kline(_kline, _collection):
     try:
         if _kline.exchange == "binance":
-            _collection.insert_one({'kline': to_mongo_binance(_kline), 'timestamp': _kline.start_time})
+            _collection.insert_one({'kline': to_mongo_binance(_kline), 'timestamp': _kline.start_time, 'timestamp_str': get_time_from_binance_tmstmp(_kline.start_time)})
         else:
             _collection.insert_one({'kline': to_mongo(_kline), 'timestamp': _kline.start_time})
     except PyMongoError as err:
