@@ -267,10 +267,10 @@ def _do_volume_crawl(_vc):
     while True:
         _tmstmp_diff = datetime.datetime.now().timestamp() - last_tmstmp
         if _tmstmp_diff > 60*60:
-            logger.warning(f"last trading volume tmstmp ({last_tmstmp}) is older than 60 minutes, diff = {_tmstmp_diff}")
+            logger.warning(f"{_vc.market} last trading volume tmstmp ({last_tmstmp}) is older than 60 minutes, diff = {_tmstmp_diff}")
         filter_current_trades(_vc)
         if len(trades[_vc.market]) > 0:
-            logger.info(f"last trading volume : {trades[_vc.market][-1].timestamp_str} {_vc.market}")
+            logger.info(f"{_vc.market} last trading volume : {trades[_vc.market][-1].timestamp_str} {_vc.market}")
         sleep(60*60)
 
 
