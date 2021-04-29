@@ -548,7 +548,6 @@ def _do_schedule(_schedule):
                 logger.exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
                 sleep(randrange(30))
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
-        logger.info("Storing to collection : {} : {} ".format(_schedule.exchange, collection_name))
         current_klines = filter_current_klines(klines, collection_name, collection)
         sleep(15)
         bd, sd = get_average_depths(_schedule.depth_crawl, _schedule.no_depths)
@@ -559,6 +558,7 @@ def _do_schedule(_schedule):
             list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
         persist_klines(current_klines, collection)
+        logger.info("Stored to collection : {} : {} ".format(_schedule.exchange, collection_name))
         sleep(_schedule.sleep+randrange(round(_schedule.sleep/2)))
 
 
