@@ -566,7 +566,7 @@ def _do_schedule(_schedule):
         logger.info("Stored to collection : {} : {} ".format(_schedule.exchange, collection_name))
         _sleep_seed = 100
         if _schedule.market == "BTCUSDT" and _schedule.ticker == "15m":
-            sleep(15*60 + randrange(10))
+            sleep(3 * 60 + randrange(10))
         else:
             sleep(_schedule.sleep+randrange(100))
 

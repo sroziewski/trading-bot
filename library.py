@@ -3858,7 +3858,7 @@ def flatten(_list):
 def get_last_db_record(_collection):
     try:
         return _collection.find_one(sort=[('_id', DESCENDING)])
-    except PyMongoError as err:
+    except Exception as err:
         traceback.print_tb(err.__traceback__)
         logger_global[0].exception("get_last_db_record : find_one: {}".format(err.__traceback__))
         time.sleep(30)
