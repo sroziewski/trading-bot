@@ -564,7 +564,7 @@ def _do_schedule(_schedule):
         if _schedule.exchange == "binance":
             list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
-        if len(current_klines > 0):
+        if len(current_klines) > 0:
             persist_klines(current_klines, collection)
         sleep(_schedule.sleep+randrange(5))
 
