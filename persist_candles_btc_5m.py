@@ -100,10 +100,10 @@ def persist_kline(_kline, _collection):
             _collection.insert_one({'kline': to_mongo_binance(_kline), 'timestamp': _kline.start_time, 'timestamp_str': get_time_from_binance_tmstmp(_kline.start_time)})
         else:
             _collection.insert_one({'kline': to_mongo(_kline), 'timestamp': _kline.start_time})
-    except PyMongoError as err:
+    except Exception as err:
         traceback.print_tb(err.__traceback__)
         logger.exception("{} {}".format(_kline['market'], err.__traceback__))
-        sleep(5)
+        sleep(15)
         persist_kline(_kline, _collection)
 
 
