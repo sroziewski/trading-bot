@@ -611,7 +611,7 @@ def get_kucoin_schedules(_asset):
     ]
 
 
-schedules = get_binance_schedules("omg")
+schedules = get_binance_schedules("btc")
 
 
 # schedules.extend(get_kucoin_schedules("bepro"))
