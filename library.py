@@ -3861,7 +3861,7 @@ def get_last_db_record(_collection):
     except PyMongoError as err:
         traceback.print_tb(err.__traceback__)
         logger_global[0].exception("get_last_db_record : find_one: {}".format(err.__traceback__))
-        time.sleep(5)
+        time.sleep(30)
         return get_last_db_record(_collection)
 
 
