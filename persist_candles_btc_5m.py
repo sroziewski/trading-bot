@@ -530,8 +530,10 @@ def _do_schedule(_schedule):
     collection = db.get_collection(collection_name, codec_options=codec_options)
     sleep(1)
     while True:
-        if ticker == BinanceClient.KLINE_INTERVAL_1MINUTE or BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
-            sleep(randrange(100))
+        if ticker == BinanceClient.KLINE_INTERVAL_1MINUTE or ticker == BinanceClient.KLINE_INTERVAL_5MINUTE:
+            sleep(randrange(2))
+        elif ticker == BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
+            sleep(randrange(20))
         else:
             sleep(randrange(200))
         if _schedule.exchange == "binance":
@@ -562,8 +564,9 @@ def _do_schedule(_schedule):
         if _schedule.exchange == "binance":
             list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
-        persist_klines(current_klines, collection)
-        sleep(_schedule.sleep+randrange(15))
+        if len(current_klines > 0):
+            persist_klines(current_klines, collection)
+        sleep(_schedule.sleep+randrange(5))
 
 
 def get_binance_schedules(_asset):
@@ -590,7 +593,7 @@ def get_binance_schedules(_asset):
         #          20, _vc)
         # Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * 60 * 8, _exchange, _dc,
         #          10, _vc,),
-        Schedule(_market, '{}5m'.format(_asset), BinanceClient.KLINE_INTERVAL_5MINUTE, 5*60, _exchange, _dc,
+        Schedule(_market, '{}5m'.format(_asset), BinanceClient.KLINE_INTERVAL_5MINUTE, 2*60, _exchange, _dc,
                  1, _vc,)
     ]
 
