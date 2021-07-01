@@ -563,7 +563,7 @@ def _do_schedule(_schedule):
             list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
         persist_klines(current_klines, collection)
-        sleep(_schedule.sleep+randrange(round(_schedule.sleep/2)))
+        sleep(_schedule.sleep+randrange(15))
 
 
 def get_binance_schedules(_asset):
@@ -590,7 +590,7 @@ def get_binance_schedules(_asset):
         #          20, _vc)
         # Schedule(_market, '{}30m'.format(_asset), BinanceClient.KLINE_INTERVAL_30MINUTE, 60 * 60 * 8, _exchange, _dc,
         #          10, _vc,),
-        Schedule(_market, '{}1m'.format(_asset), BinanceClient.KLINE_INTERVAL_1MINUTE, 60, _exchange, _dc,
+        Schedule(_market, '{}5m'.format(_asset), BinanceClient.KLINE_INTERVAL_5MINUTE, 5*60, _exchange, _dc,
                  1, _vc,)
     ]
 

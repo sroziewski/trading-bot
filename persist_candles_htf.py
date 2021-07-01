@@ -563,7 +563,7 @@ def _do_schedule(_schedule):
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
         persist_klines(current_klines, collection)
         logger.info("Stored to collection : {} : {} ".format(_schedule.exchange, collection_name))
-        sleep(_schedule.sleep+randrange(round(_schedule.sleep/2)))
+        sleep(_schedule.sleep+randrange(500))
 
 
 def get_binance_schedules(_asset):
