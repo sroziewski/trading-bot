@@ -529,8 +529,10 @@ def _do_schedule(_schedule):
     collection = db.get_collection(collection_name, codec_options=codec_options)
     sleep(1)
     while True:
-        if ticker == BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
-            sleep(randrange(100))
+        if ticker == BinanceClient.KLINE_INTERVAL_1MINUTE or ticker == BinanceClient.KLINE_INTERVAL_5MINUTE:
+            sleep(randrange(2))
+        elif ticker == BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
+            sleep(randrange(20))
         else:
             sleep(randrange(200))
         if _schedule.exchange == "binance":
