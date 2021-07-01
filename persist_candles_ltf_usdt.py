@@ -699,6 +699,7 @@ schedules.extend(get_binance_schedules("near"))
 schedules.extend(get_binance_schedules("storj"))
 schedules.extend(get_binance_schedules("shib"))
 schedules.extend(get_binance_schedules("wrx"))
+schedules.extend(get_binance_schedules("aave"))
 
 # schedules.extend(get_kucoin_schedules("bepro"))
 # schedules.extend(get_kucoin_schedules("dag"))
