@@ -49,37 +49,36 @@ def process_market_info_entity(_market_entity, _journal_collection):
     guard(_journal_collection)
     if _market_entity['active']:
         _market_name = _market_entity['name']
-        # for _ticker in _market_entity['tickers']:
-        for _ticker in ['1h']:
-            _journal_name = _market_name + _market_type + "_" + _ticker
-            _r = _journal_collection.find({
-                "market": _market_name,
-                "ticker": _ticker
-            })
-            _now = datetime.datetime.now().timestamp()
-            _delta_t = ticker2sec(_ticker)
-            if len(list(_r.clone())) < 1:  # there is no such a market yet
-                _journal_collection.insert_one({
-                    'market': _market_name,
-                    'ticker': _ticker,
-                    'last_seen': round(_now),
-                    'running': True  # we set this as True only here, we will use it for keeping a limited number of threads running at startup
+        for _ticker in _market_entity['tickers']:
+            if _ticker not in ['2d', '4d', '5d']:
+            # for _ticker in ['1h']:
+                _journal_name = _market_name + _market_type + "_" + _ticker
+                _r = _journal_collection.find({
+                    "market": _market_name,
+                    "ticker": _ticker
                 })
-                logger.info("Adding market {} to journal".format(_journal_name.upper()))
-                # run a thread here
-                manage_crawling(get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
-            # elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t, _r))) > 0:  # market exists but it's not operating
-                # run a thread here
-                # manage_crawling(get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
-
-            l = 1
+                _now = datetime.datetime.now().timestamp()
+                _delta_t = ticker2sec(_ticker)
+                if len(list(_r.clone())) < 1:  # there is no such a market yet
+                    _journal_collection.insert_one({
+                        'market': _market_name,
+                        'ticker': _ticker,
+                        'last_seen': round(_now),
+                        'running': True  # we set this as True only here, we will use it for keeping a limited number of threads running at startup
+                    })
+                    logger.info("Adding market {} to journal".format(_journal_name.upper()))
+                    # run a thread here
+                    manage_crawling(get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
+                elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t, _r))) > 0:  # market exists but it's not operating
+                    # run a thread here
+                    manage_crawling(get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
 
 
 journal_collection = db_journal.get_collection(data_btc.collection.name, codec_options=codec_options)
 
-# for _market in l:
-#     process_market_info_entity(_market, journal_collection)
+for _market in l:  # inf loop neede here
+    process_market_info_entity(_market, journal_collection)
 
-process_market_info_entity(l[0], journal_collection)
+# process_market_info_entity(l[0], journal_collection)
 
 i = 1
