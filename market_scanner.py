@@ -287,23 +287,7 @@ def manage_depth_crawling(_dc):
 
 
 def set_trade_volume(_schedule, _kline):
-    _diff = None
-    if _schedule.ticker == "5m":
-        _diff = 5 * 60
-    if _schedule.ticker == "15m":
-        _diff = 15 * 60
-    if _schedule.ticker == "30m":
-        _diff = 30 * 60
-    if _schedule.ticker == "1h":
-        _diff = 60 * 60
-    if _schedule.ticker == "4h":
-        _diff = 4 * 60 * 60
-    if _schedule.ticker == "8h":
-        _diff = 8 * 60 * 60
-    if _schedule.ticker == "12h":
-        _diff = 12 * 60 * 60
-    if _schedule.ticker == "1d":
-        _diff = 24 * 60 * 60
+    _diff = ticker2sec(_schedule.ticker)
     _diff *= 1000  # to binance msec timestamp
 
     _kline_timestamp = _kline.start_time
