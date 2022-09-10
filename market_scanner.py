@@ -551,8 +551,8 @@ def _do_schedule(_schedule):
         list(map(lambda x: x.add_buy_depth(bd), current_klines))
         list(map(lambda x: x.add_sell_depth(sd), current_klines))
         list(map(lambda x: x.add_market(market), current_klines))
-        if _schedule.exchange == "binance":
-            list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
+        # if _schedule.exchange == "binance":
+        #     list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
         persist_klines(current_klines, collection)
         logger_global[0].info("Stored to collection : {} : {} ".format(_schedule.exchange, collection_name))
