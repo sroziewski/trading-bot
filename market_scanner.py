@@ -627,16 +627,28 @@ def ticker2num(_ticker):
         return 168
 
 
-def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal):
+def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _depth_scan_set):
     _exchange = "binance"
     _market = (_market_name + _market_type).upper()
-    _dc = DepthCrawl(_market, _exchange)
+
+    if _market not in _depth_scan_set:
+        _dc = DepthCrawl(_market, _exchange)
+        _depth_scan_set[_market] = _dc
+        manage_depth_crawling(_dc)
+
+    _dc = _depth_scan_set[_market]
+
     _vc = VolumeCrawl(_market, _exchange)
-    manage_depth_crawling(_dc)
+
     if _exchange == "binance":
         manage_volume_crawling(_vc)
 
-    return Schedule(_market_name, _market, _market_name + _ticker_val, _ticker_val,
+    if _market_type == "btc":
+        _collection_name = _market_name + _ticker_val
+    else:
+        _collection_name = _market_name + "_" + _market_type + "_" + _ticker_val
+
+    return Schedule(_market_name, _market, _collection_name, _ticker_val,
                     ticker2sec(_ticker_val), _exchange, _dc, round(20 * ticker2num(_ticker_val)), _journal, _vc)
 
 

@@ -27,20 +27,34 @@ decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
 
-btc_markets_cursor = db_markets_info.get_collection("btc", codec_options=codec_options)
-usdt_markets_cursor = db_markets_info.get_collection("usdt", codec_options=codec_options)
-busd_markets_cursor = db_markets_info.get_collection("busd", codec_options=codec_options)
-
-data_btc = btc_markets_cursor.find()
-l = [e for e in data_btc]
+btc_markets_collection = db_markets_info.get_collection("btc", codec_options=codec_options)
+usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
+busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
 thread_limit = 200
+
+depth_scan_set = {}
+
+
+def do_scan_market(_market_info_collection):
+    _market_info_cursor = _market_info_collection.find()
+    _market_info_list = [e for e in _market_info_cursor]
+    _journal_collection = db_journal.get_collection(_market_info_collection.name, codec_options=codec_options)
+
+    for _market_s in _market_info_list:  # inf loop needed here
+        process_market_info_entity(_market_s, _journal_collection)
+
+
+def scanner(_market_info_collection):
+    _crawler_s = threading.Thread(target=do_scan_market, args=(_market_info_collection,),
+                                  name='do_scan_market : {}'.format(_market_info_collection.name))
+    _crawler_s.start()
 
 
 def guard(_data_collection):
     while _data_collection.count_documents({
         "running": True
-    }) > thread_limit / 2:
+    }) > thread_limit:
         sleep(5 * 60)  # 5 min of sleep
 
 
@@ -51,7 +65,6 @@ def process_market_info_entity(_market_entity, _journal_collection):
         _market_name = _market_entity['name']
         for _ticker in _market_entity['tickers']:
             if _ticker not in ['2d', '4d', '5d']:
-            # for _ticker in ['1h']:
                 _journal_name = _market_name + _market_type + "_" + _ticker
                 _r = _journal_collection.find({
                     "market": _market_name,
@@ -64,21 +77,20 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         'market': _market_name,
                         'ticker': _ticker,
                         'last_seen': round(_now),
-                        'running': True  # we set this as True only here, we will use it for keeping a limited number of threads running at startup
+                        'running': True
+                        # we set this as True only here, we will use it for keeping a limited number of threads running at startup
                     })
                     logger.info("Adding market {} to journal".format(_journal_name.upper()))
                     # run a thread here
-                    manage_crawling(get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
-                elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t, _r))) > 0:  # market exists but it's not operating
+                    manage_crawling(
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
+                elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
+                                     _r))) > 0:  # market exists but it's not operating
                     # run a thread here
-                    manage_crawling(get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
+                    manage_crawling(
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
 
 
-journal_collection = db_journal.get_collection(data_btc.collection.name, codec_options=codec_options)
-
-for _market in l:  # inf loop neede here
-    process_market_info_entity(_market, journal_collection)
-
-# process_market_info_entity(l[0], journal_collection)
-
-i = 1
+scanner(btc_markets_collection)
+scanner(usdt_markets_collection)
+scanner(busd_markets_collection)
