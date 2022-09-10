@@ -71,7 +71,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                     "ticker": _ticker
                 })
                 _now = datetime.datetime.now().timestamp()
-                _delta_t = ticker2sec(_ticker)
+                _delta_t = 2 * ticker2sec(_ticker)
                 if len(list(_r.clone())) < 1:  # there is no such a market yet
                     _journal_collection.insert_one({
                         'market': _market_name,
@@ -86,11 +86,15 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
                 elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
                                      _r))) > 0:  # market exists but it's not operating
+                    logger.info("Market {} NOT OPERATING --> handled".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
                         get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
 
 
-scanner(btc_markets_collection)
-scanner(usdt_markets_collection)
-scanner(busd_markets_collection)
+while True:
+    hr = 15 * 60
+    sleep(hr)
+    scanner(btc_markets_collection)
+    scanner(usdt_markets_collection)
+    scanner(busd_markets_collection)
