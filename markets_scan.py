@@ -71,7 +71,10 @@ def process_market_info_entity(_market_entity, _journal_collection):
                     "ticker": _ticker
                 })
                 _now = datetime.datetime.now().timestamp()
-                _delta_t = 2 * ticker2sec(_ticker)
+                try:
+                    _delta_t = 2 * ticker2sec(_ticker)
+                except TypeError:
+                    logger.error("TypeError ticker"+_ticker+_market_name+_market_type)
                 if len(list(_r.clone())) < 1:  # there is no such a market yet
                     _journal_collection.insert_one({
                         'market': _market_name,
