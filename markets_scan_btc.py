@@ -113,6 +113,4 @@ def process_market_info_entity(_market_entity, _journal_collection):
 while True:
     hr = 15 * 60
     scanner(btc_markets_collection)
-    scanner(usdt_markets_collection)
-    scanner(busd_markets_collection)
     sleep(hr)
