@@ -3147,18 +3147,18 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
                 _klines = get_binance_klines(_market, _ticker, _time_interval)
             if not _klines:
                 logger_global[0].warning(f"Trying for market : {_market} {_ticker} ... {_ii}")
-                time.sleep(15 * 60)
+                time.sleep(1 * 60)
         except RuntimeError as re:
             logger_global[0].warning(re)
             logger_global[0].warning(f"Sleeping for 15 min : {_market} {_ticker} ... {_ii}")
-            time.sleep(15 * 60)
+            time.sleep(1 * 60)
         except ReadTimeoutError as e:
             logger_global[0].warning(e)
-            time.sleep(15 * 60)
+            time.sleep(1 * 60)
         except Exception as e:
             logger_global[0].warning(e)
             logger_global[0].warning(f"Exception : {_market} {_ticker} ... {_ii}")
-            time.sleep(15 * 60)
+            time.sleep(1 * 60)
         if _klines:
             return _klines
     raise RuntimeError(f"No klines for market {_market}")
