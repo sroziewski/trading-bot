@@ -79,9 +79,10 @@ def validate_time_interval(_ticker):
         return _ticker in ['1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
 
 
-is_repaired = False
+global is_repaired
 repair_set = {}
 
+is_repaired = False
 
 def process_market_info_entity(_market_entity, _journal_collection):
     _market_type = _journal_collection.name
