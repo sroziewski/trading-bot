@@ -12,6 +12,7 @@ from mongodb import mongo_client
 
 market_type = sys.argv[1]
 market_time_interval = sys.argv[2]
+repair_mode = sys.argv[3]
 
 logger = setup_logger("Binance-Markets-Scanner-"+market_type.upper())
 
@@ -46,10 +47,12 @@ def scanner(_market_info_collection):
 
 
 def guard(_data_collection_j):
-    while _data_collection_j.count_documents({
-        "running": True
-    }) > thread_limit:
-        sleep(5 * 60)  # 5 min of sleep
+    if repair_mode != "repair":
+        logger.info("Guard enabled")
+        while _data_collection_j.count_documents({
+            "running": True
+        }) > thread_limit:
+            sleep(5 * 60)  # 5 min of sleep
 
 
 # def guard(_data_collection_j, _market_name_j, _ticker_j):
@@ -88,7 +91,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                 })
                 _now = datetime.datetime.now().timestamp()
                 try:
-                    _delta_t = 2 * ticker2sec(_ticker)
+                    _delta_t = ticker2sec(_ticker) + 15 * 60  # plus 15 min
                 except TypeError:
                     logger.error("TypeError ticker"+_ticker+_market_name+_market_type)
                 if len(list(_r.clone())) < 1:  # there is no such a market yet
@@ -106,6 +109,11 @@ def process_market_info_entity(_market_entity, _journal_collection):
                 elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
                                      _r))) > 0:  # market exists but it's not operating
                     logger.info("Market {} NOT OPERATING --> handled".format(_journal_name.upper()))
+                    # run a thread here
+                    manage_crawling(
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
+                elif repair_mode == "repair" and len(list(filter(lambda x: x['running'], _r))) > 0:
+                    logger.info("Market {} was running --> handled".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
                         get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
