@@ -14,7 +14,7 @@ market_type = sys.argv[1]
 market_time_interval = sys.argv[2]
 repair_mode = sys.argv[3]
 
-logger = setup_logger("Binance-Markets-Scanner-"+market_type.upper())
+logger = setup_logger("Binance-Markets-Scanner-" + market_type.upper())
 
 db_markets_info = mongo_client.markets_info
 db_journal = mongo_client.journal
@@ -79,6 +79,10 @@ def validate_time_interval(_ticker):
         return _ticker in ['1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
 
 
+is_repaired = False
+repair_set = {}
+
+
 def process_market_info_entity(_market_entity, _journal_collection):
     _market_type = _journal_collection.name
     guard(_journal_collection)
@@ -95,7 +99,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                 try:
                     _delta_t = ticker2sec(_ticker) + 15 * 60  # plus 15 min
                 except TypeError:
-                    logger.error("TypeError ticker"+_ticker+_market_name+_market_type)
+                    logger.error("TypeError ticker" + _ticker + _market_name + _market_type)
                 if len(list(_r.clone())) < 1:  # there is no such a market yet
                     _journal_collection.insert_one({
                         'market': _market_name,
@@ -110,11 +114,16 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
                 elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
                                      _r))) > 0:  # market exists but it's not operating
-                    logger.info("Market {} NOT OPERATING --> handled".format(_journal_name.upper()))
-                    # run a thread here
-                    manage_crawling(
-                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
-                elif repair_mode == "repair" and len(list(filter(lambda x: x['running'], _r))) > 0:
+                    if _market_name not in repair_set:
+                        if repair_mode == "repair":
+                            repair_set[_market_name] = True
+                        logger.info("Market {} NOT OPERATING --> handled".format(_journal_name.upper()))
+                        # run a thread here
+                        manage_crawling(
+                            get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection,
+                                                 depth_scan_set))
+                elif not is_repaired and repair_mode == "repair" and len(list(filter(lambda x: x['running'], _r))) > 0:
+                    is_repaired = True
                     logger.info("Market {} was running --> handled".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
@@ -130,7 +139,6 @@ while True:
     elif market_type == "busd":
         scanner(busd_markets_collection)
     sleep(hr)
-
 
 # how to run?
 # e.g. btc ltf repair
