@@ -233,7 +233,7 @@ def _do_depth_crawl(_dc):
         except BinanceAPIException as err:
             traceback.print_tb(err.__traceback__)
             logger_global[0].exception("BinanceAPIException -> sleeping 5 min {} {}".format(_dc.market, err.__traceback__))
-            sleep(randrange(120))
+            sleep(randrange(60))
         except ConnectionError as err:
             traceback.print_tb(err.__traceback__)
             logger_global[0].exception("ConnectionError -> sleeping{} {}".format(_dc.market, err.__traceback__))
