@@ -53,6 +53,8 @@ def guard(_data_collection_j):
             "running": True
         }) > thread_limit:
             sleep(5 * 60)  # 5 min of sleep
+    elif repair_mode == "repair":
+        logger.info("Guard is OFF")
 
 
 # def guard(_data_collection_j, _market_name_j, _ticker_j):
