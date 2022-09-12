@@ -3152,14 +3152,14 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
         except RuntimeError as re:
             logger_global[0].warning(re)
             logger_global[0].warning(f"Sleeping for 15 min : {_market} {_ticker} ... {_ii}")
-            time.sleep(1 * 60)
+            time.sleep(randrange(180))
         except ReadTimeoutError as e:
             logger_global[0].warning(e)
-            time.sleep(1 * 60)
+            time.sleep(randrange(180))
         except Exception as e:
             logger_global[0].warning(e)
             logger_global[0].warning(f"Exception : {_market} {_ticker} ... {_ii}")
-            time.sleep(1 * 60)
+            time.sleep(randrange(180))
         if _klines:
             return _klines
     raise RuntimeError(f"No klines for market {_market}")
