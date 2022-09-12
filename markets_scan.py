@@ -128,3 +128,7 @@ while True:
     elif market_type == "busd":
         scanner(busd_markets_collection)
     sleep(hr)
+
+
+# how to run?
+# e.g. btc ltf repair
