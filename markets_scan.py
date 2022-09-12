@@ -10,8 +10,8 @@ from library import setup_logger, DecimalCodec
 from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
 from mongodb import mongo_client
 
-market_time_interval = sys.argv[1]
-market_type = sys.argv[2]
+market_type = sys.argv[1]
+market_time_interval = sys.argv[2]
 
 logger = setup_logger("Binance-Markets-Scanner-"+market_type.upper())
 
