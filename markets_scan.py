@@ -1,11 +1,7 @@
 import datetime
+import http.client as http_client
 import sys
 import threading
-
-import requests
-import logging
-import http.client as http_client
-
 from time import sleep
 
 from bson import CodecOptions
@@ -34,7 +30,7 @@ btc_markets_collection = db_markets_info.get_collection("btc", codec_options=cod
 usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
 busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
-thread_limit = 20
+thread_limit = 50
 depth_scan_set = {}
 
 
