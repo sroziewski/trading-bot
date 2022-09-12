@@ -31,7 +31,7 @@ depth_scan_set = {}
 
 
 def do_scan_market(_market_info_collection):
-    _market_info_cursor = _market_info_collection.find().sort({ "_id": -1 })
+    _market_info_cursor = _market_info_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
     _journal_collection = db_journal.get_collection(_market_info_collection.name, codec_options=codec_options)
 
