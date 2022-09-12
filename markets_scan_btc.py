@@ -33,8 +33,8 @@ usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=c
 busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
 thread_limit = 100
-market_time_interval = sys.argv[1]
-market_type = sys.argv[2]
+market_type = sys.argv[1]
+market_time_interval = sys.argv[2]
 depth_scan_set = {}
 
 
