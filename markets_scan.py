@@ -1,24 +1,19 @@
 import datetime
+import sys
 import threading
-import traceback
-from random import randrange
 from time import sleep
 
-from binance.client import Client as BinanceClient
-from binance.exceptions import BinanceAPIException
-from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
-from kucoin.exceptions import KucoinAPIException
-from pymongo.errors import PyMongoError
 
-from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, \
-    get_time_from_binance_tmstmp
+from library import setup_logger, DecimalCodec
 from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
 from mongodb import mongo_client
 
-logger = setup_logger("Binance-Markets-Scanner")
+market_time_interval = sys.argv[1]
+market_type = sys.argv[2]
+
+logger = setup_logger("Binance-Markets-Scanner-"+market_type.upper())
 
 db_markets_info = mongo_client.markets_info
 db_journal = mongo_client.journal
@@ -32,12 +27,11 @@ usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=c
 busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
 thread_limit = 100
-
 depth_scan_set = {}
 
 
 def do_scan_market(_market_info_collection):
-    _market_info_cursor = _market_info_collection.find()
+    _market_info_cursor = _market_info_collection.find().sort({ "_id": -1 })
     _market_info_list = [e for e in _market_info_cursor]
     _journal_collection = db_journal.get_collection(_market_info_collection.name, codec_options=codec_options)
 
@@ -73,13 +67,20 @@ def guard(_data_collection_j):
 #         sleep(5 * 60)  # 5 min of sleep
 
 
+def validate_time_interval(_ticker):
+    if market_time_interval == "ltf":
+        return _ticker in ['1m', '5m', '15m', '30m']
+    if market_time_interval == "htf":
+        return _ticker in ['1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
+
+
 def process_market_info_entity(_market_entity, _journal_collection):
     _market_type = _journal_collection.name
     guard(_journal_collection)
     if _market_entity['active']:
         _market_name = _market_entity['name']
         for _ticker in _market_entity['tickers']:
-            if _ticker not in ['2d', '4d', '5d']:
+            if _ticker not in ['2d', '4d', '5d'] and validate_time_interval(_ticker):
                 _journal_name = _market_name + _market_type + "_" + _ticker
                 _r = _journal_collection.find({
                     "market": _market_name,
@@ -112,7 +113,10 @@ def process_market_info_entity(_market_entity, _journal_collection):
 
 while True:
     hr = 15 * 60
-    scanner(btc_markets_collection)
-    scanner(usdt_markets_collection)
-    scanner(busd_markets_collection)
+    if market_type == "btc":
+        scanner(btc_markets_collection)
+    elif market_type == "usdt":
+        scanner(usdt_markets_collection)
+    elif market_type == "busd":
+        scanner(busd_markets_collection)
     sleep(hr)

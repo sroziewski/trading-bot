@@ -562,6 +562,8 @@ def _do_schedule(_schedule):
 
 
 def ticker2sec(_ticker):
+    if _ticker == "1m":
+        return 1 * 60
     if _ticker == "5m":
         return 5 * 60
     if _ticker == "15m":
