@@ -535,6 +535,8 @@ def _do_schedule(_schedule):
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, bae.__traceback__))
                 logger_global[0].info("sleeping 15 min")
                 sleep(15 * 60)
+                klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
+                klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
