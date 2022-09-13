@@ -3854,7 +3854,7 @@ class TradeMsg(object):
         self.timestamp_str = get_time_from_binance_tmstmp(msg['T'])
         self.buy = not msg['m']
         self.sell = msg['m']
-        self.btc_volume = round(self.price * self.quantity, 8)
+        self.base_volume = round(self.price * self.quantity, 8)
 
 
 def flatten(_list):
