@@ -524,7 +524,9 @@ def _do_schedule(_schedule):
     sleep(1)
     while True:
         if ticker == BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
-            sleep(randrange(100))
+            sleep(randrange(60))
+        elif ticker == BinanceClient.KLINE_INTERVAL_5MINUTE:
+            sleep(randrange(1))
         else:
             sleep(randrange(200))
         if _schedule.exchange == "binance":
@@ -533,8 +535,8 @@ def _do_schedule(_schedule):
                 klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
             except BinanceAPIException as bae:
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, bae.__traceback__))
-                logger_global[0].info("sleeping 15 min")
-                sleep(15 * 60)
+                logger_global[0].info("sleeping ...")
+                sleep(randrange(500))
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
                 klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
             except Exception as err:
