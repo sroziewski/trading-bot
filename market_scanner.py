@@ -605,6 +605,8 @@ def ticker2sec(_ticker):
 
 
 def ticker2num(_ticker):
+    if _ticker == "1m":
+        return 1.0/60
     if _ticker == "5m":
         return 1.0/12
     if _ticker == "15m":
