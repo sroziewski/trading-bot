@@ -1889,17 +1889,9 @@ def setup_logger(symbol):
     formatter = logging.Formatter(formater_str)
     logging.config.fileConfig(fname='logging.conf')
     logger = logging.getLogger(symbol)
-    logger.setLevel(logging.INFO)
     file_handler = logging.FileHandler(LOGGER_FILE)
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
-
-    # requests_log = logging.getLogger("requests.packages.urllib3")
-    # requests_log.setLevel(logging.DEBUG)
-    # requests_log.propagate = True
-    # 
-    # requests_log.addHandler(file_handler)
-
     logger.addHandler(file_handler)
     logger_global.append(logger)
 

@@ -10,13 +10,11 @@ from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from kucoin.exceptions import KucoinAPIException
-from pymongo.errors import PyMongoError
 
-from library import get_binance_klines, get_binance_interval_unit, setup_logger, get_kucoin_klines, \
+from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, \
     get_time_from_binance_tmstmp, logger_global
 from mongodb import mongo_client
-
 
 db = mongo_client.klines
 decimal_codec = DecimalCodec()
