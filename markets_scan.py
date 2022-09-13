@@ -11,8 +11,6 @@ from library import setup_logger, DecimalCodec
 from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
 from mongodb import mongo_client
 
-http_client.HTTPConnection.debuglevel = 1
-
 market_type = sys.argv[1]
 market_time_interval = sys.argv[2]
 repair_mode = sys.argv[3]
