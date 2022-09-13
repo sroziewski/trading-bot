@@ -1889,7 +1889,7 @@ def setup_logger(symbol):
     formatter = logging.Formatter(formater_str)
     logging.config.fileConfig(fname='logging.conf')
     logger = logging.getLogger(symbol)
-    logger.setLevel(logging.DEBUG)
+    logger.setLevel(logging.INFO)
     file_handler = logging.FileHandler(LOGGER_FILE)
     file_handler.setLevel(logging.INFO)
     file_handler.setFormatter(formatter)
