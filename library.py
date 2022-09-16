@@ -3857,6 +3857,16 @@ class TradeMsg(object):
         self.base_volume = round(self.price * self.quantity, 8)
         
 
+class VolumeContainer(object):
+    def __init__(self, _market, _ticker, _start_time, _avg_weighted_price, _buy_volume, _sell_volume) -> None:
+        self.market = _market
+        self.ticker = _ticker
+        self.start_time = _ticker
+        self.avg_weighted_price = _avg_weighted_price
+        self.buy_volume = _buy_volume
+        self.sell_volume = _sell_volume
+
+
 class VolumeUnit(object):
     def __init__(self, _trade_msg_list) -> None:
         self.base_volume = 0.0
