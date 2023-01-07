@@ -1474,9 +1474,9 @@ def get_pickled(_dir, filename):
 
 keys = get_pickled(key_dir, keys_filename)
 keys_b = keys['binance']
-keys_k = keys['kucoin']
+# keys_k = keys['kucoin']
 binance_client = BinanceClient(keys_b[0], keys_b[1])
-kucoin_client: Client = KucoinClient(keys_k[0], keys_k[1], keys_k[2])
+kucoin_client = []
 
 binance_obj = Binance(keys_b[0], keys_b[1])
 

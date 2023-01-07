@@ -12,7 +12,7 @@ for chunk in data_in:
         cmd = "mv  cont/{}.bson cont/{}.metadata.json klines".format(el, el)
         process = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE)
         process.wait()
-        process = subprocess.Popen("mongorestore klines", shell=True, stdout=subprocess.PIPE)
+        process = subprocess.Popen("mongorestore -d klines klines/", shell=True, stdout=subprocess.PIPE)
         process.wait()
         process = subprocess.Popen("rm klines/*", shell=True, stdout=subprocess.PIPE)
         process.wait()

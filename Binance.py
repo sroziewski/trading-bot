@@ -4,8 +4,8 @@ from binance.client import Client
 import pandas as pd
 import numpy as np
 import threading
-from binance.websockets import BinanceSocketManager
-from scipy.signal import gaussian
+# from binance.websockets import BinanceSocketManager
+# from scipy.signal import gaussian
 from scipy.ndimage import filters
 from scipy import signal
 import operator
@@ -91,27 +91,27 @@ class Binance:
 
         return list(map(lambda x: x[0], sorted(r, key=lambda tup: tup[1], reverse=True)))
 
-    def _threading_listen(self, currency, po):
-        bm = BinanceSocketManager(self.client)
-        bm.start_trade_socket(currency, po.start_observing)
-        bm.start()
+    # def _threading_listen(self, currency, po):
+        # bm = BinanceSocketManager(self.client)
+        # bm.start_trade_socket(currency, po.start_observing)
+        # bm.start()
 
-    def listen_to_currency(self, currency):
-        po = PriceObserver()
-
-        t = threading.Thread(target=self._threading_listen, args=(currency, po))
-        t.start()
-        order = Order(self.client, currency, po)
-        price_buy = order.buy()
-        order.sell()
-        # feed data cont.
-        # buy
-        # sell
-        # repeat process
+    # def listen_to_currency(self, currency):
+    #     po = PriceObserver()
+    #
+    #     t = threading.Thread(target=self._threading_listen, args=(currency, po))
+    #     t.start()
+    #     order = Order(self.client, currency, po)
+    #     price_buy = order.buy()
+    #     order.sell()
+    #     # feed data cont.
+    #     # buy
+    #     # sell
+    #     # repeat process
 
     def _left_gaussian(self, y):
         npts = len(y)
-        b = gaussian(npts, 5)
+        # b = gaussian(npts, 5)
         s1 = int(npts / 2)
         s2 = s1
         if npts % 2 == 1:
@@ -119,10 +119,10 @@ class Binance:
             s2 = s1 - 1
         b1 = np.ones(s1)
         b2 = np.zeros(s2)
-        b *= np.concatenate([b1, b2])
-        ga = filters.convolve1d(y, b / b.sum())
+        # b *= np.concatenate([b1, b2])
+        # ga = filters.convolve1d(y, b / b.sum())
 
-        return ga
+        # return ga
 
     def filter_signal(self, rsi):
         rsi_filter = self._left_gaussian(rsi)
@@ -166,13 +166,13 @@ class Binance:
         lows_pd = pd.DataFrame(lows, columns=['col'])
         closes_pd = pd.DataFrame(closes, columns=['col'])
 
-        movavg = pa.rolling_mean(closes_pd, 20, min_periods=20)
-        movstddev = pa.rolling_std(closes_pd, 20, min_periods=20)
+        # movavg = pa.rolling_mean(closes_pd, 20, min_periods=20)
+        # movstddev = pa.rolling_std(closes_pd, 20, min_periods=20)
 
-        upperband = movavg + 2 * movstddev
-        lowerband = movavg - 2 * movstddev
+        # upperband = movavg + 2 * movstddev
+        # lowerband = movavg - 2 * movstddev
 
-        return lowerband, upperband, closes, diff_high_low, highs, lows
+        # return lowerband, upperband, closes, diff_high_low, highs, lows
 
     def bollinger_bands_currency2(self, currency, datetime):
         klines = self.get_klines_currency(currency, datetime)
@@ -184,13 +184,13 @@ class Binance:
         lows_pd = pd.DataFrame(lows, columns=['col'])
         closes_pd = pd.DataFrame(closes, columns=['col'])
 
-        movavg = pa.rolling_mean(closes_pd, 20, min_periods=20)
-        movstddev = pa.rolling_std(closes_pd, 20, min_periods=20)
-
-        upperband = movavg + 2 * movstddev
-        lowerband = movavg - 2 * movstddev
-
-        return lowerband, upperband, closes, diff_high_low
+        # movavg = pa.rolling_mean(closes_pd, 20, min_periods=20)
+        # movstddev = pa.rolling_std(closes_pd, 20, min_periods=20)
+        #
+        # upperband = movavg + 2 * movstddev
+        # lowerband = movavg - 2 * movstddev
+        #
+        # return lowerband, upperband, closes, diff_high_low
 
     def rsi(self, currency, datetime, n=14):
 

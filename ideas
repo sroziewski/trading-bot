@@ -1,0 +1,8 @@
+from scipy.ndimage import uniform_filter1d
+
+y_smooth = uniform_filter1d(y,size=15)
+https://stackoverflow.com/questions/20618804/how-to-smooth-a-curve-in-the-right-way
+
+def smooth(scalars, weight=0.8):  # Weight between 0 and 1
+    return [scalars[i] * weight + (1 - weight) * scalars[i + 1] for i in range(len(scalars)) if
+           i < len(scalars) - 1]
