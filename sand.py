@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-df = pd.read_csv('E:\\bin\\data\\BINANCE_BTCUSDT_60.csv')
+df = pd.read_csv('E:\\bin\\data\\BINANCE_BTCUSDT_240.csv')
 
 
 def Approximation1(_data, _val):
@@ -78,12 +78,14 @@ def compute_tr(_data):
     return _data['high']-_data['low']
 
 
-def get_crossup(_data, Lower_Threshold_of_Approximability2):
-    return np.logical_and(_data['low'] > Lower_Threshold_of_Approximability2[1] , _data['low'] <= Lower_Threshold_of_Approximability2)
+def get_crossup(_data, Lower_Threshold_of_Approximability2): # +1
+    return np.logical_and(_data[1:]['low'] > Lower_Threshold_of_Approximability2[:-1], _data.iloc[:-1, :]['low'] <= Lower_Threshold_of_Approximability2[:-1])
+    # return list(map(lambda x: int(not x), _data[1:]['low'] > Lower_Threshold_of_Approximability2[:-1]))# , _data.iloc[:-1, :]['low'] <= Lower_Threshold_of_Approximability2[:-1])
+    # return list(map(lambda x: int(x), _data.iloc[:-1, :]['low'] <= Lower_Threshold_of_Approximability2[:-1]))# , _data.iloc[:-1, :]['low'] <= Lower_Threshold_of_Approximability2[:-1])
 
 
 def get_crossdn(_data, Upper_Threshold_of_Approximability2):
-    return np.logical_and(_data['high'] < Upper_Threshold_of_Approximability2, _data['high'] >= Upper_Threshold_of_Approximability2)
+    return np.logical_and(_data[1:]['high'] < Upper_Threshold_of_Approximability2[:-1], _data.iloc[:-1, :]['high']   >= Upper_Threshold_of_Approximability2[:-1])
 
 
 def smooth(_scalars, weight=0.8):  # Weight between 0 and 1
@@ -124,6 +126,25 @@ Lower_Threshold_of_Approximability2 = amlag - 2*inapproximability*1.618
 
 crossup = get_crossup(df, Lower_Threshold_of_Approximability2)
 crossdn = get_crossdn(df, Upper_Threshold_of_Approximability2)
+
+
+plt.plot(crossup, color='green')
+# plt.plot(df['open'], color='red')
+plt.show()
+
+def find_indices(list_to_check, item_to_find):
+    indices = []
+    for idx, value in enumerate(list_to_check):
+        if value == item_to_find:
+            indices.append(idx)
+    return indices
+
+indexes =  find_indices(crossdn, 1)
+
+times =[]
+for i in indexes:
+    time_s = datetime.datetime.fromtimestamp(df['time'].iloc[i]).strftime('%d %B %Y %H:%M:%S')
+    times.append((i, time_s))
 
 j=0
 for c in crossup:
