@@ -519,6 +519,9 @@ def _do_schedule(_schedule):
     ticker = _schedule.ticker
     collection_name = _schedule.collection_name
     collection = db.get_collection(collection_name, codec_options=codec_options)
+    cursor = collection.find_one()
+    if cursor is None:
+        _schedule.no_such_market = True
     sleep(1)
     while True:
         if ticker == BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
@@ -564,6 +567,7 @@ def _do_schedule(_schedule):
         logger_global[0].info("Stored to collection : {} : {} ".format(_schedule.exchange, collection_name))
         _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'running': False}})
         _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'last_seen': round(datetime.datetime.now().timestamp())}})
+        _schedule.no_such_market = False
         sleep(_schedule.sleep + randrange(500))
 
 

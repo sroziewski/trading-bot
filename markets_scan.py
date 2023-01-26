@@ -88,7 +88,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
     if _market_entity['active']:
         _market_name = _market_entity['name']
         for _ticker in _market_entity['tickers']:
-            if _ticker not in ['2d', '4d', '5d'] and validate_time_interval(_ticker):
+            if _market_name=="hft" and _ticker not in ['2d', '4d', '5d'] and validate_time_interval(_ticker):
                 _journal_name = _market_name + _market_type + "_" + _ticker
                 _r = _journal_collection.find({
                     "market": _market_name,
@@ -110,7 +110,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                     logger.info("Adding market {} to journal".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
-                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set, True))
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
                 elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
                                      _r))) > 0:  # market exists but it's not operating
                     if _market_name not in repair_set:
