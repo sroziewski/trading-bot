@@ -529,19 +529,19 @@ def _do_schedule(_schedule):
             sleep(randrange(200))
         if _schedule.exchange == "binance":
             try:
-                klines = try_get_klines(_schedule.exchange, market, ticker, get_binance_interval_unit(ticker))
+                klines = try_get_klines(_schedule.exchange, market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
                 klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
             except BinanceAPIException as bae:
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, bae.__traceback__))
                 logger_global[0].info("sleeping ...")
                 sleep(randrange(500))
-                klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
+                klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
                 klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
                 sleep(randrange(30))
-                klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker))
+                klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
                 klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
         elif _schedule.exchange == "kucoin":
             try:
