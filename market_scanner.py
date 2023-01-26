@@ -6,7 +6,6 @@ from time import sleep
 
 from binance.client import Client as BinanceClient
 from binance.exceptions import BinanceAPIException
-from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from kucoin.exceptions import KucoinAPIException
@@ -123,7 +122,7 @@ def persist_klines(_klines, _collection):
 
 
 class Schedule(object):
-    def __init__(self, _asset, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _no_depths, _journal, _no_such_market=false, _vc=False):
+    def __init__(self, _asset, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _no_depths, _journal, _no_such_market=False, _vc=False):
         self.asset = _asset
         self.market = _market
         self.collection_name = _collection_name
