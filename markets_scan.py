@@ -120,13 +120,13 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         # run a thread here
                         manage_crawling(
                             get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection,
-                                                 depth_scan_set, True))
+                                                 depth_scan_set))
                 elif not is_repaired and repair_mode == "repair" and len(list(filter(lambda x: x['running'], _r))) > 0:
                     is_repaired = True
                     logger.info("Market {} was running --> handled".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
-                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set, True))
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
 
 
 while True:
