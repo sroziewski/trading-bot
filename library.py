@@ -1487,23 +1487,41 @@ general_fee = 0.001
 kucoin_general_fee = 0.001
 
 
-def get_binance_interval_unit(_ticker):
-    return {
-        BinanceClient.KLINE_INTERVAL_1MINUTE: "6 hours ago",
-        BinanceClient.KLINE_INTERVAL_3MINUTE: "18 hours ago",
-        BinanceClient.KLINE_INTERVAL_5MINUTE: "1 days ago",
-        BinanceClient.KLINE_INTERVAL_15MINUTE: "2 days ago",
-        BinanceClient.KLINE_INTERVAL_30MINUTE: "4 days ago",
-        BinanceClient.KLINE_INTERVAL_1HOUR: "4 days ago",
-        BinanceClient.KLINE_INTERVAL_2HOUR: "4 days ago",
-        BinanceClient.KLINE_INTERVAL_4HOUR: "5 days ago",
-        BinanceClient.KLINE_INTERVAL_6HOUR: "5 days ago",
-        BinanceClient.KLINE_INTERVAL_8HOUR: "10 days ago",
-        BinanceClient.KLINE_INTERVAL_12HOUR: "10 days ago",
-        BinanceClient.KLINE_INTERVAL_1DAY: "30 days ago",
-        BinanceClient.KLINE_INTERVAL_3DAY: "30 days ago",
-        BinanceClient.KLINE_INTERVAL_1WEEK: "30 days ago",
-    }[_ticker]
+def get_binance_interval_unit(_ticker, _no_such_market):
+    if _no_such_market:
+        return {
+            BinanceClient.KLINE_INTERVAL_1MINUTE: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_3MINUTE: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_5MINUTE: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_15MINUTE: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_30MINUTE: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_1HOUR: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_2HOUR: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_4HOUR: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_6HOUR: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_8HOUR: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_12HOUR: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_1DAY: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_3DAY: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_1WEEK: "30 days ago",
+        }[_ticker]
+    else:
+        return {
+            BinanceClient.KLINE_INTERVAL_1MINUTE: "6 hours ago",
+            BinanceClient.KLINE_INTERVAL_3MINUTE: "18 hours ago",
+            BinanceClient.KLINE_INTERVAL_5MINUTE: "1 days ago",
+            BinanceClient.KLINE_INTERVAL_15MINUTE: "2 days ago",
+            BinanceClient.KLINE_INTERVAL_30MINUTE: "4 days ago",
+            BinanceClient.KLINE_INTERVAL_1HOUR: "4 days ago",
+            BinanceClient.KLINE_INTERVAL_2HOUR: "4 days ago",
+            BinanceClient.KLINE_INTERVAL_4HOUR: "5 days ago",
+            BinanceClient.KLINE_INTERVAL_6HOUR: "5 days ago",
+            BinanceClient.KLINE_INTERVAL_8HOUR: "10 days ago",
+            BinanceClient.KLINE_INTERVAL_12HOUR: "10 days ago",
+            BinanceClient.KLINE_INTERVAL_1DAY: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_3DAY: "30 days ago",
+            BinanceClient.KLINE_INTERVAL_1WEEK: "30 days ago",
+        }[_ticker]
 
 
 def get_timestamp(_min, _hrs, _days, _weeks):

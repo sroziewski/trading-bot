@@ -110,7 +110,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                     logger.info("Adding market {} to journal".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
-                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set, True))
                 elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
                                      _r))) > 0:  # market exists but it's not operating
                     logger.info("Market {} NOT OPERATING --> handled".format(_journal_name.upper()))

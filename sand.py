@@ -95,21 +95,78 @@ def smooth(_scalars, weight=0.8):  # Weight between 0 and 1
     l3 = np.zeros(len(_scalars))
 
     for i in range(len(_scalars)):
-        if i < len(_scalars):
-            if i == 0:
-                l0[i] = (1 - weight) * _scalars[i]
-                l1[i] = -weight * l0[i]
-                l2[i] = -weight * l1[i]
-                l3[i] = -weight * l2[i]
-            else:
-                l0[i] = (1 - weight) * _scalars[i] + weight * l0[i-1]
-                l1[i] = -weight * l0[i] + l0[i-1] + weight * l1[i-1]
-                l2[i] = -weight * l1[i] + l1[i-1] + weight * l2[i-1]
-                l3[i] = -weight * l2[i] + l2[i-1] + weight * l3[i-1]
+        if i == 0:
+            l0[i] = (1 - weight) * _scalars[i]
+            l1[i] = -weight * l0[i]
+            l2[i] = -weight * l1[i]
+            l3[i] = -weight * l2[i]
+        else:
+            l0[i] = (1 - weight) * _scalars[i] + weight * l0[i-1]
+            l1[i] = -weight * l0[i] + l0[i-1] + weight * l1[i-1]
+            l2[i] = -weight * l1[i] + l1[i-1] + weight * l2[i-1]
+            l3[i] = -weight * l2[i] + l2[i-1] + weight * l3[i-1]
 
     return (l0 + 2*l1 + 2*l2 + l3)/6
 
+
+def lele(_open, _close, _high, _low, _val, _strength):
+    _bindex = np.zeros(len(_open))
+    _sindex = np.zeros(len(_open))
+    _ret = np.zeros(len(_open))
+    for i in range(len(_open)):
+        if i > 0:
+            _bindex[i] = _bindex[i-1]
+            _sindex[i] = _sindex[i-1]
+        if i > 4:
+            if _close[i] > _close[i-4]:
+                _bindex[i] = _bindex[i] + 1
+            if _close[i] < _close[i-4]:
+                _sindex[i] = _sindex[i] + 1
+
+        if i == 52:
+            k=2
+        if _bindex[i] > _val and _close[i] < _open[i] and _high[i] >= np.max(_high[i-10:i]):
+            _bindex[i] = 0
+            _ret[i] = -1
+        if _sindex[i] > _val and _close[i] > _open[i] and _low[i] <= np.min(_low[i-10:i]):
+            _sindex[i] = 0
+            _ret[i] = 1
+    return _ret
+
+
+def find_indices(list_to_check, item_to_find):
+    indices = []
+    for idx, value in enumerate(list_to_check):
+        if value == item_to_find:
+            indices.append(idx)
+    return indices
+
+
+def calculations(_close, _low, _high):
+
+
+
+
+_out = lele(df['open'], df['close'], df['high'], df['low'], 2, 10)
+
+plt.plot(_out, color='green')
+# plt.plot(df['open'], color='red')
+plt.show()
+
+indexes = find_indices(_out, -1)
+find_indices(_out, -1)
+
+# indexes = list(np.asarray(indexes) - 1)
+
+times =[]
+for i in indexes:
+    time_s = datetime.datetime.fromtimestamp(df['time'].iloc[i]).strftime('%d %B %Y %H:%M:%S')
+    times.append((i, time_s))
+
 _data = smooth(df['open'], 0.95)
+
+# '08 November 2022 13:00:00'
+# '09 January 2023 21:00:00'
 
 conjectures = list(map(lambda x: smooth(df['open'], x), np.arange(0.1, 1.0, 0.05)))
 
@@ -132,12 +189,7 @@ plt.plot(crossup, color='green')
 # plt.plot(df['open'], color='red')
 plt.show()
 
-def find_indices(list_to_check, item_to_find):
-    indices = []
-    for idx, value in enumerate(list_to_check):
-        if value == item_to_find:
-            indices.append(idx)
-    return indices
+
 
 indexes =  find_indices(crossdn, 1)
 

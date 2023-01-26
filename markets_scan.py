@@ -110,7 +110,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                     logger.info("Adding market {} to journal".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
-                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set, True))
                 elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
                                      _r))) > 0:  # market exists but it's not operating
                     if _market_name not in repair_set:
@@ -120,13 +120,13 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         # run a thread here
                         manage_crawling(
                             get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection,
-                                                 depth_scan_set))
+                                                 depth_scan_set, True))
                 elif not is_repaired and repair_mode == "repair" and len(list(filter(lambda x: x['running'], _r))) > 0:
                     is_repaired = True
                     logger.info("Market {} was running --> handled".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
-                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set, True))
 
 
 while True:

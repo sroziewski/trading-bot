@@ -123,7 +123,7 @@ def persist_klines(_klines, _collection):
 
 
 class Schedule(object):
-    def __init__(self, _asset, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _no_depths, _journal, _vc=False):
+    def __init__(self, _asset, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _no_depths, _journal, _no_such_market=false, _vc=False):
         self.asset = _asset
         self.market = _market
         self.collection_name = _collection_name
@@ -134,6 +134,7 @@ class Schedule(object):
         self.no_depths = _no_depths
         self.volume_crawl = _vc
         self.journal = _journal
+        self.no_such_market = _no_such_market
 
 
 class MarketDepth(object):
@@ -637,7 +638,7 @@ def ticker2num(_ticker):
         return 168
 
 
-def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _depth_scan_set):
+def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _depth_scan_set, _no_such_market=False):
     _exchange = "binance"
     _market = (_market_name + _market_type).upper()
 
@@ -659,6 +660,6 @@ def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _dep
         _collection_name = _market_name + "_" + _market_type + "_" + _ticker_val
 
     return Schedule(_market_name, _market, _collection_name, _ticker_val,
-                    ticker2sec(_ticker_val), _exchange, _dc, round(20 * ticker2num(_ticker_val)), _journal, _vc)
+                    ticker2sec(_ticker_val), _exchange, _dc, round(20 * ticker2num(_ticker_val)), _journal, _no_such_market, _vc)
 
 
