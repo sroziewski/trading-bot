@@ -14,6 +14,8 @@ import operator
 class Binance:
     def __init__(self, key_api, key_secret):
         self.client = Client(key_api, key_secret)
+        self.key_api = key_api
+        self.key_secret = key_secret
 
     def get_all_currencies(self):
         return list(map(lambda x: x['symbol'], self.client.get_orderbook_tickers()))

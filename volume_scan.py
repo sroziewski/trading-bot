@@ -6,7 +6,7 @@ import schedule
 
 from binance.websockets import BinanceSocketManager
 
-from library import TradeMsg, BuyVolumeUnit, SellVolumeUnit, setup_logger, VolumeContainer
+from library import TradeMsg, BuyVolumeUnit, SellVolumeUnit, setup_logger, VolumeContainer, add_volume_containers
 
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, \
@@ -15,6 +15,7 @@ from market_scanner import VolumeCrawl
 from mongodb import mongo_client
 
 trades = {}
+volumes = {}
 
 logger = setup_logger("Binance-Volume-Scanner")
 
@@ -26,8 +27,38 @@ def process_trade_socket_message(_msg):
     last_tmstmp = datetime.datetime.now().timestamp()
 
 
+def merge_volumes(_market):
+    _merged = []
+    for _v in volumes[_market].values():
+        if len(_v) == 1:
+            _merged.append(_v[0])
+        elif len(_v) == 2:
+            _merged.append(add_volume_containers(_v[0], _v[1]))
+        elif len(_v) == 3:
+            _r = add_volume_containers(_v[0], _v[1])
+            _merged.append(add_volume_containers(_r, _v[2]))
+    return _merged
+
+
+def handle_volume_containers(_market):
+    if len(volumes[_market]) < 5:
+        return
+    _merged = merge_volumes(_market)
+    if len(volumes[_market]) < 5:
+        _merged.clear()
+        return
+    # we are doing once in 5m
+    _start_time0 = int(_merged[0].start_time)
+    _start_time4 = int(_merged[4].start_time)
+    if _start_time0 % 5 != 0:
+        del volumes[_market][_merged[0].start_time]
+        if len(volumes[_market].keys()) < 5:
+            sleep(1)
+        return handle_volume_containers(_market)
+    if _start_time4 % 5 == 4:
+        here = 11
 def process_volume():
-    volume_ticker = '5m'
+    _volume_ticker = '5m'
 
     _markets = list(trades.keys())
 
@@ -38,15 +69,32 @@ def process_volume():
         _bag[_market] = trades[_market].copy()
         _bag[_market] = _bag[_market][:-1]  # we skip the lock element
         trades[_market].clear()
-        _buy_volume = filter(lambda x: x.buy, _bag[_market])
-        _sell_volume = filter(lambda x: x.sell, _bag[_market])
-        _bv = BuyVolumeUnit(_buy_volume)
-        _sv = SellVolumeUnit(_sell_volume)
-        VolumeContainer(_market, volume_ticker, _start_time, _bv, _sv)
+        _aggs = aggregate_by_minute(_bag[_market])
+        _vcl = []
+        if _market not in volumes:
+            volumes[_market] = {}
+        for _k, _v in _aggs.items():
+            _buy_volume = filter(lambda x: x.buy, _v)
+            _sell_volume = filter(lambda x: x.sell, _v)
+            _bv = BuyVolumeUnit(_buy_volume)
+            _sv = SellVolumeUnit(_sell_volume)
+            if _k not in volumes[_market]:
+                volumes[_market][_k] = [VolumeContainer(_market, _volume_ticker, _k, 0, 0, _bv, _sv)]
+            else:
+                volumes[_market][_k].append(VolumeContainer(_market, _volume_ticker, _k, 0, 0, _bv, _sv))
         _bag[_market].clear()
+        handle_volume_containers(_market)
 
     print("A")
 
+
+def aggregate_by_minute(_list):
+    _aggs = {}
+    for _el in _list:
+        if _el.timestamp_str.split(":")[-2] not in _aggs:
+            _aggs[_el.timestamp_str.split(":")[-2]] = []
+        _aggs[_el.timestamp_str.split(":")[-2]].append(_el)
+    return _aggs
 
 
 def _do_volume_crawl(_vc):

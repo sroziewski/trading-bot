@@ -3876,13 +3876,20 @@ class TradeMsg(object):
         
 
 class VolumeContainer(object):
-    def __init__(self, _market, _ticker, _start_time, _avg_weighted_price, _buy_volume, _sell_volume) -> None:
+    def __init__(self, _market, _ticker, _start_time, _avg_weighted_buy_price, _avg_weighted_sell_price, _buy_volume, _sell_volume) -> None:
         self.market = _market
         self.ticker = _ticker
-        self.start_time = _ticker
-        self.avg_weighted_price = _avg_weighted_price
+        self.start_time = _start_time
+        self.avg_weighted_bid_price = _avg_weighted_buy_price
+        self.avg_weighted_ask_price = _avg_weighted_sell_price
         self.buy_volume = _buy_volume
         self.sell_volume = _sell_volume
+
+
+def add_volume_containers(_c1 : VolumeContainer, _c2 : VolumeContainer):
+    _c1.buy_volume = add_volume_units(_c1.buy_volume, _c2.buy_volume)
+    _c1.sell_volume = add_volume_units(_c1.sell_volume, _c2.sell_volume)
+    return _c1
 
 
 class VolumeUnit(object):
@@ -3907,14 +3914,19 @@ class VolumeUnit(object):
         self.l20 = 0
         self.l50 = 0
         self.l100 = 0
+        self.mean_price = 0.0
         self.timestamp = datetime.datetime.now().timestamp()
         self._compute_levels(_trade_msg_list)
         self.base_volume = round(self.base_volume)
+        self.quantity = round(self.quantity)
 
     def _compute_levels(self, _trade_msg_list):
+        _i = 0
         for _trade_msg in _trade_msg_list:
+            _i = _i + 1
             self.base_volume += _trade_msg.base_volume
             self.quantity += _trade_msg.quantity
+            self.mean_price += _trade_msg.price
             if 0.0 < _trade_msg.base_volume < 5000.0:  # between 0 and 5k USDT
                 self.l00 += 1
             if 5000.0 < _trade_msg.base_volume < 10000.0:  # between 5k and 10k USDT
@@ -3951,6 +3963,32 @@ class VolumeUnit(object):
                 self.l50 += 1
             elif 10000000.0 < _trade_msg.base_volume:  # greater than 10 mln USDT
                 self.l100 += 1
+        self.mean_price = round(self.mean_price / _i, 8)
+
+
+def add_volume_units(_a : VolumeUnit, _b : VolumeUnit):
+    _a.l00 = _a.l00 + _b.l00
+    _a.l01 = _a.l01 + _b.l01
+    _a.l02 = _a.l02 + _b.l02
+    _a.l0 = _a.l0 + _b.l0
+    _a.l0236 = _a.l0236 + _b.l0236
+    _a.l0382 = _a.l0382 + _b.l0382
+    _a.l05 = _a.l05 + _b.l05
+    _a.l0618 = _a.l0618 + _b.l0618
+    _a.l0786 = _a.l0786 + _b.l0786
+    _a.l1 = _a.l1 + _b.l1
+    _a.l1382 = _a.l1382 + _b.l1382
+    _a.l162 = _a.l162 + _b.l162
+    _a.l2 = _a.l2 + _b.l2
+    _a.l5 = _a.l5 + _b.l5
+    _a.l10 = _a.l10 + _b.l10
+    _a.l20 = _a.l20 + _b.l20
+    _a.l50 = _a.l50 + _b.l50
+    _a.l100 = _a.l100 + _b.l100
+    _a.mean_price = round((_a.mean_price + _b.mean_price)/2, 8)
+    _a.base_volume = round(_a.base_volume + _b.base_volume, 8)
+    _a.quantity = round(_a.quantity + _b.quantity, 8)
+    return _a
 
 
 class BuyVolumeUnit(VolumeUnit):
