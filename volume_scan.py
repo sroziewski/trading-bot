@@ -42,9 +42,19 @@ def merge_volumes(_market):
     return _merged
 
 
-def post_process_volume_container(_vc : VolumeContainer):
+def post_process_volume_container(_vc : VolumeContainer, _t0):
     _vc.avg_weighted_bid_price = _vc.buy_volume.avg_price
     _vc.avg_weighted_ask_price = _vc.sell_volume.avg_price
+    _vc.mean_price = (_vc.buy_volume.mean_price + _vc.sell_volume.mean_price)/2
+    _vc.total_quantity = _vc.buy_volume.quantity + _vc.sell_volume.quantity
+    _vc.total_base_volume = _vc.buy_volume.base_volume + _vc.sell_volume.base_volume
+    _vc.avg_price = round(_vc.total_base_volume / _vc.total_quantity, 8)
+
+    _second = int(get_time_from_binance_tmstmp(_vc.buy_volume.timestamp).split(":")[-1])
+    _vc.start_time = _vc.buy_volume.timestamp - 1000 * _second
+    _vc.start_time_str = get_time_from_binance_tmstmp(_vc.buy_volume.timestamp - 1000 * _second)
+    _r = to_mongo(_vc)
+    k=1
 
 
 def handle_volume_containers(_market):
@@ -68,7 +78,7 @@ def handle_volume_containers(_market):
     if _start_time4 % 5 == 4:
         _keys = volumes[_market].keys()
         print("{} {}".format(_start_time0, _start_time4))
-        _res = post_process_volume_container(functools.reduce(lambda x, y: add_volume_containers(x, y), _merged))
+        _res = post_process_volume_container(functools.reduce(lambda x, y: add_volume_containers(x, y), _merged), _start_time0)
         if len(_merged) > 5 and int(_merged[5].start_time) % 5 == 0:
             _keys = list(volumes[_market].keys())[:-1]
             for _k in _keys:
@@ -104,9 +114,9 @@ def process_volume():
             _bv = BuyVolumeUnit(_buy_volume)
             _sv = SellVolumeUnit(_sell_volume)
             if _k not in volumes[_market]:
-                volumes[_market][_k] = [VolumeContainer(_market, _volume_ticker, _k, 0, 0, _bv, _sv)]
+                volumes[_market][_k] = [VolumeContainer(_market, _volume_ticker, _k, _bv, _sv)]
             else:
-                volumes[_market][_k].append(VolumeContainer(_market, _volume_ticker, _k, 0, 0, _bv, _sv))
+                volumes[_market][_k].append(VolumeContainer(_market, _volume_ticker, _k, _bv, _sv))
         _bag[_market].clear()
         handle_volume_containers(_market)
 
@@ -142,58 +152,61 @@ def manage_depth_crawling(_vc):
     _crawler.start()
 
 
-def to_mongo(_vc): # _volume_container
+def to_mongo(_vc : VolumeContainer): # _volume_container
     return {
         'market': _vc.market,
         'ticker': _vc.ticker,
         'start_time': _vc.start_time,
-        'total_base_volume': _vc.base_volume,
-        'total_quantity': _vc.quantity,
-        'start_time_str': _vc.time_str,
-        'avg_weighted_price': _vc.avg_weighted_price,
+        'start_time_str': _vc.start_time_str,
+        'total_base_volume': _vc.total_base_volume,
+        'total_quantity': _vc.total_quantity,
+        'avg_weighted_bid_price': _vc.avg_weighted_bid_price,
+        'avg_weighted_ask_price': _vc.avg_weighted_ask_price,
+        'avg_price': _vc.avg_price,
+        'mean_price': _vc.mean_price,
         'buy_volume': {
-            'base_volume': _vc.base_volume,
-            'quantity': _vc.quantity,
-            'l00': _vc.l00,
-            'l01': _vc.l01,
-            'l02': _vc.l02,
-            'l0': _vc.l0,
-            'l0236': _vc.l0236,
-            'l0382': _vc.l0382,
-            'l05': _vc.l05,
-            'l0618': _vc.l0618,
-            'l0786': _vc.l0786,
-            'l1': _vc.l1,
-            'l1382': _vc.l1382,
-            'l162': _vc.l162,
-            'l2': _vc.l2,
-            'l5': _vc.l5,
-            'l10': _vc.l10,
-            'l20': _vc.l20,
-            'l50': _vc.l50,
-            'l100': _vc.l100
+            'base_volume': _vc.buy_volume.base_volume,
+            'quantity': _vc.buy_volume.quantity,
+            'l00': _vc.buy_volume.l00,
+            'l01': _vc.buy_volume.l01,
+            'l02': _vc.buy_volume.l02,
+            'l0': _vc.buy_volume.l0,
+            'l0236': _vc.buy_volume.l0236,
+            'l0382': _vc.buy_volume.l0382,
+            'l05': _vc.buy_volume.l05,
+            'l0618': _vc.buy_volume.l0618,
+            'l0786': _vc.buy_volume.l0786,
+            'l1': _vc.buy_volume.l1,
+            'l1382': _vc.buy_volume.l1382,
+            'l162': _vc.buy_volume.l162,
+            'l2': _vc.buy_volume.l2,
+            'l5': _vc.buy_volume.l5,
+            'l10': _vc.buy_volume.l10,
+            'l20': _vc.buy_volume.l20,
+            'l50': _vc.buy_volume.l50,
+            'l100': _vc.buy_volume.l100
         },
         'sell_volume': {
-            'base_volume': _vc.base_volume,
-            'quantity': _vc.quantity,
-            'l00': _vc.l00,
-            'l01': _vc.l01,
-            'l02': _vc.l02,
-            'l0': _vc.l0,
-            'l0236': _vc.l0236,
-            'l0382': _vc.l0382,
-            'l05': _vc.l05,
-            'l0618': _vc.l0618,
-            'l0786': _vc.l0786,
-            'l1': _vc.l1,
-            'l1382': _vc.l1382,
-            'l162': _vc.l162,
-            'l2': _vc.l2,
-            'l5': _vc.l5,
-            'l10': _vc.l10,
-            'l20': _vc.l20,
-            'l50': _vc.l50,
-            'l100': _vc.l100
+            'base_volume': _vc.sell_volume.base_volume,
+            'quantity': _vc.sell_volume.quantity,
+            'l00': _vc.sell_volume.l00,
+            'l01': _vc.sell_volume.l01,
+            'l02': _vc.sell_volume.l02,
+            'l0': _vc.sell_volume.l0,
+            'l0236': _vc.sell_volume.l0236,
+            'l0382': _vc.sell_volume.l0382,
+            'l05': _vc.sell_volume.l05,
+            'l0618': _vc.sell_volume.l0618,
+            'l0786': _vc.sell_volume.l0786,
+            'l1': _vc.sell_volume.l1,
+            'l1382': _vc.sell_volume.l1382,
+            'l162': _vc.sell_volume.l162,
+            'l2': _vc.sell_volume.l2,
+            'l5': _vc.sell_volume.l5,
+            'l10': _vc.sell_volume.l10,
+            'l20': _vc.sell_volume.l20,
+            'l50': _vc.sell_volume.l50,
+            'l100': _vc.sell_volume.l100
         }
     }
 

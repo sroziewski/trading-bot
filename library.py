@@ -26,7 +26,7 @@ import talib
 from binance.client import Client as BinanceClient
 from bson import Decimal128
 from bson.codec_options import TypeCodec
-from kucoin.client import Client as KucoinClient, Client
+from kucoin.client import Client as KucoinClient
 from pymongo import DESCENDING
 from pymongo.errors import PyMongoError, InvalidDocument
 from urllib3.exceptions import ReadTimeoutError
@@ -3898,7 +3898,7 @@ class VolumeUnit(object):
         self.l50 = 0
         self.l100 = 0
         self.mean_price = 0.0
-        self.timestamp = datetime.datetime.now().timestamp()
+        self.timestamp = 0
         self._compute_levels(_trade_msg_list)
         self.base_volume = round(self.base_volume, 8)
         self.quantity = round(self.quantity, 8)
@@ -3907,6 +3907,8 @@ class VolumeUnit(object):
     def _compute_levels(self, _trade_msg_list):
         _i = 0
         for _trade_msg in _trade_msg_list:
+            if _i == 0:
+                self.timestamp = _trade_msg.timestamp
             _i = _i + 1
             self.base_volume += _trade_msg.base_volume
             self.quantity += _trade_msg.quantity
@@ -3951,14 +3953,19 @@ class VolumeUnit(object):
 
 
 class VolumeContainer(object):
-    def __init__(self, _market, _ticker, _start_time, _avg_weighted_buy_price, _avg_weighted_sell_price, _buy_volume : VolumeUnit, _sell_volume : VolumeUnit) -> None:
+    def __init__(self, _market, _ticker, _start_time, _buy_volume : VolumeUnit, _sell_volume : VolumeUnit) -> None:
         self.market = _market
         self.ticker = _ticker
         self.start_time = _start_time
-        self.avg_weighted_bid_price = _avg_weighted_buy_price
-        self.avg_weighted_ask_price = _avg_weighted_sell_price
+        self.start_time_str = 0
+        self.avg_weighted_bid_price = 0
+        self.avg_weighted_ask_price = 0
+        self.avg_price = 0
+        self.mean_price = 0
         self.buy_volume = _buy_volume
         self.sell_volume = _sell_volume
+        self.total_base_volume = 0
+        self.total_quantity = 0
 
 
 def add_volume_containers(_c1 : VolumeContainer, _c2 : VolumeContainer):
