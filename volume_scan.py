@@ -1,4 +1,5 @@
 import datetime
+import functools
 import threading
 from time import sleep
 
@@ -16,6 +17,7 @@ from mongodb import mongo_client
 
 trades = {}
 volumes = {}
+locker = {}
 
 logger = setup_logger("Binance-Volume-Scanner")
 
@@ -40,12 +42,20 @@ def merge_volumes(_market):
     return _merged
 
 
+def post_process_volume_container(_vc : VolumeContainer):
+    _vc.avg_weighted_bid_price = _vc.buy_volume.avg_price
+    _vc.avg_weighted_ask_price = _vc.sell_volume.avg_price
+
+
 def handle_volume_containers(_market):
+    locker[_market] = True
     if len(volumes[_market]) < 5:
+        del locker[_market]
         return
     _merged = merge_volumes(_market)
-    if len(volumes[_market]) < 5:
+    if len(_merged) < 5:
         _merged.clear()
+        del locker[_market]
         return
     # we are doing once in 5m
     _start_time0 = int(_merged[0].start_time)
@@ -56,7 +66,20 @@ def handle_volume_containers(_market):
             sleep(1)
         return handle_volume_containers(_market)
     if _start_time4 % 5 == 4:
-        here = 11
+        _keys = volumes[_market].keys()
+        print("{} {}".format(_start_time0, _start_time4))
+        _res = post_process_volume_container(functools.reduce(lambda x, y: add_volume_containers(x, y), _merged))
+        if len(_merged) > 5 and int(_merged[5].start_time) % 5 == 0:
+            _keys = list(volumes[_market].keys())[:-1]
+            for _k in _keys:
+                del volumes[_market][_k]
+        else:
+            del volumes[_market]
+            i = 2
+    del locker[_market]
+    _merged.clear()
+
+
 def process_volume():
     _volume_ticker = '5m'
 
@@ -65,6 +88,8 @@ def process_volume():
     _bag = {}
 
     for _market in _markets:
+        while _market in locker:
+            sleep(1)
         trades[_market].append("lock")
         _bag[_market] = trades[_market].copy()
         _bag[_market] = _bag[_market][:-1]  # we skip the lock element
@@ -85,8 +110,6 @@ def process_volume():
         _bag[_market].clear()
         handle_volume_containers(_market)
 
-    print("A")
-
 
 def aggregate_by_minute(_list):
     _aggs = {}
@@ -103,14 +126,14 @@ def _do_volume_crawl(_vc):
     _bm = BinanceSocketManager(binance_obj.client)
     _conn_key = _bm.start_aggtrade_socket(_vc.market, process_trade_socket_message)
     _bm.start()
-    while True:
-        _tmstmp_diff = datetime.datetime.now().timestamp() - last_tmstmp
-        if _tmstmp_diff > 60 * 60:
-            logger_global[0].warning(
-                f"{_vc.market} last trading volume tmstmp ({last_tmstmp}) is older than 60 minutes, diff = {_tmstmp_diff}")
-        if len(trades[_vc.market]) > 0:
-            logger_global[0].info(f"{_vc.market} last trading volume : {trades[_vc.market][-1].timestamp_str} {_vc.market}")
-        sleep(60 * 60)
+    # while True:
+    #     _tmstmp_diff = datetime.datetime.now().timestamp() - last_tmstmp
+    #     # if _tmstmp_diff > 60 * 60:
+    #     #     logger_global[0].warning(
+    #     #         f"{_vc.market} last trading volume tmstmp ({last_tmstmp}) is older than 60 minutes, diff = {_tmstmp_diff}")
+    #     if len(trades[_vc.market]) > 0:
+    #         logger_global[0].info(f"{_vc.market} last trading volume : {trades[_vc.market][-1].timestamp_str} {_vc.market}")
+    #     sleep(60 * 60)
 
 
 def manage_depth_crawling(_vc):
@@ -119,15 +142,14 @@ def manage_depth_crawling(_vc):
     _crawler.start()
 
 
-def to_mongo(_vc):
+def to_mongo(_vc): # _volume_container
     return {
-        'exchange': _vc.exchange,
+        'market': _vc.market,
         'ticker': _vc.ticker,
         'start_time': _vc.start_time,
         'total_base_volume': _vc.base_volume,
         'total_quantity': _vc.quantity,
         'start_time_str': _vc.time_str,
-        'market': _vc.market,
         'avg_weighted_price': _vc.avg_weighted_price,
         'buy_volume': {
             'base_volume': _vc.base_volume,

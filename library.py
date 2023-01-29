@@ -3875,23 +3875,6 @@ class TradeMsg(object):
         self.base_volume = round(self.price * self.quantity, 8)
         
 
-class VolumeContainer(object):
-    def __init__(self, _market, _ticker, _start_time, _avg_weighted_buy_price, _avg_weighted_sell_price, _buy_volume, _sell_volume) -> None:
-        self.market = _market
-        self.ticker = _ticker
-        self.start_time = _start_time
-        self.avg_weighted_bid_price = _avg_weighted_buy_price
-        self.avg_weighted_ask_price = _avg_weighted_sell_price
-        self.buy_volume = _buy_volume
-        self.sell_volume = _sell_volume
-
-
-def add_volume_containers(_c1 : VolumeContainer, _c2 : VolumeContainer):
-    _c1.buy_volume = add_volume_units(_c1.buy_volume, _c2.buy_volume)
-    _c1.sell_volume = add_volume_units(_c1.sell_volume, _c2.sell_volume)
-    return _c1
-
-
 class VolumeUnit(object):
     def __init__(self, _trade_msg_list) -> None:
         self.base_volume = 0.0
@@ -3917,8 +3900,9 @@ class VolumeUnit(object):
         self.mean_price = 0.0
         self.timestamp = datetime.datetime.now().timestamp()
         self._compute_levels(_trade_msg_list)
-        self.base_volume = round(self.base_volume)
-        self.quantity = round(self.quantity)
+        self.base_volume = round(self.base_volume, 8)
+        self.quantity = round(self.quantity, 8)
+        self.avg_price = round(self.base_volume / self.quantity, 8)
 
     def _compute_levels(self, _trade_msg_list):
         _i = 0
@@ -3964,6 +3948,23 @@ class VolumeUnit(object):
             elif 10000000.0 < _trade_msg.base_volume:  # greater than 10 mln USDT
                 self.l100 += 1
         self.mean_price = round(self.mean_price / _i, 8)
+
+
+class VolumeContainer(object):
+    def __init__(self, _market, _ticker, _start_time, _avg_weighted_buy_price, _avg_weighted_sell_price, _buy_volume : VolumeUnit, _sell_volume : VolumeUnit) -> None:
+        self.market = _market
+        self.ticker = _ticker
+        self.start_time = _start_time
+        self.avg_weighted_bid_price = _avg_weighted_buy_price
+        self.avg_weighted_ask_price = _avg_weighted_sell_price
+        self.buy_volume = _buy_volume
+        self.sell_volume = _sell_volume
+
+
+def add_volume_containers(_c1 : VolumeContainer, _c2 : VolumeContainer):
+    _c1.buy_volume = add_volume_units(_c1.buy_volume, _c2.buy_volume)
+    _c1.sell_volume = add_volume_units(_c1.sell_volume, _c2.sell_volume)
+    return _c1
 
 
 def add_volume_units(_a : VolumeUnit, _b : VolumeUnit):
