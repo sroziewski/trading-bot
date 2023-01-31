@@ -6,6 +6,8 @@ from time import sleep
 import schedule
 
 from binance.websockets import BinanceSocketManager
+from bson import CodecOptions
+from bson.codec_options import TypeRegistry
 
 from library import TradeMsg, BuyVolumeUnit, SellVolumeUnit, setup_logger, VolumeContainer, add_volume_containers
 
@@ -18,8 +20,16 @@ from mongodb import mongo_client
 trades = {}
 volumes = {}
 locker = {}
+volumes15 = {}
 
 logger = setup_logger("Binance-Volume-Scanner")
+
+db_volume = mongo_client.volume
+
+decimal_codec = DecimalCodec()
+type_registry = TypeRegistry([decimal_codec])
+codec_options = CodecOptions(type_registry=type_registry)
+
 
 def process_trade_socket_message(_msg):
     _trade_msg = TradeMsg(_msg)
@@ -42,19 +52,46 @@ def merge_volumes(_market):
     return _merged
 
 
-def post_process_volume_container(_vc : VolumeContainer, _t0):
-    _vc.avg_weighted_bid_price = _vc.buy_volume.avg_price
-    _vc.avg_weighted_ask_price = _vc.sell_volume.avg_price
-    _vc.mean_price = (_vc.buy_volume.mean_price + _vc.sell_volume.mean_price)/2
+def post_process_volume_container(_vc: VolumeContainer):
+    handle_volume_container(_vc)
+    try:
+        _second = int(get_time_from_binance_tmstmp(_vc.buy_volume.timestamp).split(":")[-1])
+    except Exception as e:
+        logger.info("_vc.buy_volume.timestamp = {}".format(_vc.buy_volume.timestamp))
+        logger.exception(e.__traceback__)
+    _vc.start_time = _vc.buy_volume.timestamp - 1000 * _second
+    _vc.start_time_str = get_time_from_binance_tmstmp(_vc.buy_volume.timestamp - 1000 * _second)
+    volume_collection = db_volume.get_collection(_vc.market.lower(), codec_options=codec_options)
+    if _vc.market == "BTCUSDT":
+        volume_collection.insert_one(to_mongo(_vc))
+        logger.info("Volume market {}_{} has been written to volume {} collection".format(_vc.market.lower(), _vc.ticker.lower(), volume_collection.name.upper()))
+    else:
+        if _vc.market not in volumes15:
+            _minutes = int(_vc.start_time_str.split(":")[-2])
+            volumes15[_vc.market] = []
+            if _minutes % 15 == 0:
+                volumes15[_vc.market].append(_vc)
+        else:
+            volumes15[_vc.market].append(_vc)
+        if len(volumes15[_vc.market]) == 3:
+            _vc = handle_volume_container(functools.reduce(lambda x, y: add_volume_containers(x, y), volumes15[_vc.market][0:3]))
+            _vc.ticker = '15m'
+            volume_collection.insert_one(to_mongo(_vc))
+            logger.info("Volume market {}_{} has been written to volume {} collection".format(_vc.market.lower(),
+                                                                                              _vc.ticker.lower(),
+                                                                                              volume_collection.name.upper()))
+            del volumes15[_vc.market]
+    kk = 1
+
+
+def handle_volume_container(_vc):
+    _vc.avg_weighted_buy_price = _vc.buy_volume.avg_price
+    _vc.avg_weighted_sell_price = _vc.sell_volume.avg_price
+    _vc.mean_price = (_vc.buy_volume.mean_price + _vc.sell_volume.mean_price) / 2
     _vc.total_quantity = _vc.buy_volume.quantity + _vc.sell_volume.quantity
     _vc.total_base_volume = _vc.buy_volume.base_volume + _vc.sell_volume.base_volume
     _vc.avg_price = round(_vc.total_base_volume / _vc.total_quantity, 8)
-
-    _second = int(get_time_from_binance_tmstmp(_vc.buy_volume.timestamp).split(":")[-1])
-    _vc.start_time = _vc.buy_volume.timestamp - 1000 * _second
-    _vc.start_time_str = get_time_from_binance_tmstmp(_vc.buy_volume.timestamp - 1000 * _second)
-    _r = to_mongo(_vc)
-    k=1
+    return _vc
 
 
 def handle_volume_containers(_market):
@@ -77,15 +114,14 @@ def handle_volume_containers(_market):
         return handle_volume_containers(_market)
     if _start_time4 % 5 == 4:
         _keys = volumes[_market].keys()
-        print("{} {}".format(_start_time0, _start_time4))
-        _res = post_process_volume_container(functools.reduce(lambda x, y: add_volume_containers(x, y), _merged), _start_time0)
+        # print("{} {}".format(_start_time0, _start_time4))
+        post_process_volume_container(functools.reduce(lambda x, y: add_volume_containers(x, y), _merged[0:5]))
         if len(_merged) > 5 and int(_merged[5].start_time) % 5 == 0:
             _keys = list(volumes[_market].keys())[:-1]
             for _k in _keys:
                 del volumes[_market][_k]
         else:
             del volumes[_market]
-            i = 2
     del locker[_market]
     _merged.clear()
 
@@ -130,7 +166,8 @@ def aggregate_by_minute(_list):
     return _aggs
 
 
-def _do_volume_crawl(_vc):
+def _do_volume_scan(_vc : VolumeCrawl):
+    logger.info("Start scanning market {}".format(_vc.market))
     trades[_vc.market] = []
     last_tmstmp = datetime.datetime.now().timestamp()
     _bm = BinanceSocketManager(binance_obj.client)
@@ -146,8 +183,8 @@ def _do_volume_crawl(_vc):
     #     sleep(60 * 60)
 
 
-def manage_depth_crawling(_vc):
-    _crawler = threading.Thread(target=_do_volume_crawl, args=(_vc,),
+def manage_volume_scan(_vc):
+    _crawler = threading.Thread(target=_do_volume_scan, args=(_vc,),
                                 name='_do_volume_crawl : {}'.format(_vc.market))
     _crawler.start()
 
@@ -160,62 +197,68 @@ def to_mongo(_vc : VolumeContainer): # _volume_container
         'start_time_str': _vc.start_time_str,
         'total_base_volume': _vc.total_base_volume,
         'total_quantity': _vc.total_quantity,
-        'avg_weighted_bid_price': _vc.avg_weighted_bid_price,
-        'avg_weighted_ask_price': _vc.avg_weighted_ask_price,
+        'avg_weighted_buy_price': _vc.avg_weighted_buy_price,
+        'avg_weighted_sell_price': _vc.avg_weighted_sell_price,
         'avg_price': _vc.avg_price,
         'mean_price': _vc.mean_price,
         'buy_volume': {
             'base_volume': _vc.buy_volume.base_volume,
             'quantity': _vc.buy_volume.quantity,
-            'l00': _vc.buy_volume.l00,
-            'l01': _vc.buy_volume.l01,
-            'l02': _vc.buy_volume.l02,
-            'l0': _vc.buy_volume.l0,
-            'l0236': _vc.buy_volume.l0236,
-            'l0382': _vc.buy_volume.l0382,
-            'l05': _vc.buy_volume.l05,
-            'l0618': _vc.buy_volume.l0618,
-            'l0786': _vc.buy_volume.l0786,
-            'l1': _vc.buy_volume.l1,
-            'l1382': _vc.buy_volume.l1382,
-            'l162': _vc.buy_volume.l162,
-            'l2': _vc.buy_volume.l2,
-            'l5': _vc.buy_volume.l5,
-            'l10': _vc.buy_volume.l10,
-            'l20': _vc.buy_volume.l20,
-            'l50': _vc.buy_volume.l50,
-            'l100': _vc.buy_volume.l100
+            '5k': _vc.buy_volume.l00,
+            '10k': _vc.buy_volume.l01,
+            '23_6k': _vc.buy_volume.l02,
+            '0-23_6k': _vc.buy_volume.l0,
+            '38_2k': _vc.buy_volume.l0236,
+            '50k': _vc.buy_volume.l0382,
+            '61_8k': _vc.buy_volume.l05,
+            '78_6k': _vc.buy_volume.l0618,
+            '100k': _vc.buy_volume.l0786,
+            '138k': _vc.buy_volume.l1,
+            '162k': _vc.buy_volume.l1382,
+            '200k': _vc.buy_volume.l162,
+            '500k': _vc.buy_volume.l2,
+            '1M': _vc.buy_volume.l5,
+            '2M': _vc.buy_volume.l10,
+            '5M': _vc.buy_volume.l20,
+            '10M': _vc.buy_volume.l50,
+            '10M+': _vc.buy_volume.l100
         },
         'sell_volume': {
             'base_volume': _vc.sell_volume.base_volume,
             'quantity': _vc.sell_volume.quantity,
-            'l00': _vc.sell_volume.l00,
-            'l01': _vc.sell_volume.l01,
-            'l02': _vc.sell_volume.l02,
-            'l0': _vc.sell_volume.l0,
-            'l0236': _vc.sell_volume.l0236,
-            'l0382': _vc.sell_volume.l0382,
-            'l05': _vc.sell_volume.l05,
-            'l0618': _vc.sell_volume.l0618,
-            'l0786': _vc.sell_volume.l0786,
-            'l1': _vc.sell_volume.l1,
-            'l1382': _vc.sell_volume.l1382,
-            'l162': _vc.sell_volume.l162,
-            'l2': _vc.sell_volume.l2,
-            'l5': _vc.sell_volume.l5,
-            'l10': _vc.sell_volume.l10,
-            'l20': _vc.sell_volume.l20,
-            'l50': _vc.sell_volume.l50,
-            'l100': _vc.sell_volume.l100
+            '5k': _vc.sell_volume.l00,
+            '10k': _vc.sell_volume.l01,
+            '23_6k': _vc.sell_volume.l02,
+            '0-23_6k': _vc.sell_volume.l0,
+            '38_2k': _vc.sell_volume.l0236,
+            '50k': _vc.sell_volume.l0382,
+            '61_8k': _vc.sell_volume.l05,
+            '78_6k': _vc.sell_volume.l0618,
+            '100k': _vc.sell_volume.l0786,
+            '138k': _vc.sell_volume.l1,
+            '162k': _vc.sell_volume.l1382,
+            '200k': _vc.sell_volume.l162,
+            '500k': _vc.sell_volume.l2,
+            '1M': _vc.sell_volume.l5,
+            '2M': _vc.sell_volume.l10,
+            '5M': _vc.sell_volume.l20,
+            '10M': _vc.sell_volume.l50,
+            '10M+': _vc.sell_volume.l100
         }
     }
 
 
+type = "usdt"
 
-_vc = VolumeCrawl("BTCUSDT", "binance")
+db_markets_info = mongo_client.markets_info
+usdt_markets_collection = db_markets_info.get_collection(type, codec_options=codec_options)
+market_info_cursor = usdt_markets_collection.find()
+market_info_list = [e for e in market_info_cursor]
 
-manage_depth_crawling(_vc)
 
+for _market_s in market_info_list:  # inf loop needed here
+    _vc = VolumeCrawl("{}{}".format(_market_s['name'], type).upper())
+    manage_volume_scan(_vc)
 
 schedule.every(1).minutes.do(process_volume)
 

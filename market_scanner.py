@@ -201,13 +201,8 @@ class DepthCrawl(object):
 
 
 class VolumeCrawl(object):
-    def __init__(self, _market, _exchange):
+    def __init__(self, _market):
         self.market = _market
-        self.exchange = _exchange
-        self.buy_btc_volume = False
-        self.buy_quantity = False
-        self.sell_btc_volume = False
-        self.sell_quantity = False
     #
     # def add_volumes(self, _bv, _sv):
     #     _size = 1440010 # 1000 per minute, 24hrs -- that's a maximum
