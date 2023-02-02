@@ -3870,8 +3870,8 @@ class TradeMsg(object):
         self.quantity = float(msg['q'])
         self.timestamp = msg['T']
         self.timestamp_str = get_time_from_binance_tmstmp(msg['T'])
-        self.buy = not msg['m']
-        self.sell = msg['m']
+        self.taker = not msg['m']
+        self.maker = msg['m']
         self.base_volume = round(self.price * self.quantity, 8)
         
 
@@ -3898,6 +3898,7 @@ class VolumeUnit(object):
         self.l50 = 0
         self.l100 = 0
         self.mean_price = 0.0
+        self.avg_price = 0.0
         self.timestamp = 0
         self._compute_levels(_trade_msg_list)
         self.base_volume = round(self.base_volume, 8)
@@ -3908,7 +3909,8 @@ class VolumeUnit(object):
         for _trade_msg in _trade_msg_list:
             if _ii == 0:
                 self.timestamp = _trade_msg.timestamp
-            _ii += 1
+            if _trade_msg.quantity > 0:
+                _ii += 1
             self.base_volume += _trade_msg.base_volume
             self.quantity += _trade_msg.quantity
             self.mean_price += _trade_msg.price
@@ -3956,24 +3958,26 @@ class VolumeUnit(object):
 
 
 class VolumeContainer(object):
-    def __init__(self, _market, _ticker, _start_time, _buy_volume : VolumeUnit, _sell_volume : VolumeUnit) -> None:
+    def __init__(self, _market, _ticker, _start_time, _maker_volume : VolumeUnit, _taker_volume : VolumeUnit) -> None:
         self.market = _market
         self.ticker = _ticker
         self.start_time = _start_time
         self.start_time_str = 0
-        self.avg_weighted_bid_price = 0
-        self.avg_weighted_ask_price = 0
+        self.avg_weighted_maker_price = 0
+        self.avg_weighted_taker_price = 0
         self.avg_price = 0
         self.mean_price = 0
-        self.buy_volume = _buy_volume
-        self.sell_volume = _sell_volume
+        self.maker_volume = _maker_volume
+        self.taker_volume = _taker_volume
         self.total_base_volume = 0
         self.total_quantity = 0
 
 
 def add_volume_containers(_c1: VolumeContainer, _c2: VolumeContainer):
-    _c1.buy_volume = add_volume_units(_c1.buy_volume, _c2.buy_volume)
-    _c1.sell_volume = add_volume_units(_c1.sell_volume, _c2.sell_volume)
+    _c1.maker_volume = add_volume_units(_c1.maker_volume, _c2.maker_volume)
+    _c1.taker_volume = add_volume_units(_c1.taker_volume, _c2.taker_volume)
+    if _c1.start_time == 0:
+        _c1.start_time = _c2.start_time
     return _c1
 
 
@@ -4004,12 +4008,12 @@ def add_volume_units(_a : VolumeUnit, _b : VolumeUnit):
     return _a
 
 
-class BuyVolumeUnit(VolumeUnit):
+class MakerVolumeUnit(VolumeUnit):
     def __init__(self, _trade_msg_list):
         super().__init__(_trade_msg_list)
 
 
-class SellVolumeUnit(VolumeUnit):
+class TakerVolumeUnit(VolumeUnit):
     def __init__(self, _trade_msg_list):
         super().__init__(_trade_msg_list)
 
