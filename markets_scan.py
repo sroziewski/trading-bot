@@ -85,7 +85,7 @@ repair_set = {}
 
 def process_market_info_entity(_market_entity, _journal_collection):
     global is_repaired
-    _market_type = _journal_collection.replace("_htf", "").replace("_ltf", "")
+    _market_type = _journal_collection.name.replace("_htf", "").replace("_ltf", "")
     guard(_journal_collection)
     if _market_entity['active']:
         _market_name = _market_entity['name']
