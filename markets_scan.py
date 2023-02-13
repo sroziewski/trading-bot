@@ -1,5 +1,4 @@
 import datetime
-import http.client as http_client
 import sys
 import threading
 from time import sleep
@@ -7,7 +6,7 @@ from time import sleep
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from library import setup_logger, DecimalCodec
+from library import setup_logger, DecimalCodec, get_time
 from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
 from mongodb import mongo_client
 
@@ -106,6 +105,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         'market': _market_name,
                         'ticker': _ticker,
                         'last_seen': round(_now),
+                        'last_seen_str': get_time(round(_now)),
                         'running': True
                         # we set this as True only here, we will use it for keeping a limited number of threads running at startup
                     })
