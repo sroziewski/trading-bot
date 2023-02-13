@@ -1,15 +1,12 @@
 #https://www.tradeconfident.io/content/images/size/w1600/2023/02/Screen-Shot-2023-02-01-at-7.32.43-AM.png
 import datetime
 import threading
-import urllib
 from datetime import date
 from time import sleep
 from urllib import request
 
 import schedule
 from PIL import Image
-
-from library import get_time
 
 prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
 path = "/var/www/html/pics/"
