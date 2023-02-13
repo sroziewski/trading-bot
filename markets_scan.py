@@ -15,7 +15,7 @@ market_type = sys.argv[1]
 market_time_interval = sys.argv[2]
 repair_mode = sys.argv[3]
 
-filename = "Binance-Markets-Scanner-" + market_type.upper()
+filename = "Binance-Markets-Scanner-{}-{}".format(market_type.upper(), market_time_interval.upper())
 logger = setup_logger(filename)
 
 db_markets_info = mongo_client.markets_info
@@ -25,9 +25,9 @@ decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
 
-btc_markets_collection = db_markets_info.get_collection("btc_" + market_type.lower(), codec_options=codec_options)
-usdt_markets_collection = db_markets_info.get_collection("usdt_" + market_type.lower(), codec_options=codec_options)
-busd_markets_collection = db_markets_info.get_collection("busd_" + market_type.lower(), codec_options=codec_options)
+btc_markets_collection = db_markets_info.get_collection("btc_" + market_time_interval.lower(), codec_options=codec_options)
+usdt_markets_collection = db_markets_info.get_collection("usdt_" + market_time_interval.lower(), codec_options=codec_options)
+busd_markets_collection = db_markets_info.get_collection("busd_" + market_time_interval.lower(), codec_options=codec_options)
 
 thread_limit = 100
 depth_scan_set = {}
