@@ -77,7 +77,7 @@ def manager():
     scanner(Argument(range(40, 60), "yesterday"))
 
 
-schedule.every().day.at("17:45").do(manager)
+schedule.every().day.at("17:49").do(manager)
 
 while True:
     # Checks whether a scheduled task
