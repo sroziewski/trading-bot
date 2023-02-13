@@ -25,9 +25,9 @@ decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
 
-btc_markets_collection = db_markets_info.get_collection("btc_" + market_time_interval.lower(), codec_options=codec_options)
-usdt_markets_collection = db_markets_info.get_collection("usdt_" + market_time_interval.lower(), codec_options=codec_options)
-busd_markets_collection = db_markets_info.get_collection("busd_" + market_time_interval.lower(), codec_options=codec_options)
+btc_markets_collection = db_markets_info.get_collection("btc", codec_options=codec_options)
+usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
+busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
 thread_limit = 100
 depth_scan_set = {}
@@ -36,7 +36,7 @@ depth_scan_set = {}
 def do_scan_market(_market_info_collection):
     _market_info_cursor = _market_info_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
-    _journal_collection = db_journal.get_collection(_market_info_collection.name, codec_options=codec_options)
+    _journal_collection = db_journal.get_collection(_market_info_collection.name + market_time_interval.lower(), codec_options=codec_options)
 
     for _market_s in _market_info_list:  # inf loop needed here
         process_market_info_entity(_market_s, _journal_collection)
