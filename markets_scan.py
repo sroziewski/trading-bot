@@ -36,7 +36,8 @@ depth_scan_set = {}
 def do_scan_market(_market_info_collection):
     _market_info_cursor = _market_info_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
-    _journal_collection = db_journal.get_collection(_market_info_collection.name + market_time_interval.lower(), codec_options=codec_options)
+    _journal_cn = _market_info_collection.name + "_" + market_time_interval.lower()
+    _journal_collection = db_journal.get_collection(_journal_cn, codec_options=codec_options)
 
     for _market_s in _market_info_list:  # inf loop needed here
         process_market_info_entity(_market_s, _journal_collection)

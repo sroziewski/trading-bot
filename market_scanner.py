@@ -647,7 +647,7 @@ def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _dep
 
     _dc = _depth_scan_set[_market]
 
-    _vc = VolumeCrawl(_market, _exchange)
+    _vc = VolumeCrawl(_market)
 
     # if _exchange == "binance":
     #     manage_volume_crawling(_vc)
