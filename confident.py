@@ -10,7 +10,7 @@ import schedule
 from PIL import Image
 
 prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
-path = "/tmp/pics/"
+path = "/var/www/html/pics/"
 # path = "D:/dev_null/trade/files/"
 counter = 0
 
@@ -38,7 +38,7 @@ def save_pic(_arg : Argument):
                 _img_filename = path + "{}-{}.png".format(_arg.when, _counter)
                 _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
                 request.urlretrieve(_url_tmp, _img_filename)
-                resize_pic(_img_filename, _img_filename_small)
+                # resize_pic(_img_filename, _img_filename_small)
                 _counter += 1
             except Exception as e:
                 pass
@@ -77,7 +77,7 @@ def manager():
     scanner(Argument(range(40, 60), "yesterday"))
 
 
-schedule.every().day.at("17:49").do(manager)
+schedule.every().day.at("18:00").do(manager)
 
 while True:
     # Checks whether a scheduled task
