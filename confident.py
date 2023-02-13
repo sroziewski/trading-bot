@@ -9,6 +9,8 @@ from urllib import request
 import schedule
 from PIL import Image
 
+from library import get_time
+
 prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
 path = "/var/www/html/pics/"
 # path = "D:/dev_null/trade/files/"
@@ -68,16 +70,21 @@ def scanner(_arg):
 
 
 def manager():
-    # scanner(Argument(range(0, 20)))
-    # scanner(Argument(range(20, 40)))
-    # scanner(Argument(range(40, 60)))
-    #
+    scanner(Argument(range(0, 20)))
+    scanner(Argument(range(20, 40)))
+    scanner(Argument(range(40, 60)))
+
     scanner(Argument(range(0, 20), "yesterday"))
     scanner(Argument(range(20, 40), "yesterday"))
     scanner(Argument(range(40, 60), "yesterday"))
 
+    with open(path + "date.txt", "w") as _f:
+        # Writing data to a file
+        _f.write(str(datetime.datetime.now()))
 
-schedule.every().day.at("18:02").do(manager)
+
+
+schedule.every().day.at("08:00").do(manager)
 
 while True:
     # Checks whether a scheduled task
