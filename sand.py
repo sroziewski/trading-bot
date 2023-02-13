@@ -3,7 +3,7 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-
+import talib as ta
 df = pd.read_csv('E:\\bin\\data\\BINANCE_BTCUSDT_240.csv')
 
 
