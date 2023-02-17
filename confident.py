@@ -1,4 +1,4 @@
-#https://www.tradeconfident.io/content/images/size/w1600/2023/02/Screen-Shot-2023-02-01-at-7.32.43-AM.png
+# https://www.tradeconfident.io/content/images/size/w1600/2023/02/Screen-Shot-2023-02-01-at-7.32.43-AM.png
 import datetime
 import threading
 from datetime import date
@@ -20,7 +20,7 @@ class Argument(object):
         self.when = _when
 
 
-def save_pic(_arg : Argument):
+def save_pic(_arg: Argument):
     _date = date.today()
     if _arg.when == "yesterday":
         _date -= datetime.timedelta(1)
@@ -31,7 +31,7 @@ def save_pic(_arg : Argument):
     _counter = 0
     for _min in _arg.range:
         for _sec in range(60):
-            _url_tmp = prefix_url + "{}/{}/Screen-Shot-{}-{}-{}-at-7.{}.{}-AM.png"\
+            _url_tmp = prefix_url + "{}/{}/Screen-Shot-{}-{}-{}-at-7.{}.{}-AM.png" \
                 .format(_year, _month, _year, _month, _day, add_zero(_min), add_zero(_sec))
             try:
                 _img_filename = path + "{}-{}.png".format(_arg.when, _counter)
@@ -80,13 +80,10 @@ def manager():
         _f.write(str(datetime.datetime.now()))
 
 
-
-schedule.every().day.at("08:00").do(manager)
+schedule.every().day.at("08:00").at("20:30").do(manager)
 
 while True:
     # Checks whether a scheduled task
     # is pending to run or not
     schedule.run_pending()
     sleep(10)
-
-
