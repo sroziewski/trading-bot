@@ -1,7 +1,6 @@
 # https://www.tradeconfident.io/content/images/size/w1600/2023/02/Screen-Shot-2023-02-01-at-7.32.43-AM.png
 # https://www.tradeconfident.io/content/images/2023/03/Screen-Shot-2023-03-01-at-7.36.52-AM.png
 import datetime
-import os
 import subprocess
 import threading
 from datetime import date
@@ -21,7 +20,7 @@ counter = 0
 
 def read_text(_file_fullname, _filename):
     im = Image.open(r""+_file_fullname)
-    left = 70
+    left = 5
     top = 5
     right = 514
     bottom = 40
@@ -31,6 +30,7 @@ def read_text(_file_fullname, _filename):
     tesseract_cmd = "docker run --rm -it --name myapp -v \"/var/www/html/pics/tmp\":/app  -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_filename)
     p = subprocess.Popen(tesseract_cmd, stdout=subprocess.PIPE, shell=True)
     return p.communicate()
+
 
 class Argument(object):
     def __init__(self, _range, _when="today"):
@@ -107,7 +107,7 @@ def manager():
         _f.write(str(datetime.datetime.now()))
 
 
-schedule.every().day.at("16:37").do(manager)
+schedule.every().day.at("16:49").do(manager)
 schedule.every().day.at("20:30").do(manager)
 #
 while True:
