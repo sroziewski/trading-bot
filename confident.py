@@ -5,6 +5,7 @@ import threading
 from datetime import date
 from time import sleep
 from urllib import request
+from urllib.error import HTTPError
 
 import schedule
 from PIL import Image
@@ -45,7 +46,7 @@ def save_pic(_arg: Argument):
         for _sec in range(60):
             _url_tmp = prefix_url + "{}/{}/Screen-Shot-{}-{}-{}-at-7.{}.{}-AM.png" \
                 .format(_year, _month, _year, _month, _day, add_zero(_min), add_zero(_sec))
-            # try:
+        try:
             _filename_suffix = "{}-{}.png".format(_arg.when, _counter)
             _img_filename = path + _filename_suffix
             _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
@@ -54,8 +55,8 @@ def save_pic(_arg: Argument):
             _txt = read_text(_img_filename)
             print(_txt)
             _counter += 1
-            # except Exception as e:
-            #     pass
+        except HTTPError as e:
+            pass
     return 0
 
 
@@ -80,6 +81,10 @@ def scanner(_arg):
     _crawler_s.start()
     counter += 1
 
+
+scanner(Argument(range(0, 20), "yesterday"))
+scanner(Argument(range(20, 40), "yesterday"))
+scanner(Argument(range(40, 60), "yesterday"))
 
 def manager():
     # scanner(Argument(range(0, 20)))
