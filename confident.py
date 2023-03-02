@@ -106,7 +106,7 @@ def extract_coin(_txt: str):
     print(_txt)
     print(_txt.lower())
     # print(_txt.lower().split("/"))
-    _txt = _txt.lower().encode('utf-8').split("/")[0]
+    _txt = _txt.lower().decode('utf-8').split("/")[0]
 
     _atom = ['cosmos', 'cocsmo']
     _dot = ['polkadot']
@@ -228,7 +228,7 @@ def manager():
 
 
 schedule.every().day.at("17:39").do(manager)
-schedule.every().day.at("20:45").do(manager)
+schedule.every().day.at("20:47").do(manager)
 #
 while True:
     # Checks whether a scheduled task
