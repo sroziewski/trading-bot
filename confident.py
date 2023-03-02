@@ -1,4 +1,5 @@
 # https://www.tradeconfident.io/content/images/size/w1600/2023/02/Screen-Shot-2023-02-01-at-7.32.43-AM.png
+# https://www.tradeconfident.io/content/images/2023/03/Screen-Shot-2023-03-01-at-7.36.52-AM.png
 import datetime
 import os
 import subprocess
@@ -11,7 +12,8 @@ from urllib.error import HTTPError
 import schedule
 from PIL import Image
 
-prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
+# prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
+prefix_url = "https://www.tradeconfident.io/content/images/"
 path = "/var/www/html/pics/"
 # path = "E:/dev_null/trade/files/"
 counter = 0
@@ -19,9 +21,9 @@ counter = 0
 
 def read_text(_file_fullname, _filename):
     im = Image.open(r""+_file_fullname)
-    left = 87
+    left = 70
     top = 5
-    right = 414
+    right = 514
     bottom = 40
     img_crop = im.crop((left, top, right, bottom))
     _tmp_file = path + "tmp/" + _filename
@@ -36,7 +38,10 @@ class Argument(object):
         self.when = _when
 
 
+_list = []
+
 def save_pic(_arg: Argument):
+    global _list
     _date = date.today()
     if _arg.when == "yesterday":
         _date -= datetime.timedelta(1)
@@ -49,17 +54,19 @@ def save_pic(_arg: Argument):
         for _sec in range(60):
             _url_tmp = prefix_url + "{}/{}/Screen-Shot-{}-{}-{}-at-7.{}.{}-AM.png" \
                 .format(_year, _month, _year, _month, _day, add_zero(_min), add_zero(_sec))
-        try:
-            _filename_suffix = "{}-{}.png".format(_arg.when, _counter)
-            _img_filename = path + _filename_suffix
-            _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
-            request.urlretrieve(_url_tmp, _img_filename)
-            resize_pic(_img_filename, _img_filename_small)
-            _txt = read_text(_img_filename, _filename_suffix)
-            print(_txt)
-            _counter += 1
-        except HTTPError as e:
-            pass
+            _list.append(_url_tmp)
+            try:
+                _filename_suffix = "{}-{}.png".format(_arg.when, _counter)
+                _img_filename = path + _filename_suffix
+                _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
+                request.urlretrieve(_url_tmp, _img_filename)
+                resize_pic(_img_filename, _img_filename_small)
+
+                _txt = read_text(_img_filename, _filename_suffix)
+                print(_txt)
+                _counter += 1
+            except HTTPError as e:
+                pass
     return 0
 
 
@@ -85,14 +92,11 @@ def scanner(_arg):
     counter += 1
 
 
-scanner(Argument(range(0, 20), "yesterday"))
-scanner(Argument(range(20, 40), "yesterday"))
-scanner(Argument(range(40, 60), "yesterday"))
 
 def manager():
-    # scanner(Argument(range(0, 20)))
-    # scanner(Argument(range(20, 40)))
-    # scanner(Argument(range(40, 60)))
+    scanner(Argument(range(0, 20)))
+    scanner(Argument(range(20, 40)))
+    scanner(Argument(range(40, 60)))
 
     scanner(Argument(range(0, 20), "yesterday"))
     scanner(Argument(range(20, 40), "yesterday"))
@@ -103,9 +107,9 @@ def manager():
         _f.write(str(datetime.datetime.now()))
 
 
-schedule.every().day.at("14:55").do(manager)
+schedule.every().day.at("16:37").do(manager)
 schedule.every().day.at("20:30").do(manager)
-
+#
 while True:
     # Checks whether a scheduled task
     # is pending to run or not
