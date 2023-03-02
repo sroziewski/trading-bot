@@ -17,8 +17,8 @@ path = "/var/www/html/pics/"
 counter = 0
 
 
-def read_text(_filename):
-    im = Image.open(r""+_filename)
+def read_text(_file_fullname, _filename):
+    im = Image.open(r""+_file_fullname)
     left = 87
     top = 5
     right = 414
@@ -54,7 +54,7 @@ def save_pic(_arg: Argument):
             _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
             request.urlretrieve(_url_tmp, _img_filename)
             resize_pic(_img_filename, _img_filename_small)
-            _txt = read_text(_filename_suffix)
+            _txt = read_text(_img_filename, _filename_suffix)
             print(_txt)
             _counter += 1
         except HTTPError as e:
