@@ -26,7 +26,7 @@ def read_text(_filename):
     img_crop = im.crop((left, top, right, bottom))
     _tmp_file = path + "tmp/ " + _filename
     img_crop.save(_tmp_file)
-    pytesseract.tesseract_cmd = "docker run --rm -it --name myapp -v \"$PWD\":/app -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_tmp_file)
+    pytesseract.tesseract_cmd = "docker run --rm -it --name myapp -v \"/var/www/html/pics/tmp\":/app  -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_filename)
     return pytesseract.image_to_string(img_crop)
 
 class Argument(object):
