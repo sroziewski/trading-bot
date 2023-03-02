@@ -3,6 +3,7 @@ import datetime
 import hashlib
 import logging
 import logging.config
+import os
 import pickle
 import smtplib
 import ssl
@@ -4144,3 +4145,9 @@ def analyze_40ma(_filename, _exchange, _ticker, _time_interval, _markets_obj):
     save_to_file(key_dir, _filename, _exclude_markets)
 
     return False
+
+
+def get_files(path):
+    for file in os.listdir(path):
+        if os.path.isfile(os.path.join(path, file)):
+            yield file

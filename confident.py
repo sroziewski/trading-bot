@@ -1,5 +1,6 @@
 # https://www.tradeconfident.io/content/images/size/w1600/2023/02/Screen-Shot-2023-02-01-at-7.32.43-AM.png
 import datetime
+import os
 import threading
 from datetime import date
 from time import sleep
@@ -7,12 +8,23 @@ from urllib import request
 
 import schedule
 from PIL import Image
+from pytesseract import pytesseract
 
 prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
 path = "/var/www/html/pics/"
-# path = "D:/dev_null/trade/files/"
+# path = "E:/dev_null/trade/files/"
 counter = 0
 
+
+def read_text(_filename):
+    im = Image.open(r""+_filename)
+    left = 87
+    top = 5
+    right = 414
+    bottom = 40
+    im1 = im.crop((left, top, right, bottom))
+    pytesseract.tesseract_cmd = "docker run --rm -it --name myapp -v \"$PWD\":/app -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_filename)
+    return pytesseract.image_to_string(im1)
 
 class Argument(object):
     def __init__(self, _range, _when="today"):
@@ -34,10 +46,13 @@ def save_pic(_arg: Argument):
             _url_tmp = prefix_url + "{}/{}/Screen-Shot-{}-{}-{}-at-7.{}.{}-AM.png" \
                 .format(_year, _month, _year, _month, _day, add_zero(_min), add_zero(_sec))
             try:
-                _img_filename = path + "{}-{}.png".format(_arg.when, _counter)
+                _filename_suffix = "{}-{}.png".format(_arg.when, _counter)
+                _img_filename = path + _filename_suffix
                 _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
                 request.urlretrieve(_url_tmp, _img_filename)
                 resize_pic(_img_filename, _img_filename_small)
+                _txt = read_text(_img_filename)
+                print(_txt)
                 _counter += 1
             except Exception as e:
                 pass
@@ -67,9 +82,9 @@ def scanner(_arg):
 
 
 def manager():
-    scanner(Argument(range(0, 20)))
-    scanner(Argument(range(20, 40)))
-    scanner(Argument(range(40, 60)))
+    # scanner(Argument(range(0, 20)))
+    # scanner(Argument(range(20, 40)))
+    # scanner(Argument(range(40, 60)))
 
     scanner(Argument(range(0, 20), "yesterday"))
     scanner(Argument(range(20, 40), "yesterday"))
@@ -80,7 +95,7 @@ def manager():
         _f.write(str(datetime.datetime.now()))
 
 
-schedule.every().day.at("08:00").do(manager)
+schedule.every().day.at("14:52").do(manager)
 schedule.every().day.at("20:30").do(manager)
 
 while True:
