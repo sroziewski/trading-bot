@@ -228,7 +228,7 @@ def manager():
 
 
 schedule.every().day.at("17:39").do(manager)
-schedule.every().day.at("20:35").do(manager)
+schedule.every().day.at("20:42").do(manager)
 #
 while True:
     # Checks whether a scheduled task
