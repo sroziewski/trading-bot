@@ -103,9 +103,6 @@ def save_pic(_arg: Argument):
 
 
 def extract_coin(_txt: str):
-    print(_txt)
-    print(_txt.lower())
-    # print(_txt.lower().split("/"))
     _txt = _txt.lower().decode('utf-8').split("/")[0]
 
     _atom = ['cosmos', 'cocsmo']
@@ -164,7 +161,7 @@ def extract_coin(_txt: str):
     if any(item in _txt for item in _eth):
         return "eth"
     if any(item in _txt for item in _ada):
-        return "_ada"
+        return "ada"
     if any(item in _txt for item in _algo):
         return "algo"
     if any(item in _txt for item in _ape):
@@ -205,21 +202,16 @@ def scanner(_arg):
 def manager():
     coin_map = copy.deepcopy(coin_map_0)
 
-    _s0 = scanner(Argument(range(0, 20), coin_map))
-    _s1 = scanner(Argument(range(20, 40), coin_map))
-    _s2 = scanner(Argument(range(40, 60), coin_map))
+    scanner(Argument(range(0, 20), coin_map))
+    scanner(Argument(range(20, 40), coin_map))
+    scanner(Argument(range(40, 60), coin_map))
 
-    _s3 = scanner(Argument(range(0, 20), coin_map, "yesterday"))
-    _s4 = scanner(Argument(range(20, 40), coin_map, "yesterday"))
-    _s5 = scanner(Argument(range(40, 60), coin_map, "yesterday"))
+    scanner(Argument(range(0, 20), coin_map, "yesterday"))
+    scanner(Argument(range(20, 40), coin_map, "yesterday"))
+    scanner(Argument(range(40, 60), coin_map, "yesterday"))
 
-    _s0.join()
-    _s1.join()
-    _s2.join()
-    _s3.join()
-    _s4.join()
-    _s5.join()
-
+    sleep(60 * 10)
+    print("Writing map...")
     write_map(coin_map)
 
     with open(path + "date.txt", "w") as _f:
@@ -228,7 +220,7 @@ def manager():
 
 
 schedule.every().day.at("17:39").do(manager)
-schedule.every().day.at("20:47").do(manager)
+schedule.every().day.at("21:04").do(manager)
 #
 while True:
     # Checks whether a scheduled task
