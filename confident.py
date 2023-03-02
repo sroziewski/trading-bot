@@ -1,6 +1,7 @@
 # https://www.tradeconfident.io/content/images/size/w1600/2023/02/Screen-Shot-2023-02-01-at-7.32.43-AM.png
 import datetime
 import os
+import subprocess
 import threading
 from datetime import date
 from time import sleep
@@ -9,7 +10,6 @@ from urllib.error import HTTPError
 
 import schedule
 from PIL import Image
-from pytesseract import pytesseract
 
 prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
 path = "/var/www/html/pics/"
@@ -26,8 +26,9 @@ def read_text(_file_fullname, _filename):
     img_crop = im.crop((left, top, right, bottom))
     _tmp_file = path + "tmp/" + _filename
     img_crop.save(_tmp_file)
-    pytesseract.tesseract_cmd = "docker run --rm -it --name myapp -v \"/var/www/html/pics/tmp\":/app  -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_filename)
-    return pytesseract.image_to_string(img_crop)
+    tesseract_cmd = "docker run --rm -it --name myapp -v \"/var/www/html/pics/tmp\":/app  -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_filename)
+    p = subprocess.Popen(tesseract_cmd, stdout=subprocess.PIPE, shell=True)
+    return p.communicate()
 
 class Argument(object):
     def __init__(self, _range, _when="today"):
