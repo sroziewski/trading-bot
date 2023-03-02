@@ -171,9 +171,9 @@ def extract_coin(_txt: str):
 
 def write_map(_coin_map):
     for _key, _list in _coin_map.items():
-        with open("{}.txt".format(_key), "w") as _f:
+        with open(map_path + "{}.txt".format(_key), "w") as _f:
             for _row in _list:
-                _f.write(_row)
+                _f.write(_row +"\n")
 
 
 def resize_pic(_img_filename, _img_filename_small):
@@ -220,7 +220,7 @@ def manager():
 
 
 schedule.every().day.at("17:39").do(manager)
-schedule.every().day.at("21:04").do(manager)
+schedule.every().day.at("21:21").do(manager)
 #
 while True:
     # Checks whether a scheduled task
