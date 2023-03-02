@@ -103,6 +103,9 @@ def save_pic(_arg: Argument):
 
 
 def extract_coin(_txt: str):
+    print(_txt)
+    print(_txt.lower())
+    print(_txt.lower().split("/"))
     _txt = _txt.lower().split("/")[0]
 
     _atom = ['cosmos', 'cocsmo']
