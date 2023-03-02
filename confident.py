@@ -45,17 +45,17 @@ def save_pic(_arg: Argument):
         for _sec in range(60):
             _url_tmp = prefix_url + "{}/{}/Screen-Shot-{}-{}-{}-at-7.{}.{}-AM.png" \
                 .format(_year, _month, _year, _month, _day, add_zero(_min), add_zero(_sec))
-            try:
-                _filename_suffix = "{}-{}.png".format(_arg.when, _counter)
-                _img_filename = path + _filename_suffix
-                _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
-                request.urlretrieve(_url_tmp, _img_filename)
-                resize_pic(_img_filename, _img_filename_small)
-                _txt = read_text(_img_filename)
-                print(_txt)
-                _counter += 1
-            except Exception as e:
-                pass
+            # try:
+            _filename_suffix = "{}-{}.png".format(_arg.when, _counter)
+            _img_filename = path + _filename_suffix
+            _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
+            request.urlretrieve(_url_tmp, _img_filename)
+            resize_pic(_img_filename, _img_filename_small)
+            _txt = read_text(_img_filename)
+            print(_txt)
+            _counter += 1
+            # except Exception as e:
+            #     pass
     return 0
 
 
@@ -95,7 +95,7 @@ def manager():
         _f.write(str(datetime.datetime.now()))
 
 
-schedule.every().day.at("14:52").do(manager)
+schedule.every().day.at("14:55").do(manager)
 schedule.every().day.at("20:30").do(manager)
 
 while True:
