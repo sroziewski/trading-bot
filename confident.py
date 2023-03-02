@@ -23,9 +23,11 @@ def read_text(_filename):
     top = 5
     right = 414
     bottom = 40
-    im1 = im.crop((left, top, right, bottom))
-    pytesseract.tesseract_cmd = "docker run --rm -it --name myapp -v \"$PWD\":/app -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_filename)
-    return pytesseract.image_to_string(im1)
+    img_crop = im.crop((left, top, right, bottom))
+    _tmp_file = path + "tmp/ " + _filename
+    img_crop.save(_tmp_file)
+    pytesseract.tesseract_cmd = "docker run --rm -it --name myapp -v \"$PWD\":/app -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_tmp_file)
+    return pytesseract.image_to_string(img_crop)
 
 class Argument(object):
     def __init__(self, _range, _when="today"):
