@@ -28,7 +28,7 @@ def read_text(_file_fullname, _filename):
     img_crop = im.crop((left, top, right, bottom))
     _tmp_file = path + "tmp/" + _filename
     img_crop.save(_tmp_file)
-    tesseract_cmd = "docker run --rm -it --name myapp -v \"/var/www/html/pics/tmp\":/app  -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_filename)
+    tesseract_cmd = "docker run --rm -it --name myapp -v \"/var/www/html/pics/tmp\":/app  -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1 -l eng".format(_filename)
     while locked:
         sleep(1)
     locked = True
@@ -111,7 +111,7 @@ def manager():
         _f.write(str(datetime.datetime.now()))
 
 
-schedule.every().day.at("17:03").do(manager)
+schedule.every().day.at("17:39").do(manager)
 schedule.every().day.at("20:30").do(manager)
 #
 while True:
