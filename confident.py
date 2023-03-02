@@ -24,7 +24,7 @@ def read_text(_filename):
     right = 414
     bottom = 40
     img_crop = im.crop((left, top, right, bottom))
-    _tmp_file = path + "tmp/ " + _filename
+    _tmp_file = path + "tmp/" + _filename
     img_crop.save(_tmp_file)
     pytesseract.tesseract_cmd = "docker run --rm -it --name myapp -v \"/var/www/html/pics/tmp\":/app  -w /app \"tesseract-ocr\" tesseract {} stdout --oem 1".format(_filename)
     return pytesseract.image_to_string(img_crop)
@@ -54,7 +54,7 @@ def save_pic(_arg: Argument):
             _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
             request.urlretrieve(_url_tmp, _img_filename)
             resize_pic(_img_filename, _img_filename_small)
-            _txt = read_text(_img_filename)
+            _txt = read_text(_filename_suffix)
             print(_txt)
             _counter += 1
         except HTTPError as e:
