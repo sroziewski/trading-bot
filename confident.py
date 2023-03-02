@@ -1,5 +1,6 @@
 # https://www.tradeconfident.io/content/images/size/w1600/2023/02/Screen-Shot-2023-02-01-at-7.32.43-AM.png
 # https://www.tradeconfident.io/content/images/2023/03/Screen-Shot-2023-03-01-at-7.36.52-AM.png
+import copy
 import datetime
 import subprocess
 import threading
@@ -14,8 +15,33 @@ from PIL import Image
 # prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
 prefix_url = "https://www.tradeconfident.io/content/images/"
 path = "/var/www/html/pics/"
+map_path = path + "map/"
 # path = "E:/dev_null/trade/files/"
 counter = 0
+
+coin_map_0 = {
+    "atom": [],
+    "dot": [],
+    "avax": [],
+    "eos": [],
+    "doge": [],
+    "link": [],
+    "ltc": [],
+    "mana": [],
+    "matic": [],
+    "sand": [],
+    "shiba": [],
+    "sol": [],
+    "uni": [],
+    "btc": [],
+    "vet": [],
+    "xrp": [],
+    "eth": [],
+    "ada": [],
+    "algo": [],
+    "ape": [],
+    "others": []
+}
 
 
 def read_text(_file_fullname, _filename):
@@ -39,9 +65,10 @@ def read_text(_file_fullname, _filename):
 
 
 class Argument(object):
-    def __init__(self, _range, _when="today"):
+    def __init__(self, _range, _map, _when="today"):
         self.range = _range
         self.when = _when
+        self.coin_map = _map
 
 
 locked = False
@@ -61,17 +88,92 @@ def save_pic(_arg: Argument):
             _url_tmp = prefix_url + "{}/{}/Screen-Shot-{}-{}-{}-at-7.{}.{}-AM.png" \
                 .format(_year, _month, _year, _month, _day, add_zero(_min), add_zero(_sec))
             try:
-                _filename_suffix = "{}-{}.png".format(_arg.when, _counter)
+                _filename_suffix = "{}-{}-{}.png".format(_arg.when, max(_arg.range), _counter)
                 _img_filename = path + _filename_suffix
                 _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
                 request.urlretrieve(_url_tmp, _img_filename)
                 resize_pic(_img_filename, _img_filename_small)
                 _txt = read_text(_img_filename, _filename_suffix)
-                print(_txt)
+                _coin = extract_coin(_txt[0])
+                _arg.coin_map[_coin].append(_filename_suffix)
                 _counter += 1
-            except HTTPError as e:
+            except HTTPError:
                 pass
     return 0
+
+
+def extract_coin(_txt: str):
+    _txt = _txt.lower().split("/")[0]
+
+    _atom = ['cosmos', 'cocsmo']
+    _dot = ['polkadot']
+    _avax = ['avalanche']
+    _eos = ['eos', 'eqs', 'fos', 'fqs']
+    _doge = ['doge']
+    _link = ['link']
+    _ltc = ['jtecoin', 'litecoin']
+    _mana = ['decentraland']
+    _matic = ['poalvaon', 'polygon']
+    _sand = ['sand']
+    _shiba = ['ghiba', 'shib']
+    _sol = ['solana']
+    _uni = ['uni', 'ynjswap']
+    _btc = ['bitcoin']
+    _vet = ['echain']
+    _xrp = ['xrp', 'wyrp', 'xyrp']
+    _eth = ['eth', 'Fthe']
+    _ada = ['cardano']
+    _algo = ['algo']
+    _ape = ['ape']
+
+    if any(item in _txt for item in _atom):
+        return "atom"
+    if any(item in _txt for item in _dot):
+        return "dot"
+    if any(item in _txt for item in _avax):
+        return "avax"
+    if any(item in _txt for item in _eos):
+        return "eos"
+    if any(item in _txt for item in _doge):
+        return "doge"
+    if any(item in _txt for item in _link):
+        return "link"
+    if any(item in _txt for item in _ltc):
+        return "ltc"
+    if any(item in _txt for item in _mana):
+        return "mana"
+    if any(item in _txt for item in _matic):
+        return "matic"
+    if any(item in _txt for item in _sand):
+        return "sand"
+    if any(item in _txt for item in _shiba):
+        return "shiba"
+    if any(item in _txt for item in _sol):
+        return "sol"
+    if any(item in _txt for item in _uni):
+        return "uni"
+    if any(item in _txt for item in _btc):
+        return "btc"
+    if any(item in _txt for item in _vet):
+        return "vet"
+    if any(item in _txt for item in _xrp):
+        return "xrp"
+    if any(item in _txt for item in _eth):
+        return "eth"
+    if any(item in _txt for item in _ada):
+        return "_ada"
+    if any(item in _txt for item in _algo):
+        return "algo"
+    if any(item in _txt for item in _ape):
+        return "ape"
+    return "others"
+
+
+def write_map(_coin_map):
+    for _key, _list in _coin_map.items():
+        with open("{}.txt".format(_key), "w") as _f:
+            for _row in _list:
+                _f.write(_row)
 
 
 def resize_pic(_img_filename, _img_filename_small):
@@ -94,17 +196,28 @@ def scanner(_arg):
                                   name='save_pic : {}'.format(counter))
     _crawler_s.start()
     counter += 1
-
+    return _crawler_s
 
 
 def manager():
-    scanner(Argument(range(0, 20)))
-    scanner(Argument(range(20, 40)))
-    scanner(Argument(range(40, 60)))
+    coin_map = copy.deepcopy(coin_map_0)
 
-    scanner(Argument(range(0, 20), "yesterday"))
-    scanner(Argument(range(20, 40), "yesterday"))
-    scanner(Argument(range(40, 60), "yesterday"))
+    _s0 = scanner(Argument(range(0, 20), coin_map))
+    _s1 = scanner(Argument(range(20, 40), coin_map))
+    _s2 = scanner(Argument(range(40, 60), coin_map))
+
+    _s3 = scanner(Argument(range(0, 20), coin_map, "yesterday"))
+    _s4 = scanner(Argument(range(20, 40), coin_map, "yesterday"))
+    _s5 = scanner(Argument(range(40, 60), coin_map, "yesterday"))
+
+    _s0.join()
+    _s1.join()
+    _s2.join()
+    _s3.join()
+    _s4.join()
+    _s5.join()
+
+    write_map(coin_map)
 
     with open(path + "date.txt", "w") as _f:
         # Writing data to a file
@@ -112,7 +225,7 @@ def manager():
 
 
 schedule.every().day.at("17:39").do(manager)
-schedule.every().day.at("20:30").do(manager)
+schedule.every().day.at("20:35").do(manager)
 #
 while True:
     # Checks whether a scheduled task
