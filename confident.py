@@ -16,6 +16,7 @@ from PIL import Image
 prefix_url = "https://www.tradeconfident.io/content/images/"
 path = "/var/www/html/pics/"
 map_path = path + "map/"
+small_path = path + "small/"
 # path = "E:/dev_null/trade/files/"
 counter = 0
 
@@ -90,7 +91,7 @@ def save_pic(_arg: Argument):
             try:
                 _filename_suffix = "{}-{}-{}.png".format(_arg.when, max(_arg.range), _counter)
                 _img_filename = path + _filename_suffix
-                _img_filename_small = path + "small/{}-{}.png".format(_arg.when, _counter)
+                _img_filename_small = small_path + "{}-{}-{}.png".format(_arg.when, max(_arg.range), _counter)
                 request.urlretrieve(_url_tmp, _img_filename)
                 resize_pic(_img_filename, _img_filename_small)
                 _txt = read_text(_img_filename, _filename_suffix)
@@ -219,7 +220,13 @@ def manager():
         _f.write(str(datetime.datetime.now()))
 
 
-schedule.every().day.at("17:39").do(manager)
+def clear_chart_dir():
+    _p = subprocess.Popen("cd {} && rm -f *.png && cd small && rm -f *.png".format(path), stdout=subprocess.PIPE, shell=True)
+    _p.communicate()
+
+
+schedule.every().day.at("15:18").do(clear_chart_dir)
+schedule.every().day.at("15:19").do(manager)
 schedule.every().day.at("21:21").do(manager)
 #
 while True:
