@@ -221,7 +221,7 @@ def manager():
 
 
 def clear_chart_dir():
-    _p = subprocess.Popen("cd {} && rm -f *.png && cd small && rm -f *.png".format(path), stdout=subprocess.PIPE, shell=True)
+    _p = subprocess.Popen("cd {} && rm -f *.png && rm -f small/*.png && rm -f tmp/*.png && rm -f map/*.txt".format(path), stdout=subprocess.PIPE, shell=True)
     _p.communicate()
 
 
