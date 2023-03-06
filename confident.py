@@ -101,7 +101,7 @@ def save_pic(_arg: Argument):
                 _txt = read_text(_img_filename, _filename_suffix)
                 _coin = extract_coin(_txt[0])
                 if _coin== "others":
-                    logger.info("others: {}".format(_txt[0]))
+                    logger.info("file: {} -- others: {}".format(_filename_suffix, _txt[0]))
                 _arg.coin_map[_coin].append(_filename_suffix)
                 _counter += 1
             except HTTPError:
@@ -113,7 +113,7 @@ def extract_coin(_txt: str):
     _txt = _txt.lower().decode('utf-8').split("/")[0]
 
     _atom = ['cosmos', 'cocsmo']
-    _dot = ['polkadot']
+    _dot = ['polkadot', 'idot']
     _avax = ['avalanche']
     _eos = ['eos', 'eqs', 'fos', 'fqs']
     _doge = ['doge']
