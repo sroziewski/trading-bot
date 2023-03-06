@@ -12,6 +12,8 @@ from urllib.error import HTTPError
 import schedule
 from PIL import Image
 
+from library import setup_logger
+
 # prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
 prefix_url = "https://www.tradeconfident.io/content/images/"
 path = "/var/www/html/pics/"
@@ -19,6 +21,8 @@ map_path = path + "map/"
 small_path = path + "small/"
 # path = "E:/dev_null/trade/files/"
 counter = 0
+
+logger = setup_logger("Trade-Confident")
 
 coin_map_0 = {
     "atom": [],
@@ -96,6 +100,8 @@ def save_pic(_arg: Argument):
                 resize_pic(_img_filename, _img_filename_small)
                 _txt = read_text(_img_filename, _filename_suffix)
                 _coin = extract_coin(_txt[0])
+                if _coin== "others":
+                    logger.info("others: {}".format(_txt[0]))
                 _arg.coin_map[_coin].append(_filename_suffix)
                 _counter += 1
             except HTTPError:
@@ -201,6 +207,8 @@ def scanner(_arg):
 
 
 def manager():
+    logger.info("Starting manager...")
+
     coin_map = copy.deepcopy(coin_map_0)
 
     scanner(Argument(range(0, 20), coin_map))
@@ -212,7 +220,7 @@ def manager():
     scanner(Argument(range(40, 60), coin_map, "yesterday"))
 
     sleep(60 * 10)
-    print("Writing map...")
+    logger.info("Writing map...")
     write_map(coin_map)
 
     with open(path + "date.txt", "w") as _f:
@@ -225,9 +233,9 @@ def clear_chart_dir():
     _p.communicate()
 
 
-schedule.every().day.at("15:28").do(clear_chart_dir)
-schedule.every().day.at("15:29").do(manager)
-schedule.every().day.at("21:21").do(manager)
+schedule.every().day.at("07:59").do(clear_chart_dir)
+schedule.every().day.at("08:00").do(manager)
+schedule.every().day.at("20:30").do(manager)
 #
 while True:
     # Checks whether a scheduled task
