@@ -221,15 +221,12 @@ def manager():
 
 
 def clear_chart_dir():
-    print("CLEAR")
     _p = subprocess.Popen("cd {} && rm -f *.png && cd small && rm -f *.png".format(path), stdout=subprocess.PIPE, shell=True)
     _p.communicate()
 
 
-clear_chart_dir()
-
-schedule.every().day.at("15:18").do(clear_chart_dir)
-schedule.every().day.at("15:19").do(manager)
+schedule.every().day.at("15:22").do(clear_chart_dir)
+schedule.every().day.at("15:23").do(manager)
 schedule.every().day.at("21:21").do(manager)
 #
 while True:
