@@ -120,18 +120,18 @@ def extract_coin(_txt: str):
     _link = ['link']
     _ltc = ['jtecoin', 'litecoin']
     _mana = ['decentraland']
-    _matic = ['poalvaon', 'polygon', 'polvaon']
+    _matic = ['poalvaon', 'polygon', 'polvaon', 'palvaon']
     _sand = ['sand']
-    _shiba = ['ghiba', 'shib']
+    _shiba = ['hiba', 'shib']
     _sol = ['solana']
-    _uni = ['uni', 'ynjswap', 'jniewan']
+    _uni = ['uni', 'ynjswap', 'jniewan', 'iniewan']
     _btc = ['bitcoin']
     _vet = ['echain', '\\/echain']
-    _xrp = ['xrp', 'wyrp', 'xyrp']
+    _xrp = ['xrp', 'wyrp', 'xyrp', 'rp']
     _eth = ['eth', 'fthe']
     _ada = ['cardano']
     _algo = ['algo']
-    _ape = ['ape']
+    _ape = ['ape', 'apne']
 
     if any(item in _txt for item in _atom):
         return "atom"

@@ -3972,6 +3972,8 @@ class VolumeContainer(object):
         self.taker_volume = _taker_volume
         self.total_base_volume = 0
         self.total_quantity = 0
+    def print(self):
+        logger_global[0].info("market: {}, total_base_volume: {}, total_quantity: {}, start_time_str: {}".format(self.market, self.maker_volume.base_volume+self.taker_volume.base_volume, self.maker_volume.quantity+self.taker_volume.quantity, get_time_from_binance_tmstmp(self.maker_volume.timestamp)))
 
 
 def add_volume_containers(_c1: VolumeContainer, _c2: VolumeContainer):
@@ -4147,7 +4149,7 @@ def analyze_40ma(_filename, _exchange, _ticker, _time_interval, _markets_obj):
     return False
 
 
-def get_files(path):
-    for file in os.listdir(path):
-        if os.path.isfile(os.path.join(path, file)):
-            yield file
+def get_files(_path):
+    for _file in os.listdir(_path):
+        if os.path.isfile(os.path.join(_path, _file)):
+            yield _file
