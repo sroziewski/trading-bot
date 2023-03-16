@@ -179,10 +179,10 @@ def handle_volume_containers(_message):
     _market = _message['market']
     locker[_market] = True
     _merged = merge_volumes(_market)
-    if len(_merged) < 2:
-        del locker[_market]
-        _merged.clear()
-        return
+    # if len(_merged) < 2:
+    #     del locker[_market]
+    #     _merged.clear()
+    #     return
     _server_time = _merged[0].taker_volume.timestamp
     _server_time_str = get_time_from_binance_tmstmp(_server_time)
     _min = int(_server_time_str.split(":")[-2])
@@ -198,6 +198,14 @@ def handle_volume_containers(_message):
     _rc = None
     _stop = None
     _message['done'] = True
+    if len(_merged) == 1:
+        _entry_quarter = int(int(_merged[0].start_time) / 15)
+        _current_candle_timestamp = _server_time - (
+                    int(_server_time_str.split(":")[-2]) - _entry_quarter * 15) * 60 * 1000
+        _rc = _merged[0]
+        _rc.maker_volume.timestamp = _current_candle_timestamp
+        _rc.taker_volume.timestamp = _current_candle_timestamp
+
     for _i in range(len(_merged) - 1):
         _entry_quarter = int(int(_merged[_i].start_time) / 15)
         if _entry_quarter == volumes15[_market]['quarter']:
@@ -205,10 +213,6 @@ def handle_volume_containers(_message):
             _current_candle_timestamp = _server_time - (int(_server_time_str.split(":")[-2]) - _entry_quarter * 15) * 60 * 1000
             _rc.maker_volume.timestamp = _current_candle_timestamp
             _rc.taker_volume.timestamp = _current_candle_timestamp
-            if volumes15[_market]['vc'] is None:
-                volumes15[_market]['vc'] = _rc
-            else:
-                _rc = add_volume_containers(volumes15[_market]['vc'], _rc)
         else:
             _stop = _i
             if _i == 0:
@@ -216,6 +220,12 @@ def handle_volume_containers(_message):
             logger.info("Stop: {} {}".format(_stop, _market))
             _persist = True
             break
+
+    if volumes15[_market]['vc'] is None:
+        volumes15[_market]['vc'] = _rc
+    else:
+        _rc = add_volume_containers(volumes15[_market]['vc'], _rc)
+
     if _persist:
         try:
             post_process_volume_container(_rc)
@@ -226,7 +236,9 @@ def handle_volume_containers(_message):
         if _market not in initialization:
             initialization[_market] = 1
     del volumes[_market]
-    if _stop and _stop > 0:
+    if _stop:
+        if _stop == 0:
+            k = 1
         volumes[_market] = _merged[_stop:]
     del locker[_market]
     _merged.clear()
@@ -401,10 +413,10 @@ market_info_list = [e for e in market_info_cursor]
 # manage_volume_scan(VolumeCrawl("LTCUSDT"))
 # manage_volume_scan(VolumeCrawl("BNBUSDT"))
 # manage_volume_scan(VolumeCrawl("OMGUSDT"))
-manage_volume_scan(VolumeCrawl("HOOKUSDT"))
+# manage_volume_scan(VolumeCrawl("HOOKUSDT"))
 # manage_volume_scan(VolumeCrawl("NEARUSDT"))
 # manage_volume_scan(VolumeCrawl("SANDUSDT"))
-# manage_volume_scan(VolumeCrawl("OGNBTC"))
+manage_volume_scan(VolumeCrawl("OGNBTC"))
 
 schedule.every(1).minutes.do(process_volume)
 
