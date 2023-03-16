@@ -3912,9 +3912,9 @@ class VolumeUnit(object):
                 self.timestamp = _trade_msg.timestamp
             if _trade_msg.quantity > 0:
                 _ii += 1
-            self.base_volume += _trade_msg.base_volume
-            self.quantity += _trade_msg.quantity
-            self.mean_price += _trade_msg.price
+                self.base_volume += _trade_msg.base_volume
+                self.quantity += _trade_msg.quantity
+                self.mean_price += _trade_msg.price
             if 0.0 < _trade_msg.base_volume < 5000.0:  # between 0 and 5k USDT
                 self.l00 += 1
             if 5000.0 < _trade_msg.base_volume < 10000.0:  # between 5k and 10k USDT
