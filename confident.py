@@ -125,7 +125,7 @@ def extract_coin(_txt: str):
     _shiba = ['hiba', 'shib']
     _sol = ['solana']
     _uni = ['uni', 'ynjswap', 'jniewan', 'iniewan']
-    _btc = ['bitcoin']
+    _btc = ['bitcoin', 'ritcoin']
     _vet = ['echain', '\\/echain']
     _xrp = ['xrp', 'wyrp', 'xyrp', 'rp']
     _eth = ['eth', 'fthe']
