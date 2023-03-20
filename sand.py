@@ -3,42 +3,8 @@ import datetime
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import talib as ta
-df = pd.read_csv('E:\\bin\\data\\BINANCE_BTCUSDT_240.csv')
 
-
-def Approximation1(_data, _val):
-    _out = []
-    _l0 = 0
-    _l0_1 = 0
-    _l1 = 0
-    _l1_1 = 0
-    _l2 = 0
-    _l2_1 = 0
-    _l3 = 0
-    _l3_1 = 0
-    for _i in range(len(_data)):
-        # l0
-
-        if _i == 0:
-            _l0 = (1 - _val) * _data[_i]
-        #     _l1 = -_val * _l0
-        #     _l2 = -_val * _l1
-        #     _l3 = -_val * _l2
-        else:
-            _l0_1 = _l0
-        #     _l1_1 = _l1
-        #     _l2_1 = _l2
-        #     _l3_1 = _l3
-            _l0 = (1 - _val) * _data[_i] + _val * _l0
-        #     _l1 = -_val * _l0 + _l0_1 + _val * _l1
-        #     _l2 = -_val * _l1 + _l1_1 + _val * _l2
-        #     _l3 = -_val * _l2 + _l2_1 + _val * _l3
-
-        # _out.append((_l0 + 2 * _l1 + 2 * _l2 + _l3) / 6)
-        _out.append((_l0))
-
-    return _out
+df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
 
 
 def nz(x, y=None):
@@ -117,7 +83,7 @@ def lele(_open, _close, _high, _low, _val, _strength):
         if i > 0:
             _bindex[i] = _bindex[i-1]
             _sindex[i] = _sindex[i-1]
-        if i > 4:
+        if i > 3:
             if _close[i] > _close[i-4]:
                 _bindex[i] = _bindex[i] + 1
             if _close[i] < _close[i-4]:
@@ -142,16 +108,16 @@ def find_indices(list_to_check, item_to_find):
     return indices
 
 
-def calculations(_close, _low, _high):
+# def calculations(_close, _low, _high):
 
 
 
 
-_out = lele(df['open'], df['close'], df['high'], df['low'], 2, 10)
+_out = lele(df['open'], df['close'], df['high'], df['low'], 2, 20)
 
-plt.plot(_out, color='green')
+# plt.plot(_out, color='green')
 # plt.plot(df['open'], color='red')
-plt.show()
+# plt.show()
 
 indexes = find_indices(_out, -1)
 find_indices(_out, -1)
@@ -191,7 +157,7 @@ plt.show()
 
 
 
-indexes =  find_indices(crossdn, 1)
+indexes =  find_indices(_out, True)
 
 times =[]
 for i in indexes:
