@@ -49,7 +49,7 @@ def rsi(_upper, _lower):
         if _lower[_ii] == 0:
             _r.append(100.0)
         elif _upper[_ii] == 0:
-            _r.append(0.0)
+            _r.append(1.0)
         else:
             _r.append(100.0 - (100.0 / (1.0 + _upper[_ii] / _lower[_ii])))
     return _r
@@ -70,6 +70,42 @@ def compute_money_strength(_close, _volume):
 
     return rsi(_upper, _lower)
 
+
+def compute_calculations(_open, _close, _high, _low, _volume, _ohlc=True):
+    _adjustment = compute_adjustment(_open, _close, _high, _low, _volume)
+    _trend_strength = []
+    _toptrend0 = []
+    _lower_trend0 = []
+    _toptrend = []
+    _lower_trend = []
+    _ohlc4 = []
+    for _ii in range(len(_open)):
+        _trend_strength.append(np.sum(_adjustment[_ii:1 + _ii]) / np.sum(_volume[_ii:1 + _ii]))
+        if _ohlc:
+            _ohlc4.append((_open[_ii] + _close[_ii] + _high[_ii] + _low[_ii]) / 4)
+        else:
+            _ohlc4.append(_close[_ii])
+
+    for _ii in range(len(_ohlc4) - 1):
+        _toptrend0.append(_volume[_ii] * (0 if _ohlc4[_ii] - _ohlc4[_ii + 1] <= 0 else _ohlc4[_ii]))
+        _lower_trend0.append(_volume[_ii] * (0 if _ohlc4[_ii] - _ohlc4[_ii + 1] >= 0 else _ohlc4[_ii]))
+
+    for _ii in range(len(_toptrend0)):
+        _toptrend.append(np.sum(_toptrend0[_ii:8 + _ii]))
+        _lower_trend.append(np.sum(_lower_trend0[_ii:8 + _ii]))
+
+    _trendline = rsi(_toptrend, _lower_trend)
+
+    return _trend_strength, _trendline
+
+
+def compute_trend_exhaustion(_open, _close, _high, _low, _volume):
+    _trend_strength, _trendline = compute_calculations(_open, _close, _high, _low, _volume)
+    _trend_strength2, _trendline2 = compute_calculations(_open, _close, _high, _low, _volume, _ohlc=False)
+    _te = []
+    for _ii in range(len(_trendline)):
+        _te.append(_trendline[_ii] + _trend_strength2[_ii] + _trend_strength[_ii] / _trendline2[_ii])
+    return _te
 
 df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
 
@@ -103,4 +139,6 @@ adjustment = compute_adjustment(open, close, high, low, volume)
 money_strength = compute_money_strength(close, volume)
 whale_money_flow = compute_whale_money_flow(adjustment, volume, money_strength)
 
+adjustment = compute_adjustment(open, close, high, low, volume)
+te = compute_trend_exhaustion(open, close, high, low, volume)
 k = 1

@@ -114,10 +114,10 @@ def compute_adjustment(_open, _close, _high, _low, _volume):
 
 
 def compute_whale_money_flow(_adjustment, _volume, _money_strength):
-    _whf = []
+    _wmf = []
     for _ii in range(len(_money_strength)):
-        _whf.append(np.sum(_adjustment[_ii:10+_ii]) / np.sum(_volume[_ii:10+_ii]) + _money_strength[_ii])
-    return _whf
+        _wmf.append(np.sum(_adjustment[_ii:10+_ii]) / np.sum(_volume[_ii:10+_ii]) + _money_strength[_ii])
+    return _wmf
 
 
 def rsi(_upper, _lower):
