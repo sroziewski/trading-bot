@@ -113,18 +113,18 @@ db_klines = mongo_client.klines
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
-avax_usdt_collection = db_klines.get_collection("avax_usdt_4h", codec_options=codec_options)
+avax_usdt_collection = db_klines.get_collection("sol_usdt_4h", codec_options=codec_options)
 
-# avax_usdt_cursor = avax_usdt_collection.find().sort("_id", -1)
+avax_usdt_cursor = avax_usdt_collection.find().sort("_id", -1)
 #
-# avax_klines = []
-#
-# for _e in avax_usdt_cursor:
-#     avax_klines.append(_e)
-#     if len(avax_klines) > 499:
-#         break
-#
-# save_to_file('D:\\bin\\data\\', "avax_usdt_4h", avax_klines)
+avax_klines = []
+
+for _e in avax_usdt_cursor:
+    avax_klines.append(_e)
+    if len(avax_klines) > 499:
+        break
+
+save_to_file('D:\\bin\\data\\', "sol_usdt_4h", avax_klines)
 
 avax_klines = get_pickled('D:\\bin\\data\\', "avax_usdt_4h")
 

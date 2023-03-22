@@ -87,10 +87,10 @@ def lele(_open, _close, _high, _low, _val, _strength):
             if _close[_ll] < _close[_ll-4]:
                 _sindex[_ll] = _sindex[_ll] + 1
 
-        if _bindex[_ll] > _val and _close[_ll] < _open[_ll] and _high[_ll] >= np.max(_high[_ll-10:_ll]):
+        if _bindex[_ll] > _val and _close[_ll] < _open[_ll] and _high[_ll] >= np.max(_high[_ll-_strength:_ll]):
             _bindex[_ll] = 0
             _ret[_ll] = -1
-        if _sindex[_ll] > _val and _close[_ll] > _open[_ll] and _low[_ll] <= np.min(_low[_ll-10:_ll]):
+        if _sindex[_ll] > _val and _close[_ll] > _open[_ll] and _low[_ll] <= np.min(_low[_ll-_strength:_ll]):
             _sindex[_ll] = 0
             _ret[_ll] = 1
     return _ret
@@ -104,7 +104,7 @@ def find_indices(_list_to_check, _item_to_find):
     return _indices
 
 
-def compute_adjustment(_open, _close, _high, _low, _volume):
+def compute_adjustment(_open, _close, _high, _low, _volume):   # time desc
     _r = []
     for _kk in range(len(_open)):
         _e = 0 if _close[_kk] == _high[_kk] and _close[_kk] == _low[_kk] or _high[_kk] == _low[_kk] else ((2 * _close[_kk] - _low[_kk] - _high[_kk]) / (
@@ -113,14 +113,14 @@ def compute_adjustment(_open, _close, _high, _low, _volume):
     return _r
 
 
-def compute_whale_money_flow(_adjustment, _volume, _money_strength):
+def compute_whale_money_flow(_adjustment, _volume, _money_strength):   # time desc
     _wmf = []
     for _ii in range(len(_money_strength)):
         _wmf.append(np.sum(_adjustment[_ii:10+_ii]) / np.sum(_volume[_ii:10+_ii]) + _money_strength[_ii])
     return _wmf
 
 
-def rsi(_upper, _lower):
+def rsi(_upper, _lower):   # time desc
     _r = []
     for _ii in range(len(_upper)):
         if _lower[_ii] == 0:
@@ -132,7 +132,7 @@ def rsi(_upper, _lower):
     return _r
 
 
-def compute_money_strength(_close, _volume):
+def compute_money_strength(_close, _volume):   # time desc
     _upper0 = []
     _lower0 = []
     _upper = []
@@ -148,7 +148,7 @@ def compute_money_strength(_close, _volume):
     return rsi(_upper, _lower)
 
 
-def compute_calculations(_open, _close, _high, _low, _volume, _ohlc=True):
+def compute_calculations(_open, _close, _high, _low, _volume, _ohlc=True):   # time desc
     _adjustment = compute_adjustment(_open, _close, _high, _low, _volume)
     _trend_strength = []
     _toptrend0 = []
@@ -176,7 +176,7 @@ def compute_calculations(_open, _close, _high, _low, _volume, _ohlc=True):
     return _trend_strength, _trendline
 
 
-def compute_trend_exhaustion(_open, _close, _high, _low, _volume):
+def compute_trend_exhaustion(_open, _close, _high, _low, _volume):  # time desc
     _trend_strength, _trendline = compute_calculations(_open, _close, _high, _low, _volume)
     _trend_strength2, _trendline2 = compute_calculations(_open, _close, _high, _low, _volume, _ohlc=False)
     _te = []
@@ -185,43 +185,63 @@ def compute_trend_exhaustion(_open, _close, _high, _low, _volume):
     return _te
 
 
-conjectures = list(map(lambda x: smooth(df['open'], x), np.arange(0.1, 1.0, 0.05)))
-amlag = np.mean(conjectures, axis=0)
-tr = compute_tr(df)
-inapproximability = np.mean(list(map(lambda x: smooth(tr, x), np.arange(0.1, 1.0, 0.05))), axis=0)
-
-Upper_Threshold_of_Approximability1 = amlag + inapproximability*1.618
-Upper_Threshold_of_Approximability2 = amlag + 2*inapproximability*1.618
-Lower_Threshold_of_Approximability1 = amlag - inapproximability*1.618
-Lower_Threshold_of_Approximability2 = amlag - 2*inapproximability*1.618
-
-crossup = get_crossup(df, Lower_Threshold_of_Approximability2)
-crossdn = get_crossdn(df, Upper_Threshold_of_Approximability2)
-
-_out = lele(df['open'], df['close'], df['high'], df['low'], 2, 20)
-indexes =  find_indices(_out, True)
-
-times =[]
-for i in indexes:
-    time_s = datetime.datetime.fromtimestamp(df['time'].iloc[i]).strftime('%d %B %Y %H:%M:%S')
-    times.append((i, time_s))
-
-j=0
-for c in crossup:
-    if c and Lower_Threshold_of_Approximability2[j]:
-        time_s = datetime.datetime.fromtimestamp(df['time'].iloc[j]).strftime('%d %B %Y %H:%M:%S')
-    j = j + 1
+def get_major_indices(_data, _p):
+    #  the returned indices are precisely at the time of a buy/sell signal
+    return find_indices(_data, _p)  # 1 BUY / -1 SELL
 
 
-avax_klines = get_pickled('D:\\bin\\data\\', "avax_usdt_4h")
+def get_strong_major_indices(_data, _p):
+    #  the returned indices are one bar before the time of a buy/sell signal
+    return find_indices(_data, _p)  # True : a strong buy signal
+
+
+avax_klines = get_pickled('D:\\bin\\data\\', "sol_usdt_4h")
+avax_klines.reverse()
+
+# df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
 
 open = list(map(lambda x: x['kline']['opening'], avax_klines))
 close = list(map(lambda x: x['kline']['closing'], avax_klines))
 high = list(map(lambda x: x['kline']['highest'], avax_klines))
 low = list(map(lambda x: x['kline']['lowest'], avax_klines))
 volume = list(map(lambda x: x['kline']['volume'], avax_klines))
-times = list(map(lambda x: x['kline']['time_str'], avax_klines))
+time = list(map(lambda x: x['kline']['start_time'], avax_klines))
+time_str = list(map(lambda x: x['kline']['time_str'], avax_klines))
 
 adjustment = compute_adjustment(open, close, high, low, volume)
 money_strength = compute_money_strength(close, volume)
 whale_money_flow = compute_whale_money_flow(adjustment, volume, money_strength)
+
+
+df = pd.DataFrame(list(zip(open, close, high, low, time, time_str)), columns=['open', 'close', 'high', 'low', 'time', 'time_str'])
+
+conjectures = list(map(lambda x: smooth(df['open'], x), np.arange(0.1, 1.0, 0.05)))
+amlag = np.mean(conjectures, axis=0)
+tr = compute_tr(df)
+inapproximability = np.mean(list(map(lambda x: smooth(tr, x), np.arange(0.1, 1.0, 0.05))), axis=0)
+
+upper_threshold_of_approximability1 = amlag + inapproximability*1.618
+upper_threshold_of_approximability2 = amlag + 2*inapproximability*1.618
+lower_threshold_of_approximability1 = amlag - inapproximability*1.618
+lower_threshold_of_approximability2 = amlag - 2*inapproximability*1.618
+
+strong_buy = get_crossup(df, lower_threshold_of_approximability2)
+strong_sell = get_crossdn(df, upper_threshold_of_approximability2)
+
+major = lele(df['open'], df['close'], df['high'], df['low'], 2, 20)  # bull/bear
+
+indexes = get_strong_major_indices(strong_sell, True)
+indexes = get_major_indices(major, -1)
+
+times =[]
+for i in indexes:
+    # times.append(datetime.datetime.fromtimestamp(df['time'].iloc[i]).strftime('%d %B %Y %H:%M:%S'))
+    times.append((i, df['time_str'].iloc[i]))
+
+j=0
+for c in strong_buy:
+    if c and lower_threshold_of_approximability2[j]:
+        time_s = datetime.datetime.fromtimestamp(df['time'].iloc[j]/1000).strftime('%d %B %Y %H:%M:%S')
+    j = j + 1
+
+k = 1
