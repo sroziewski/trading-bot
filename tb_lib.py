@@ -5,7 +5,6 @@ import pandas as pd
 
 from library import get_pickled
 
-df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
 
 def nz(_x, _y=None):
     '''
@@ -195,53 +194,59 @@ def get_strong_major_indices(_data, _p):
     return find_indices(_data, _p)  # True : a strong buy signal
 
 
-avax_klines = get_pickled('D:\\bin\\data\\', "sol_usdt_4h")
-avax_klines.reverse()
+def _stuff():
 
-# df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
+    avax_klines = get_pickled('D:\\bin\\data\\', "sol_usdt_4h")
+    avax_klines.reverse()
 
-open = list(map(lambda x: x['kline']['opening'], avax_klines))
-close = list(map(lambda x: x['kline']['closing'], avax_klines))
-high = list(map(lambda x: x['kline']['highest'], avax_klines))
-low = list(map(lambda x: x['kline']['lowest'], avax_klines))
-volume = list(map(lambda x: x['kline']['volume'], avax_klines))
-time = list(map(lambda x: x['kline']['start_time'], avax_klines))
-time_str = list(map(lambda x: x['kline']['time_str'], avax_klines))
+    # df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
 
-adjustment = compute_adjustment(open, close, high, low, volume)
-money_strength = compute_money_strength(close, volume)
-whale_money_flow = compute_whale_money_flow(adjustment, volume, money_strength)
+    open = list(map(lambda x: x['kline']['opening'], avax_klines))
+    close = list(map(lambda x: x['kline']['closing'], avax_klines))
+    high = list(map(lambda x: x['kline']['highest'], avax_klines))
+    low = list(map(lambda x: x['kline']['lowest'], avax_klines))
+    volume = list(map(lambda x: x['kline']['volume'], avax_klines))
+    time = list(map(lambda x: x['kline']['start_time'], avax_klines))
+    time_str = list(map(lambda x: x['kline']['time_str'], avax_klines))
+
+    adjustment = compute_adjustment(open, close, high, low, volume)
+    money_strength = compute_money_strength(close, volume)
+    whale_money_flow = compute_whale_money_flow(adjustment, volume, money_strength)
 
 
-df = pd.DataFrame(list(zip(open, close, high, low, time, time_str)), columns=['open', 'close', 'high', 'low', 'time', 'time_str'])
+    df = pd.DataFrame(list(zip(open, close, high, low, time, time_str)), columns=['open', 'close', 'high', 'low', 'time', 'time_str'])
 
-conjectures = list(map(lambda x: smooth(df['open'], x), np.arange(0.1, 1.0, 0.05)))
-amlag = np.mean(conjectures, axis=0)
-tr = compute_tr(df)
-inapproximability = np.mean(list(map(lambda x: smooth(tr, x), np.arange(0.1, 1.0, 0.05))), axis=0)
+    conjectures = list(map(lambda x: smooth(df['open'], x), np.arange(0.1, 1.0, 0.05)))
+    amlag = np.mean(conjectures, axis=0)
+    tr = compute_tr(df)
+    inapproximability = np.mean(list(map(lambda x: smooth(tr, x), np.arange(0.1, 1.0, 0.05))), axis=0)
 
-upper_threshold_of_approximability1 = amlag + inapproximability*1.618
-upper_threshold_of_approximability2 = amlag + 2*inapproximability*1.618
-lower_threshold_of_approximability1 = amlag - inapproximability*1.618
-lower_threshold_of_approximability2 = amlag - 2*inapproximability*1.618
+    upper_threshold_of_approximability1 = amlag + inapproximability*1.618
+    upper_threshold_of_approximability2 = amlag + 2*inapproximability*1.618
+    lower_threshold_of_approximability1 = amlag - inapproximability*1.618
+    lower_threshold_of_approximability2 = amlag - 2*inapproximability*1.618
 
-strong_buy = get_crossup(df, lower_threshold_of_approximability2)
-strong_sell = get_crossdn(df, upper_threshold_of_approximability2)
+    strong_buy = get_crossup(df, lower_threshold_of_approximability2)
+    strong_sell = get_crossdn(df, upper_threshold_of_approximability2)
 
-major = lele(df['open'], df['close'], df['high'], df['low'], 2, 20)  # bull/bear
+    major = lele(df['open'], df['close'], df['high'], df['low'], 2, 20)  # bull/bear
 
-indexes = get_strong_major_indices(strong_sell, True)
-indexes = get_major_indices(major, -1)
+    indexes = get_strong_major_indices(strong_sell, True)
+    # indexes = get_major_indices(major, 1)
 
-times =[]
-for i in indexes:
-    # times.append(datetime.datetime.fromtimestamp(df['time'].iloc[i]).strftime('%d %B %Y %H:%M:%S'))
-    times.append((i, df['time_str'].iloc[i]))
+    times = []
+    for i in indexes:
+        # times.append(datetime.datetime.fromtimestamp(df['time'].iloc[i]).strftime('%d %B %Y %H:%M:%S'))
+        times.append((i, df['time_str'].iloc[i]))
 
-j=0
-for c in strong_buy:
-    if c and lower_threshold_of_approximability2[j]:
-        time_s = datetime.datetime.fromtimestamp(df['time'].iloc[j]/1000).strftime('%d %B %Y %H:%M:%S')
-    j = j + 1
+    j=0
+    for c in strong_buy:
+        if c and lower_threshold_of_approximability2[j]:
+            time_s = datetime.datetime.fromtimestamp(df['time'].iloc[j]/1000).strftime('%d %B %Y %H:%M:%S')
+        j = j + 1
 
-k = 1
+    k = 1
+
+
+if __name__ == "__main__":
+    _stuff()

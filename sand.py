@@ -121,12 +121,12 @@ avax_klines = []
 
 for _e in avax_usdt_cursor:
     avax_klines.append(_e)
-    if len(avax_klines) > 499:
+    if len(avax_klines) > 399:
         break
 
 save_to_file('D:\\bin\\data\\', "sol_usdt_4h", avax_klines)
 
-avax_klines = get_pickled('D:\\bin\\data\\', "avax_usdt_4h")
+avax_klines = get_pickled('D:\\bin\\data\\', "sol_usdt_4h")
 
 open = list(map(lambda x: x['kline']['opening'], avax_klines))
 close = list(map(lambda x: x['kline']['closing'], avax_klines))
