@@ -17,7 +17,7 @@ def min_max_scanner(_market_info_collection):
             _cursor = _collection.find().sort("_id", -1)
             for _e in _cursor:
                 _klines.append(_e)
-                if len(_klines) > 499:
+                if len(_klines) > 399:
                     break
 
 
