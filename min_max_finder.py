@@ -4,7 +4,8 @@ from bson.codec_options import TypeRegistry, CodecOptions
 from mongodb import mongo_client
 
 from library import setup_logger, DecimalCodec, save_to_file, get_pickled
-from tb_lib import compute_tr, smooth, get_crossup, get_crossdn, lele, get_strong_major_indices, get_major_indices
+from tb_lib import compute_tr, smooth, get_crossup, get_crossdn, lele, get_strong_major_indices, get_major_indices, \
+    compute_adjustment, compute_money_strength, compute_whale_money_flow, compute_trend_exhaustion
 
 db_klines = mongo_client.klines
 
@@ -50,10 +51,23 @@ def min_max_scanner(_market_info_collection):
     _strong_sell_ind = get_strong_major_indices(_strong_sell, True)
     _strong_buy_ind = get_strong_major_indices(_strong_buy, True)
     _buy_ind = get_major_indices(_major, 1)
-    _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
+    _sell_ind = get_major_indices(_major, -1)
 
-    _buys = list(filter(lambda x: x > _last_strong_sell_ind, [*_strong_buy_ind, *_buy_ind]))
-    _buys.sort()
+    _buys = None
+    if len(_strong_sell_ind) > 0:
+        _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
+        _buys = list(filter(lambda x: x > _last_strong_sell_ind, [*_strong_buy_ind, *_buy_ind]))
+    if len(_sell_ind) > 0:
+        _last_sell_ind = _sell_ind[-1] + 21
+        _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
+    if _buys:
+        _buys.sort()
+
+    _adjustment = compute_adjustment(_df_inc['open'], _df_inc['close'], _df_inc['high'], _df_inc['low'], _df_inc['volume'])
+    _money_strength = compute_money_strength(_df_inc['close'], _df_inc['volume'])
+    _whale_money_flow = compute_whale_money_flow(_adjustment, _df_inc['volume'], _money_strength)
+    _trend_exhaustion = compute_trend_exhaustion(_df_inc['open'], _df_inc['close'], _df_inc['high'], _df_inc['low'], _df_inc['volume'])
+
 
     k = 1
 
