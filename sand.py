@@ -107,13 +107,13 @@ def compute_trend_exhaustion(_open, _close, _high, _low, _volume):
         _te.append(_trendline[_ii] + _trend_strength2[_ii] + _trend_strength[_ii] / _trendline2[_ii])
     return _te
 
-df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
+# df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
 
 db_klines = mongo_client.klines
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
-avax_usdt_collection = db_klines.get_collection("sol_usdt_4h", codec_options=codec_options)
+avax_usdt_collection = db_klines.get_collection("avax_usdt_12h", codec_options=codec_options)
 
 avax_usdt_cursor = avax_usdt_collection.find().sort("_id", -1)
 #
@@ -124,7 +124,7 @@ for _e in avax_usdt_cursor:
     if len(avax_klines) > 399:
         break
 
-save_to_file('D:\\bin\\data\\', "sol_usdt_4h", avax_klines)
+save_to_file('E:\\bin\\data\\', "avax_usdt_12h", avax_klines)
 
 avax_klines = get_pickled('D:\\bin\\data\\', "sol_usdt_4h")
 

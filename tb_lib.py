@@ -196,8 +196,8 @@ def get_strong_major_indices(_data, _p):
 
 def _stuff():
 
-    avax_klines = get_pickled('D:\\bin\\data\\', "sol_usdt_4h")
-    avax_klines.reverse()
+    avax_klines = get_pickled('E:\\bin\\data\\', "avax_usdt_4h")
+    # avax_klines.reverse()
 
     # df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
 
