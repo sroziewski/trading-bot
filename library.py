@@ -1489,7 +1489,7 @@ kucoin_general_fee = 0.001
 
 
 def get_binance_interval_unit(_ticker, _no_such_market):
-    if _no_such_market:
+    if _no_such_market is True:
         return {
             BinanceClient.KLINE_INTERVAL_1MINUTE: "30 days ago",
             BinanceClient.KLINE_INTERVAL_3MINUTE: "30 days ago",
@@ -1505,6 +1505,14 @@ def get_binance_interval_unit(_ticker, _no_such_market):
             BinanceClient.KLINE_INTERVAL_1DAY: "30 days ago",
             BinanceClient.KLINE_INTERVAL_3DAY: "30 days ago",
             BinanceClient.KLINE_INTERVAL_1WEEK: "30 days ago",
+        }[_ticker]
+    elif _no_such_market == "strategy":
+        return {
+            BinanceClient.KLINE_INTERVAL_4HOUR: "5 days ago",
+            BinanceClient.KLINE_INTERVAL_6HOUR: "5 days ago",
+            BinanceClient.KLINE_INTERVAL_8HOUR: "5 days ago",
+            BinanceClient.KLINE_INTERVAL_12HOUR: "5 days ago",
+            BinanceClient.KLINE_INTERVAL_1DAY: "10 days ago"
         }[_ticker]
     else:
         return {
