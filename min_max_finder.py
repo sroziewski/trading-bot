@@ -1,6 +1,8 @@
+import threading
 import traceback
 from random import randrange
 from time import sleep
+from timeit import default_timer as timer
 
 import numpy as np
 import pandas as pd
@@ -273,29 +275,67 @@ def define_signal_strength(_setups):
             _setups[_ii].signal_strength = _signal_strength
 
 
-def min_max_scanner(_market_info_collection):
+def manage_market_processing(_pe, _ii):
+    _crawler = threading.Thread(target=process_markets, args=(_pe,),
+                                name='process_markets : {}'.format(_ii))
+    _crawler.start()
+
+    return _crawler
+
+
+def min_max_scanner(_market_info_collection, _threads):
     _market_info_cursor = _market_info_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
+    _market_info_parts = np.array_split(_market_info_list, _threads)
+    _ik = 0
+    _crawlers = []
+    for _part_list in _market_info_parts:
+        sleep(randrange(30))
+        _pe = ProcessingEntry(_market_info_collection, _part_list)
+        _c = manage_market_processing(_pe, _ik)
+        _crawlers.append(_c)
+        _ik += 1
+    for _c in _crawlers:
+        _c.join()
+
+
+class ProcessingEntry(object):
+    def __init__(self, _market_info_collection, _market_info_list):
+        self.market_info_collection = _market_info_collection
+        self.market_info_list = _market_info_list
+
+
+def process_markets(_pe: ProcessingEntry):
     _tickers = ['4h', '6h', '8h', '12h', '1d']
-    for _market_info in _market_info_list:
-        if _market_info['active']:
-            _market = _market_info['name']
-            _type = _market_info_collection.name
+    for _market_info in _pe.market_info_list:
+        _market = _market_info['name']
+        if _market_info['active'] and _market != "paxg":
+            _start = timer()
+            logger.info(_market)
+            _type = _pe.market_info_collection.name
             _setups = []
             for _ticker in _tickers:
+                sleep(randrange(10))
                 _klines = extract_klines(_market, _type, _ticker)
-                _se : SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_market, _type).upper(), _ticker)
-                _setups.append(_se)
+                _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_market, _type).upper(), _ticker)
+                _klines.clear()
+                if _se:
+                    _setups.append(_se)
             _setups_exist = define_signal_strength(_setups)
             if _setups_exist:
-                _setup_collection = db_setup.get_collection(_market_info_collection.name.lower(), codec_options=codec_options)
+                _setup_collection = db_setup.get_collection(_pe.market_info_collection.name.lower(),
+                                                            codec_options=codec_options)
                 _setup_collection.insert_one(to_mongo(_se))
                 for _se in _setups:
                     logger.info(
-                        "Setup entry found -- market: {} ticker: {} buy_price: {} signal_strength: {}".format(_se.market.lower(),
-                                                                                                   _se.ticker,
-                                                                                                   _se.buy_price,
-                                                                                                   _se.signal_strength))
+                        "Setup entry found -- market: {} ticker: {} buy_price: {} signal_strength: {}".format(
+                            _se.market.lower(),
+                            _se.ticker,
+                            _se.buy_price,
+                            _se.signal_strength))
+            _end = timer()
+            _et = _end - _start
+            logger.info("Market {} time: {} s".format(_market, _et))
 
 
 def extract_buy_entry_setup(_klines, _market, _ticker):
@@ -318,15 +358,20 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
     _strong_buy_ind = get_strong_major_indices(_strong_buy, True)
     _buy_ind = get_major_indices(_major, 1)
     _sell_ind = get_major_indices(_major, -1)
-    _buys = None
+    _buys = [*_strong_buy_ind, *_buy_ind]
+    if len(_buys) == 0:
+        return False  # there is no entry setup, we skip
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
-        _buys = list(filter(lambda x: x > _last_strong_sell_ind, [*_strong_buy_ind, *_buy_ind]))
+        _buys = list(filter(lambda x: x > _last_strong_sell_ind, _buys))
+    if len(_buys) == 0:
+        return False  # there is no entry setup, we skip
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
-    if _buys:
-        _buys.sort()
+    if len(_buys) == 0:
+        return False  # there is no entry setup, we skip
+    _buys.sort()
     _adjustment = compute_adjustment(_df_dec['open'], _df_dec['close'], _df_dec['high'], _df_dec['low'],
                                      _df_dec['volume'])
     _money_strength = compute_money_strength(_df_dec['close'], _df_dec['volume'])
@@ -357,4 +402,8 @@ usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=c
 busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
 
-min_max_scanner(usdt_markets_collection)
+start = timer()
+min_max_scanner(usdt_markets_collection, 5)
+end = timer()
+et = (end - start) / 60
+logger.info("Total time: {} minutes".format(et))
