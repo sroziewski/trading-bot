@@ -290,7 +290,7 @@ def min_max_scanner(_market_info_collection, _threads):
     _ik = 0
     _crawlers = []
     for _part_list in _market_info_parts:
-        sleep(randrange(30))
+        sleep(randrange(10))
         _pe = ProcessingEntry(_market_info_collection, _part_list)
         _c = manage_market_processing(_pe, _ik)
         _crawlers.append(_c)
@@ -303,6 +303,9 @@ class ProcessingEntry(object):
     def __init__(self, _market_info_collection, _market_info_list):
         self.market_info_collection = _market_info_collection
         self.market_info_list = _market_info_list
+
+
+_mt = []
 
 
 def process_markets(_pe: ProcessingEntry):
@@ -335,6 +338,7 @@ def process_markets(_pe: ProcessingEntry):
                             _se.signal_strength))
             _end = timer()
             _et = _end - _start
+            _mt.append(_et)
             logger.info("Market {} time: {} s".format(_market, _et))
 
 
@@ -403,7 +407,8 @@ busd_markets_collection = db_markets_info.get_collection("busd", codec_options=c
 
 
 start = timer()
-min_max_scanner(usdt_markets_collection, 5)
+min_max_scanner(usdt_markets_collection, 6)   # 5, 6, 4
 end = timer()
 et = (end - start) / 60
 logger.info("Total time: {} minutes".format(et))
+logger.info("Avg time: {} minutes".format(np.mean(_mt)))
