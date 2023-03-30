@@ -167,6 +167,8 @@ def get_delta_t(_ticker):
 
 
 def define_signal_strength(_setups):
+    if len(_setups) == 0:
+        return False
     _setups.reverse()
     _setups_dict = {}
     for _setup in _setups:
@@ -284,6 +286,16 @@ def min_max_scanner(_market_info_collection):
                 _klines = extract_klines(_market, _type, _ticker)
                 _se : SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_market, _type).upper(), _ticker)
                 _setups.append(_se)
+            _setups_exist = define_signal_strength(_setups)
+            if _setups_exist:
+                _setup_collection = db_setup.get_collection(_market_info_collection.name.lower(), codec_options=codec_options)
+                _setup_collection.insert_one(to_mongo(_se))
+                for _se in _setups:
+                    logger.info(
+                        "Setup entry found -- market: {} ticker: {} buy_price: {} signal_strength: {}".format(_se.market.lower(),
+                                                                                                   _se.ticker,
+                                                                                                   _se.buy_price,
+                                                                                                   _se.signal_strength))
 
 
 def extract_buy_entry_setup(_klines, _market, _ticker):
