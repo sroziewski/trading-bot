@@ -60,16 +60,16 @@ def process_depth_socket_message_avaxusdt(_msg):
 
 
 def freeze_order_book(_market):
-    depths[_market]['asks']
-    depths[_market]['bids']
     _asks = []
     _bids = []
-    for _price, _amount in depths[_market]['asks'].iteritems():
+    for _price, _amount in depths[_market]['asks'].items():
         _asks.append((_price, _amount))
-    for _price, _amount in depths[_market]['bids'].iteritems():
+    for _price, _amount in depths[_market]['bids'].items():
         _bids.append((_price, _amount))
     _asks.sort(key=lambda x: x[0])
     _bids.sort(key=lambda x: x[0], reverse=True)
+
+    return _asks, _bids
 
 
 # exec('def process_depth_socket_message_avaxusdt(_msg):\n    _depth_msg = DepthMsg(_msg)\n    depths[\"avaxusdt\"].append(_depth_msg)\n    ')
@@ -101,6 +101,12 @@ manage_volume_scan(_dc)
 sleep(300)
 
 k =1
+
+_asks, _bids = freeze_order_book(_dc.market)
+
+compute_depth_percentages(_asks, "asks")
+compute_depth_percentages(_bids, "bids")
+
 # _bd = compute_depth_percentages(_order['bids'], "bids")
 #         if _dc.exchange == "kucoin":
 #             _order['asks'].reverse()
