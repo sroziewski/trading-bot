@@ -74,7 +74,7 @@ def filter_buys_whale_money_flow(_whale_money_flow, _buys):
     _r = []
     for _buy in _buys:
         _ind = len(_whale_money_flow) - _buy
-        if _whale_money_flow[_ind] < 38.0 or any(filter(lambda x: x < 20.0, _whale_money_flow[_ind:_ind + 20])):
+        if _whale_money_flow[_ind] < 40.0 or any(filter(lambda x: x < 20.0, _whale_money_flow[_ind:_ind + 20])):
             _r.append(_buy)
     return _r
 

@@ -12,7 +12,7 @@ from kucoin.exceptions import KucoinAPIException
 
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global
+    get_time_from_binance_tmstmp, logger_global, get_time
 from mongodb import mongo_client
 
 db = mongo_client.klines
@@ -157,7 +157,12 @@ class MarketDepth(object):
         self.p60 = _60p
         self.p65 = _65p
         self.p70 = _70p
-        self.timestamp = datetime.datetime.now().timestamp()
+        self.timestamp = int(datetime.datetime.now().timestamp())
+        self.time_str = get_time(self.timestamp)
+
+    def set_time(self, _t):
+        self.timestamp = _t
+        self.time_str = get_time(_t)
 
 
 class SellDepth(MarketDepth):
