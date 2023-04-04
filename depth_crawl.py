@@ -1,31 +1,41 @@
 import datetime
 import threading
 from time import sleep
+from functools import reduce
 
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import binance_obj
-from market_scanner import compute_depth_percentages, add_dc, divide_dc
+from library import binance_obj, get_time
 
 binance_obj
 
 
 class DepthCrawl(object):
-    def __init__(self, _market, _exchange):
+    def __init__(self, _market):
         self.market = _market
-        self.exchange = _exchange
-        self.sell_depth = []
-        self.buy_depth = []
+        self.sell_depth_15m = []
+        self.buy_depth_15m = []
+        self.sell_depth_1d = []
+        self.buy_depth_1d = []
 
-    def add_depths(self, _bd, _sd):
-        _size = 500
-        self.buy_depth.append(_bd)
-        self.sell_depth.append(_sd)
-        if len(self.buy_depth) > _size:
-            self.buy_depth = self.buy_depth[-_size:]
-        if len(self.sell_depth) > _size:
-            self.sell_depth = self.sell_depth[-_size:]
+    def add_depths_1d(self, _bd, _sd):
+        _size = 20
+        self.buy_depth_1d.append(_bd)
+        self.sell_depth_1d.append(_sd)
+        if len(self.buy_depth_1d) > _size:
+            self.buy_depth_1d = self.buy_depth_1d[-_size:]
+        if len(self.sell_depth_1d) > _size:
+            self.sell_depth_1d = self.sell_depth_1d[-_size:]
+
+    def add_depths_15m(self, _bd, _sd):
+        _size = 200
+        self.buy_depth_15m.append(_bd)
+        self.sell_depth_15m.append(_sd)
+        if len(self.buy_depth_15m) > _size:
+            self.buy_depth_15m = self.buy_depth_15m[-_size:]
+        if len(self.sell_depth_15m) > _size:
+            self.sell_depth_15m = self.sell_depth_15m[-_size:]
 
 
 class DepthMsg(object):
@@ -37,14 +47,222 @@ class DepthMsg(object):
         self.time = datetime.datetime.now().timestamp()
 
 
-class DepthCrawl(object):
-    def __init__(self, _market):
-        self.market = _market
+class MarketDepth(object):
+    def __init__(self, _1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p,
+                 _70p):
+        self.p1 = _1p
+        self.p2 = _2p
+        self.p3 = _3p
+        self.p4 = _4p
+        self.p5 = _5p
+        self.p10 = _10p
+        self.p15 = _15p
+        self.p20 = _20p
+        self.p25 = _25p
+        self.p30 = _30p
+        self.p35 = _35p
+        self.p40 = _40p
+        self.p45 = _45p
+        self.p50 = _50p
+        self.p55 = _55p
+        self.p60 = _60p
+        self.p65 = _65p
+        self.p70 = _70p
+        self.timestamp = int(datetime.datetime.now().timestamp())
+        self.time_str = get_time(self.timestamp)
 
+    def set_time(self, _t):
+        self.timestamp = _t
+        self.time_str = get_time(_t)
+
+
+class SellDepth(MarketDepth):
+    def __init__(self, _start_price, _1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p,
+                 _55p, _60p, _65p, _70p):
+        super().__init__(_1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p,
+                         _65p, _70p)
+        self.ask_price = _start_price
+
+
+class BuyDepth(MarketDepth):
+    def __init__(self, _start_price, _1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p,
+                 _55p, _60p, _65p, _70p):
+        super().__init__(_1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p,
+                         _65p, _70p)
+        self.bid_price = _start_price
+
+
+def compute_depth_percentages(_depth, _type):
+    _start_price = float(_depth[0][0])
+    _1p_d = (0, 0)
+    _2p_d = (0, 0)
+    _3p_d = (0, 0)
+    _4p_d = (0, 0)
+    _5p_d = (0, 0)
+    _10p_d = (0, 0)
+    _15p_d = (0, 0)
+    _20p_d = (0, 0)
+    _25p_d = (0, 0)
+    _30p_d = (0, 0)
+    _35p_d = (0, 0)
+    _40p_d = (0, 0)
+    _45p_d = (0, 0)
+    _50p_d = (0, 0)
+    _55p_d = (0, 0)
+    _60p_d = (0, 0)
+    _65p_d = (0, 0)
+    _70p_d = (0, 0)
+    # if _start_price > 10000:  # we assume we have BTC here ;)
+    #     _divisor = 100.0
+    # else:
+    #     _divisor = 1.0
+    _divisor = 1.0
+    for _price, _amount in _depth:
+        _price = float(_price)
+        _amount = float(_amount)
+        if _type == "bids":
+            _ratio = (_start_price - _price) / _start_price
+        elif _type == "asks":
+            _ratio = (_price - _start_price) / _start_price
+
+        if _ratio < 0.01 / _divisor:
+            _1p_d = (_1p_d[0] + _amount, _1p_d[1] + _amount * _price)
+        if _ratio < 0.02 / _divisor:
+            _2p_d = (_2p_d[0] + _amount, _2p_d[1] + _amount * _price)
+        if _ratio < 0.03 / _divisor:
+            _3p_d = (_3p_d[0] + _amount, _3p_d[1] + _amount * _price)
+        if _ratio < 0.04 / _divisor:
+            _4p_d = (_4p_d[0] + _amount, _4p_d[1] + _amount * _price)
+        if _ratio < 0.05 / _divisor:
+            _5p_d = (_5p_d[0] + _amount, _5p_d[1] + _amount * _price)
+        if _ratio < 0.10 / _divisor:
+            _10p_d = (_10p_d[0] + _amount, _10p_d[1] + _amount * _price)
+        if _ratio < 0.15 / _divisor:
+            _15p_d = (_15p_d[0] + _amount, _15p_d[1] + _amount * _price)
+        if _ratio < 0.20 / _divisor:
+            _20p_d = (_20p_d[0] + _amount, _20p_d[1] + _amount * _price)
+        if _ratio < 0.25 / _divisor:
+            _25p_d = (_25p_d[0] + _amount, _25p_d[1] + _amount * _price)
+        if _ratio < 0.30 / _divisor:
+            _30p_d = (_30p_d[0] + _amount, _30p_d[1] + _amount * _price)
+        if _ratio < 0.35 / _divisor:
+            _35p_d = (_35p_d[0] + _amount, _35p_d[1] + _amount * _price)
+        if _ratio < 0.40 / _divisor:
+            _40p_d = (_40p_d[0] + _amount, _40p_d[1] + _amount * _price)
+        if _ratio < 0.45 / _divisor:
+            _45p_d = (_45p_d[0] + _amount, _45p_d[1] + _amount * _price)
+        if _ratio < 0.5 / _divisor:
+            _50p_d = (_50p_d[0] + _amount, _50p_d[1] + _amount * _price)
+        if _ratio < 0.55 / _divisor:
+            _55p_d = (_55p_d[0] + _amount, _55p_d[1] + _amount * _price)
+        if _ratio < 0.6 / _divisor:
+            _60p_d = (_60p_d[0] + _amount, _60p_d[1] + _amount * _price)
+        if _ratio < 0.65 / _divisor:
+            _65p_d = (_65p_d[0] + _amount, _65p_d[1] + _amount * _price)
+        if _ratio < 0.7 / _divisor:
+            _70p_d = (_70p_d[0] + _amount, _70p_d[1] + _amount * _price)
+    if _type == "bids":
+        _md = BuyDepth(_start_price, _1p_d, _2p_d, _3p_d, _4p_d, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d,
+                       _40p_d, _45p_d, _50p_d,
+                       _55p_d, _60p_d,
+                       _65p_d,
+                       _70p_d)
+    elif _type == "asks":
+        _md = SellDepth(_start_price, _1p_d, _2p_d, _3p_d, _4p_d, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d,
+                        _40p_d, _45p_d, _50p_d,
+                        _55p_d, _60p_d,
+                        _65p_d,
+                        _70p_d)
+    return _md
+
+
+def divide_dc(_dc, _by):
+    if isinstance(_dc, BuyDepth):
+        return BuyDepth(round(_dc.bid_price / _by, 10),
+                        (round(_dc.p1[0] / _by, 4), round(_dc.p1[1] / _by, 4)),
+                        (round(_dc.p2[0] / _by, 4), round(_dc.p2[1] / _by, 4)),
+                        (round(_dc.p3[0] / _by, 4), round(_dc.p3[1] / _by, 4)),
+                        (round(_dc.p4[0] / _by, 4), round(_dc.p4[1] / _by, 4)),
+                        (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
+                        (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
+                        (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
+                        (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
+                        (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)),
+                        (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
+                        (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)),
+                        (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
+                        (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)),
+                        (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
+                        (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)),
+                        (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
+                        (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
+                        (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
+    elif isinstance(_dc, SellDepth):
+        return SellDepth(round(_dc.ask_price / _by, 10),
+                         (round(_dc.p1[0] / _by, 4), round(_dc.p1[1] / _by, 4)),
+                         (round(_dc.p2[0] / _by, 4), round(_dc.p2[1] / _by, 4)),
+                         (round(_dc.p3[0] / _by, 4), round(_dc.p3[1] / _by, 4)),
+                         (round(_dc.p4[0] / _by, 4), round(_dc.p4[1] / _by, 4)),
+                         (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
+                         (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
+                         (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
+                         (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
+                         (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)),
+                         (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
+                         (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)),
+                         (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
+                         (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)),
+                         (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
+                         (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)),
+                         (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
+                         (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
+                         (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
+
+
+def add_dc(_dc1, _dc2):
+    if isinstance(_dc1, BuyDepth):
+        return BuyDepth(_dc1.bid_price + _dc2.bid_price,
+                        (_dc1.p1[0] + _dc2.p1[0], _dc1.p1[1] + _dc2.p1[1]),
+                        (_dc1.p2[0] + _dc2.p2[0], _dc1.p2[1] + _dc2.p2[1]),
+                        (_dc1.p3[0] + _dc2.p3[0], _dc1.p3[1] + _dc2.p3[1]),
+                        (_dc1.p4[0] + _dc2.p4[0], _dc1.p4[1] + _dc2.p4[1]),
+                        (_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
+                        (_dc1.p10[0] + _dc2.p10[0], _dc1.p10[1] + _dc2.p10[1]),
+                        (_dc1.p15[0] + _dc2.p15[0], _dc1.p15[1] + _dc2.p15[1]),
+                        (_dc1.p20[0] + _dc2.p20[0], _dc1.p20[1] + _dc2.p20[1]),
+                        (_dc1.p25[0] + _dc2.p25[0], _dc1.p25[1] + _dc2.p25[1]),
+                        (_dc1.p30[0] + _dc2.p30[0], _dc1.p30[1] + _dc2.p30[1]),
+                        (_dc1.p35[0] + _dc2.p35[0], _dc1.p35[1] + _dc2.p35[1]),
+                        (_dc1.p40[0] + _dc2.p40[0], _dc1.p40[1] + _dc2.p40[1]),
+                        (_dc1.p45[0] + _dc2.p45[0], _dc1.p45[1] + _dc2.p45[1]),
+                        (_dc1.p50[0] + _dc2.p50[0], _dc1.p50[1] + _dc2.p50[1]),
+                        (_dc1.p55[0] + _dc2.p55[0], _dc1.p55[1] + _dc2.p55[1]),
+                        (_dc1.p60[0] + _dc2.p60[0], _dc1.p60[1] + _dc2.p60[1]),
+                        (_dc1.p65[0] + _dc2.p65[0], _dc1.p65[1] + _dc2.p65[1]),
+                        (_dc1.p70[0] + _dc2.p70[0], _dc1.p70[1] + _dc2.p70[1]))
+    elif isinstance(_dc1, SellDepth):
+        return SellDepth(_dc1.ask_price + _dc2.ask_price,
+                         (_dc1.p1[0] + _dc2.p1[0], _dc1.p1[1] + _dc2.p1[1]),
+                         (_dc1.p2[0] + _dc2.p2[0], _dc1.p2[1] + _dc2.p2[1]),
+                         (_dc1.p3[0] + _dc2.p3[0], _dc1.p3[1] + _dc2.p3[1]),
+                         (_dc1.p4[0] + _dc2.p4[0], _dc1.p4[1] + _dc2.p4[1]),
+                         (_dc1.p5[0] + _dc2.p5[0], _dc1.p5[1] + _dc2.p5[1]),
+                         (_dc1.p10[0] + _dc2.p10[0], _dc1.p10[1] + _dc2.p10[1]),
+                         (_dc1.p15[0] + _dc2.p15[0], _dc1.p15[1] + _dc2.p15[1]),
+                         (_dc1.p20[0] + _dc2.p20[0], _dc1.p20[1] + _dc2.p20[1]),
+                         (_dc1.p25[0] + _dc2.p25[0], _dc1.p25[1] + _dc2.p25[1]),
+                         (_dc1.p30[0] + _dc2.p30[0], _dc1.p30[1] + _dc2.p30[1]),
+                         (_dc1.p35[0] + _dc2.p35[0], _dc1.p35[1] + _dc2.p35[1]),
+                         (_dc1.p40[0] + _dc2.p40[0], _dc1.p40[1] + _dc2.p40[1]),
+                         (_dc1.p45[0] + _dc2.p45[0], _dc1.p45[1] + _dc2.p45[1]),
+                         (_dc1.p50[0] + _dc2.p50[0], _dc1.p50[1] + _dc2.p50[1]),
+                         (_dc1.p55[0] + _dc2.p55[0], _dc1.p55[1] + _dc2.p55[1]),
+                         (_dc1.p60[0] + _dc2.p60[0], _dc1.p60[1] + _dc2.p60[1]),
+                         (_dc1.p65[0] + _dc2.p65[0], _dc1.p65[1] + _dc2.p65[1]),
+                         (_dc1.p70[0] + _dc2.p70[0], _dc1.p70[1] + _dc2.p70[1]))
 
 depths = {}
 depths1m = {}
-depths15m = {}
 depths_locker = {}
 
 
@@ -94,14 +312,14 @@ def do_freeze():
             #   15m section
             _sec = int(depths1m[_dc.market]['bd'][0].time_str.split(":")[-1])
             _min = int(depths1m[_dc.market]['bd'][0].time_str.split(":")[-2])
-            _t0 = int(_min / 15)
-            _t1 = int(int(depths1m[_dc.market]['bd'][-1].time_str.split(":")[-2])/15)
-            if _t0 != _t1:
-                _bdl = depths1m[_dc.market]['bd'][-1]
-                _sdl = depths1m[_dc.market]['sd'][-1]
+            _t0_quarter = int(_min / 15)
+            _t1_quarter = int(int(depths1m[_dc.market]['bd'][-1].time_str.split(":")[-2])/15)
+            if _t0_quarter != _t1_quarter:
+                _bdl_1m = depths1m[_dc.market]['bd'][-1]
+                _sdl_1m = depths1m[_dc.market]['sd'][-1]
                 _bdt = depths1m[_dc.market]['bd'][0]
                 _sdt = depths1m[_dc.market]['sd'][0]
-                _current_timestamp = _bdt.timestamp - (_min - _t0 * 15) * 60 - _sec
+                _current_timestamp = _bdt.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
                 __size = len(depths1m[_dc.market]['bd']) - 1
                 for _ii in range(1, __size):
                     _bdt = add_dc(_bdt, depths1m[_dc.market]['bd'][_ii])
@@ -110,14 +328,31 @@ def do_freeze():
                 _sdt = divide_dc(_sdt, __size)
                 _bdt.set_time(_current_timestamp)
                 _sdt.set_time(_current_timestamp)
-                depths15m[_k]['bd'].append(_bdt)
-                depths15m[_k]['sd'].append(_sdt)
+                depth_crawl_dict[_k].add_depths_15m(_bdt, _sdt)
+            #  day section
+            _t0_day = int(depths1m[_dc.market]['bd'][0].time_str.split(" ")[0])
+            _t1_day = int(depths1m[_dc.market]['bd'][-1].time_str.split(" ")[0])
+            _hour = int(depths1m[_dc.market]['bd'][0].time_str.split(":")[0].split(" ")[-1])
+            if _t0_day != _t1_day:
+                _bdt = depths1m[_dc.market]['bd'][0]
+                _sdt = depths1m[_dc.market]['sd'][0]
+                _current_timestamp = _bdt.timestamp - _hour * 60 * 60 - _min * 60 - _sec
+                _bds_f = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_k].buy_depth_15m))
+                _sds_f = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_k].sell_depth_15m))
+                _bd_1d = reduce(add_dc, _bds_f)
+                _sd_1d = reduce(add_dc, _sds_f)
+                _bd_1d = divide_dc(_bd_1d, len(_bds_f))
+                _sd_1d = divide_dc(_sd_1d, len(_sds_f))
+                _bd_1d.set_time(_current_timestamp)
+                _sd_1d.set_time(_current_timestamp)
+                depth_crawl_dict[_k].add_depths_1d(_bd_1d, _sd_1d)
+                # depth_crawl_dict[_k].add_depths_15m(_bdt, _sdt)
+                j = 1
+            if _t0_quarter != _t1_quarter:
                 depths1m[_dc.market]['bd'].clear()
                 depths1m[_dc.market]['sd'].clear()
-                depths1m[_dc.market]['bd'].append(_bdl)
-                depths1m[_dc.market]['sd'].append(_sdl)
-                ierr = 1
-
+                depths1m[_dc.market]['bd'].append(_bdl_1m)
+                depths1m[_dc.market]['sd'].append(_sdl_1m)
         unlock(depths_locker, _k)
 # exec('def process_depth_socket_message_avaxusdt(_msg):\n    _depth_msg = DepthMsg(_msg)\n    depths[\"avaxusdt\"].append(_depth_msg)\n    ')
 
@@ -132,9 +367,6 @@ def _do_depth_scan(_dc: DepthCrawl):
     depths1m[_dc.market] = {}
     depths1m[_dc.market]['bd'] = []
     depths1m[_dc.market]['sd'] = []
-    depths15m[_dc.market] = {}
-    depths15m[_dc.market]['bd'] = []
-    depths15m[_dc.market]['sd'] = []
     _bm = BinanceSocketManager(binance_obj.client)
     _conn_key = _bm.start_depth_socket(_dc.market.upper(), process_depth_socket_message)
     _bm.start()
@@ -147,6 +379,8 @@ def manage_volume_scan(_dc):
 
 
 _dc = DepthCrawl("avaxusdt")
+depth_crawl_dict = {}
+depth_crawl_dict["avaxusdt"] = _dc
 manage_volume_scan(_dc)
 
 
