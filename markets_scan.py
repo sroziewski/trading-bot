@@ -6,6 +6,7 @@ from time import sleep
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
+from depth_crawl import depth_crawl_dict
 from library import setup_logger, DecimalCodec, get_time
 from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
 from mongodb import mongo_client
@@ -29,7 +30,6 @@ usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=c
 busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
 thread_limit = 100
-depth_scan_set = {}
 
 
 def do_scan_market(_market_info_collection):
@@ -40,6 +40,7 @@ def do_scan_market(_market_info_collection):
 
     for _market_s in _market_info_list:  # inf loop needed here
         process_market_info_entity(_market_s, _journal_collection)
+        break
 
 
 def scanner(_market_info_collection):
@@ -100,6 +101,10 @@ def process_market_info_entity(_market_entity, _journal_collection):
                     _delta_t = ticker2sec(_ticker) + 15 * 60  # plus 15 min
                 except TypeError:
                     logger.error("TypeError ticker" + _ticker + _market_name + _market_type)
+
+                manage_crawling(
+                    get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_crawl_dict))
+
                 if len(list(_r.clone())) < 1:  # there is no such a market yet
                     _journal_collection.insert_one({
                         'market': _market_name,
@@ -112,7 +117,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                     logger.info("Adding market {} to journal".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
-                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_crawl_dict))
                 elif len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
                                      _r))) > 0:  # market exists but it's not operating
                     if _market_name not in repair_set:
@@ -122,23 +127,24 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         # run a thread here
                         manage_crawling(
                             get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection,
-                                                 depth_scan_set))
+                                                 depth_crawl_dict))
                 elif not is_repaired and repair_mode == "repair" and len(list(filter(lambda x: x['running'], _r))) > 0:
                     is_repaired = True
                     logger.info("Market {} was running --> handled".format(_journal_name.upper()))
                     # run a thread here
                     manage_crawling(
-                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_scan_set))
+                        get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection, depth_crawl_dict))
 
 
 while True:
     hr = 15 * 60
-    if market_type == "btc":
-        scanner(btc_markets_collection)
-    elif market_type == "usdt":
-        scanner(usdt_markets_collection)
-    elif market_type == "busd":
-        scanner(busd_markets_collection)
+    scanner(usdt_markets_collection)
+    # if market_type == "btc":
+    #     scanner(btc_markets_collection)
+    # elif market_type == "usdt":
+    #     scanner(usdt_markets_collection)
+    # elif market_type == "busd":
+    #     scanner(busd_markets_collection)
     sleep(hr)
 
 # how to run?

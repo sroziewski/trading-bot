@@ -10,7 +10,7 @@ from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from kucoin.exceptions import KucoinAPIException
 
-from depth_crawl import compute_depth_percentages, divide_dc, add_dc
+from depth_crawl import compute_depth_percentages, divide_dc, add_dc, depth_crawl_dict, manage_depth_scan, DepthCrawl
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, get_last_db_record, \
     get_time_from_binance_tmstmp, logger_global
@@ -20,8 +20,6 @@ db = mongo_client.klines
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
-
-trades = {}
 
 
 def to_mongo_binance(_kline):
@@ -124,7 +122,7 @@ def persist_klines(_klines, _collection):
 
 
 class Schedule(object):
-    def __init__(self, _asset, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _no_depths, _journal, _no_such_market=False):
+    def __init__(self, _asset, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _journal, _no_such_market=False):
         self.asset = _asset
         self.market = _market
         self.collection_name = _collection_name
@@ -132,7 +130,6 @@ class Schedule(object):
         self.sleep = _sleep
         self.exchange = _exchange
         self.depth_crawl = _dc
-        self.no_depths = _no_depths
         self.journal = _journal
         self.no_such_market = _no_such_market
 
@@ -142,23 +139,6 @@ def manage_crawling(_schedule):
     _scheduler = threading.Thread(target=_do_schedule, args=(_schedule,),
                                   name='_do_schedule : {}'.format(_schedule.collection_name))
     _scheduler.start()
-
-
-class DepthCrawl(object):
-    def __init__(self, _market, _exchange):
-        self.market = _market
-        self.exchange = _exchange
-        self.sell_depth = []
-        self.buy_depth = []
-
-    def add_depths(self, _bd, _sd):
-        _size = 500
-        self.buy_depth.append(_bd)
-        self.sell_depth.append(_sd)
-        if len(self.buy_depth) > _size:
-            self.buy_depth = self.buy_depth[-_size:]
-        if len(self.sell_depth) > _size:
-            self.sell_depth = self.sell_depth[-_size:]
 
 
 def _do_depth_crawl(_dc):
@@ -194,19 +174,6 @@ def _do_depth_crawl(_dc):
         _sd = compute_depth_percentages(_order['asks'], "asks")
         _dc.add_depths(_bd, _sd)
         sleep(3 * 60)
-
-
-def filter_current_trades(_vc):
-    _yesterday_time = (datetime.datetime.now().timestamp() - 24 * 60 * 60) * 1000
-    _tmp_trades = list(filter(lambda x: x.timestamp > _yesterday_time, trades[_vc.market])).copy()
-    del trades[_vc.market]
-    trades[_vc.market] = _tmp_trades
-
-
-def manage_depth_crawling(_dc):
-    _crawler = threading.Thread(target=_do_depth_crawl, args=(_dc,),
-                                name='_do_depth_crawl : {}'.format(_dc.market))
-    _crawler.start()
 
 
 def get_average_depths(_dc, _number_of_elements):
@@ -245,19 +212,19 @@ def _do_schedule(_schedule):
         if _schedule.exchange == "binance":
             try:
                 klines = try_get_klines(_schedule.exchange, market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
-                # klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
+                klines = klines[:-1]  # we skip the last kline on purpose since it has not been closed
             except BinanceAPIException as bae:
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, bae.__traceback__))
                 logger_global[0].info("sleeping ...")
                 sleep(randrange(500))
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
-                klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
+                klines = klines[:-1]  # we skip the last kline on purpose since it has not been closed
             except Exception as err:
                 traceback.print_tb(err.__traceback__)
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
                 sleep(randrange(30))
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
-                # klines = klines[:-1]  # we skip the last kline on purpose to have for it a crawling volume
+                klines = klines[:-1]  # we skip the last kline on purpose since it has not been closed
         elif _schedule.exchange == "kucoin":
             try:
                 klines = try_get_klines(_schedule.exchange, market, ticker, get_kucoin_interval_unit(ticker))
@@ -268,17 +235,16 @@ def _do_schedule(_schedule):
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         current_klines = filter_current_klines(klines, collection_name, collection)
         sleep(15)
-        bd, sd = get_average_depths(_schedule.depth_crawl, _schedule.no_depths)
+        sleep(15000)
+        bd, sd = get_average_depths(_schedule.depth_crawl)
         list(map(lambda x: x.add_buy_depth(bd), current_klines))
         list(map(lambda x: x.add_sell_depth(sd), current_klines))
         list(map(lambda x: x.add_market(market), current_klines))
-        # if _schedule.exchange == "binance":
-        #     list(map(lambda x: set_trade_volume(_schedule, x), current_klines))
         list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
-        persist_klines(current_klines, collection)
+        # persist_klines(current_klines, collection)
         logger_global[0].info("Stored to collection : {} : {} ".format(_schedule.exchange, collection_name))
-        _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'running': False}})
-        _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'last_seen': round(datetime.datetime.now().timestamp())}})
+        # _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'running': False}})
+        # _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'last_seen': round(datetime.datetime.now().timestamp())}})
         _schedule.no_such_market = False
         sleep(_schedule.sleep + randrange(500))
 
@@ -358,11 +324,11 @@ def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _dep
     _market = (_market_name + _market_type).upper()
 
     if _market not in _depth_scan_set:
-        _dc = DepthCrawl(_market, _exchange)
-        _depth_scan_set[_market] = _dc
-        manage_depth_crawling(_dc)
+        _dc = DepthCrawl(_market.lower())
+        _depth_scan_set[_market.lower()] = _dc
+        manage_depth_scan(_dc)
 
-    _dc = _depth_scan_set[_market]
+    _dc = _depth_scan_set[_market.lower()]
 
     if _market_type == "btc":
         _collection_name = _market_name + _ticker_val
@@ -370,6 +336,6 @@ def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _dep
         _collection_name = _market_name + "_" + _market_type + "_" + _ticker_val
 
     return Schedule(_market_name, _market, _collection_name, _ticker_val,
-                    ticker2sec(_ticker_val), _exchange, _dc, round(20 * ticker2num(_ticker_val)), _journal, _no_such_market)
+                    ticker2sec(_ticker_val), _exchange, _dc, _journal, _no_such_market)
 
 

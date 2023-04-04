@@ -301,62 +301,58 @@ def unlock(_locker, _key):
 
 
 def do_freeze():
-    for _k in depths.keys():
-        depths_locker[_k] = True
-        if len(depths[_k]['asks']) > 0 and len(depths[_k]['bids']) > 0:
-            _as, _bs = freeze_order_book(_k)
+    for _market_c in depths.keys():
+        depths_locker[_market_c] = True
+        if len(depths[_market_c]['asks']) > 0 and len(depths[_market_c]['bids']) > 0:
+            _as, _bs = freeze_order_book(_market_c)
             _bd = compute_depth_percentages(_bs, "bids")
             _sd = compute_depth_percentages(_as, "asks")
-            depths1m[_dc.market]['bd'].append(_bd)
-            depths1m[_dc.market]['sd'].append(_sd)
+            depths1m[_market_c]['bd'].append(_bd)
+            depths1m[_market_c]['sd'].append(_sd)
             #   15m section
-            _sec = int(depths1m[_dc.market]['bd'][0].time_str.split(":")[-1])
-            _min = int(depths1m[_dc.market]['bd'][0].time_str.split(":")[-2])
+            _sec = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-1])
+            _min = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-2])
             _t0_quarter = int(_min / 15)
-            _t1_quarter = int(int(depths1m[_dc.market]['bd'][-1].time_str.split(":")[-2])/15)
+            _t1_quarter = int(int(depths1m[_market_c]['bd'][-1].time_str.split(":")[-2])/15)
             if _t0_quarter != _t1_quarter:
-                _bdl_1m = depths1m[_dc.market]['bd'][-1]
-                _sdl_1m = depths1m[_dc.market]['sd'][-1]
-                _bdt = depths1m[_dc.market]['bd'][0]
-                _sdt = depths1m[_dc.market]['sd'][0]
+                _bdl_1m = depths1m[_market_c]['bd'][-1]
+                _sdl_1m = depths1m[_market_c]['sd'][-1]
+                _bdt = depths1m[_market_c]['bd'][0]
+                _sdt = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
-                __size = len(depths1m[_dc.market]['bd']) - 1
+                __size = len(depths1m[_market_c]['bd']) - 1
                 for _ii in range(1, __size):
-                    _bdt = add_dc(_bdt, depths1m[_dc.market]['bd'][_ii])
-                    _sdt = add_dc(_sdt, depths1m[_dc.market]['sd'][_ii])
+                    _bdt = add_dc(_bdt, depths1m[_market_c]['bd'][_ii])
+                    _sdt = add_dc(_sdt, depths1m[_market_c]['sd'][_ii])
                 _bdt = divide_dc(_bdt, __size)
                 _sdt = divide_dc(_sdt, __size)
                 _bdt.set_time(_current_timestamp)
                 _sdt.set_time(_current_timestamp)
-                depth_crawl_dict[_k].add_depths_15m(_bdt, _sdt)
+                depth_crawl_dict[_market_c].add_depths_15m(_bdt, _sdt)
             #  day section
-            _t0_day = int(depths1m[_dc.market]['bd'][0].time_str.split(" ")[0])
-            _t1_day = int(depths1m[_dc.market]['bd'][-1].time_str.split(" ")[0])
-            _hour = int(depths1m[_dc.market]['bd'][0].time_str.split(":")[0].split(" ")[-1])
+            _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
+            _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
+            _hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
             if _t0_day != _t1_day:
-                _bdt = depths1m[_dc.market]['bd'][0]
-                _sdt = depths1m[_dc.market]['sd'][0]
+                _bdt = depths1m[_market_c]['bd'][0]
+                _sdt = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt.timestamp - _hour * 60 * 60 - _min * 60 - _sec
-                _bds_f = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_k].buy_depth_15m))
-                _sds_f = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_k].sell_depth_15m))
+                _bds_f = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
+                _sds_f = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
                 _bd_1d = reduce(add_dc, _bds_f)
                 _sd_1d = reduce(add_dc, _sds_f)
                 _bd_1d = divide_dc(_bd_1d, len(_bds_f))
                 _sd_1d = divide_dc(_sd_1d, len(_sds_f))
                 _bd_1d.set_time(_current_timestamp)
                 _sd_1d.set_time(_current_timestamp)
-                depth_crawl_dict[_k].add_depths_1d(_bd_1d, _sd_1d)
-                # depth_crawl_dict[_k].add_depths_15m(_bdt, _sdt)
+                depth_crawl_dict[_market_c].add_depths_1d(_bd_1d, _sd_1d)
                 j = 1
             if _t0_quarter != _t1_quarter:
-                depths1m[_dc.market]['bd'].clear()
-                depths1m[_dc.market]['sd'].clear()
-                depths1m[_dc.market]['bd'].append(_bdl_1m)
-                depths1m[_dc.market]['sd'].append(_sdl_1m)
-        unlock(depths_locker, _k)
-# exec('def process_depth_socket_message_avaxusdt(_msg):\n    _depth_msg = DepthMsg(_msg)\n    depths[\"avaxusdt\"].append(_depth_msg)\n    ')
-
-
+                depths1m[_market_c]['bd'].clear()
+                depths1m[_market_c]['sd'].clear()
+                depths1m[_market_c]['bd'].append(_bdl_1m)
+                depths1m[_market_c]['sd'].append(_sdl_1m)
+        unlock(depths_locker, _market_c)
 
 
 def _do_depth_scan(_dc: DepthCrawl):
@@ -372,37 +368,32 @@ def _do_depth_scan(_dc: DepthCrawl):
     _bm.start()
 
 
-def manage_volume_scan(_dc):
+def manage_depth_scan(_dc):
     _crawler = threading.Thread(target=_do_depth_scan, args=(_dc,),
                                 name='_do_depth_scan : {}'.format("ABC"))
     _crawler.start()
 
 
-_dc = DepthCrawl("avaxusdt")
-depth_crawl_dict = {}
-depth_crawl_dict["avaxusdt"] = _dc
-manage_volume_scan(_dc)
+def run_schedule():
+    while True:
+        # Checks whether a scheduled task
+        # is pending to run or not
+        schedule.run_pending()
+        sleep(1)
 
+
+def manage_schedule():
+    _thread = threading.Thread(target=run_schedule, name='manage_depth_crawl')
+    _thread.start()
+
+
+depth_crawl_dict = {}
 
 schedule.every(1).minutes.do(do_freeze)
+manage_schedule()
 
-while True:
-    # Checks whether a scheduled task
-    # is pending to run or not
-    schedule.run_pending()
-    sleep(1)
+# _dc = DepthCrawl("avaxusdt")
 
-sleep(300)
+# depth_crawl_dict["avaxusdt"] = _dc
+# manage_depth_scan(_dc)
 
-k =1
-
-_asks, _bids = freeze_order_book(_dc.market)
-
-compute_depth_percentages(_asks, "asks")
-compute_depth_percentages(_bids, "bids")
-
-# _bd = compute_depth_percentages(_order['bids'], "bids")
-#         if _dc.exchange == "kucoin":
-#             _order['asks'].reverse()
-#         _sd = compute_depth_percentages(_order['asks'], "asks")
-#         _dc.add_depths(_bd, _sd)
