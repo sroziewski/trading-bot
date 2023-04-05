@@ -309,11 +309,12 @@ def _do_schedule(_schedule):
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         current_klines = filter_current_klines(klines, collection_name, collection)
         sleep(5)
-        set_average_depths(_schedule.depth_crawl, ticker, current_klines[-1])
-        list(map(lambda x: x.add_market(market), current_klines))
-        list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
-        persist_klines(current_klines, collection)
-        logger_global[0].info("Stored to collection : {} : {} ".format(_schedule.exchange, collection_name))
+        if len(current_klines) > 0:
+            set_average_depths(_schedule.depth_crawl, ticker, current_klines[-1])
+            list(map(lambda x: x.add_market(market), current_klines))
+            list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
+            persist_klines(current_klines, collection)
+            logger_global[0].info("Stored to collection : {} : {} ".format(_schedule.exchange, collection_name))
         _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'running': False}})
         _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'last_seen': round(datetime.datetime.now().timestamp())}})
         _schedule.no_such_market = False
