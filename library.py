@@ -75,6 +75,8 @@ class Kline(object):
         self.buy_quantity = 0
         self.sell_btc_volume = 0
         self.sell_quantity = 0
+        self.bid_depth = None
+        self.ask_depth = None
         if ticker:
             self.ticker = ticker
 

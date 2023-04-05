@@ -13,7 +13,7 @@ from kucoin.exceptions import KucoinAPIException
 from depth_crawl import compute_depth_percentages, divide_dc, add_dc, depth_crawl_dict, manage_depth_scan, DepthCrawl
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global
+    get_time_from_binance_tmstmp, logger_global, save_to_file
 from mongodb import mongo_client
 
 db = mongo_client.klines
@@ -32,7 +32,8 @@ def to_mongo_binance(_kline):
 
 
 def to_mongo(_kline):
-    return {
+    if _kline.bid_depth:
+        return {
         'exchange': _kline.exchange,
         'version': "2.0",
         'ticker': _kline.ticker,
@@ -86,8 +87,27 @@ def to_mongo(_kline):
             'p60': _kline.ask_depth.p60,
             'p65': _kline.ask_depth.p65,
             'p70': _kline.ask_depth.p70
+            }
         }
-    }
+    else:
+        return {
+            'exchange': _kline.exchange,
+            'version': "2.0",
+            'ticker': _kline.ticker,
+            'start_time': int(_kline.start_time / 1000),
+            'opening': _kline.opening,
+            'closing': _kline.closing,
+            'lowest': _kline.lowest,
+            'highest': _kline.highest,
+            'volume': round(_kline.volume, 4),
+            'btc_volume': round(_kline.btc_volume, 4),
+            'time_str': _kline.time_str,
+            'market': _kline.market,
+            'bid_price': None,
+            'ask_price': None,
+            'bid_depth': None,
+            'ask_depth': None
+        }
 
 
 def persist_kline(_kline, _collection):
@@ -176,21 +196,16 @@ def _do_depth_crawl(_dc):
         sleep(3 * 60)
 
 
-def get_average_depths(_dc, _number_of_elements):
-    while len(_dc.buy_depth) == 0:
-        logger_global[0].info(f"{_dc.market} get_average_depths sleeping : len(_dc.buy_depth) == 0")
+def set_average_depths(_dc: DepthCrawl, _ticker, _curr_kline):
+    while len(_dc.buy_depth_15m) == 0:
+        logger_global[0].info(f"{_dc.market} set_average_depths sleeping : len(_dc.buy_depth_15m) == 0")
         sleep(2*60 + randrange(100))
-    if len(_dc.buy_depth) < _number_of_elements:
-        _number_of_elements = len(_dc.buy_depth)
-    if _number_of_elements == 1:
-        return divide_dc(_dc.buy_depth[0], 1), divide_dc(_dc.sell_depth[0], 1)
-    _bd = add_dc(_dc.buy_depth[-_number_of_elements:][0], _dc.buy_depth[-_number_of_elements:][1])
-    for _i in range(2, _number_of_elements):
-        _bd = add_dc(_bd, _dc.buy_depth[-_number_of_elements:][_i])
-    _sd = add_dc(_dc.sell_depth[-_number_of_elements:][0], _dc.sell_depth[-_number_of_elements:][1])
-    for _i in range(2, _number_of_elements):
-        _sd = add_dc(_sd, _dc.sell_depth[-_number_of_elements:][_i])
-    return divide_dc(_bd, _number_of_elements), divide_dc(_sd, _number_of_elements)
+    save_to_file("E://bin//data//", "dc", _dc)
+    if _ticker == '15m':
+        __bd = list(filter(lambda x: x.timestamp == _curr_kline.timestamp, _dc.buy_depth_15m))[0]
+        __sd = list(filter(lambda x: x.timestamp == _curr_kline.timestamp, _dc.sell_depth_15m))[0]
+        _curr_kline.add_buy_depth(__bd)
+        _curr_kline.add_sell_depth(__sd)
 
 
 def _do_schedule(_schedule):
@@ -235,8 +250,7 @@ def _do_schedule(_schedule):
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         current_klines = filter_current_klines(klines, collection_name, collection)
         sleep(15)
-        sleep(15000)
-        bd, sd = get_average_depths(_schedule.depth_crawl)
+        bd, sd = set_average_depths(_schedule.depth_crawl, ticker, current_klines[-1])
         list(map(lambda x: x.add_buy_depth(bd), current_klines))
         list(map(lambda x: x.add_sell_depth(sd), current_klines))
         list(map(lambda x: x.add_market(market), current_klines))
