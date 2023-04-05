@@ -22,6 +22,8 @@ decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
 
+depth_locker = {}
+
 
 def to_mongo_binance(_kline):
     _data = to_mongo(_kline)
@@ -214,10 +216,13 @@ def set_average_depths(_dc: DepthCrawl, _ticker, _curr_kline):
     #     else:
     #         logger_global[0].info("Not found {}".format(_ticker))
     # if _ticker == '30m':
+    while _dc.market in depth_locker:
+        sleep(5)
     inject_market_depth(_curr_kline, _dc, _ticker)
 
 
 def inject_market_depth(_curr_kline, _dc, _ticker):
+    depth_locker[_dc.market] = True
     _ticker_n = ticker2num(_ticker)
     _multiple_15 = int(_ticker_n * 4)
     _tmts = list(map(lambda x: x.timestamp, _dc.buy_depth_15m))
@@ -241,6 +246,7 @@ def inject_market_depth(_curr_kline, _dc, _ticker):
         _curr_kline.add_sell_depth(__sd_r)
     else:
         logger_global[0].info("DC data not found {}".format(_ticker))
+    del depth_locker[_dc.market]
 
 
 def _do_schedule(_schedule):
