@@ -14,6 +14,8 @@ binance_obj
 class DepthCrawl(object):
     def __init__(self, _market):
         self.market = _market
+        self.sell_depth_5m = []
+        self.buy_depth_5m = []
         self.sell_depth_15m = []
         self.buy_depth_15m = []
         self.sell_depth_1d = []
@@ -36,6 +38,15 @@ class DepthCrawl(object):
             self.buy_depth_15m = self.buy_depth_15m[-_size:]
         if len(self.sell_depth_15m) > _size:
             self.sell_depth_15m = self.sell_depth_15m[-_size:]
+
+    def add_depths_5m(self, _bd, _sd):
+        _size = 600
+        self.buy_depth_5m.append(_bd)
+        self.sell_depth_5m.append(_sd)
+        if len(self.buy_depth_5m) > _size:
+            self.buy_depth_5m = self.buy_depth_5m[-_size:]
+        if len(self.sell_depth_5m) > _size:
+            self.sell_depth_5m = self.sell_depth_5m[-_size:]
 
 
 class DepthMsg(object):
@@ -314,39 +325,57 @@ def do_freeze():
             _min = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-2])
             _t0_quarter = int(_min / 15)
             _t1_quarter = int(int(depths1m[_market_c]['bd'][-1].time_str.split(":")[-2])/15)
+
+            _t0_5m = int(_min / 5)
+            _t1_5m = int(int(depths1m[_market_c]['bd'][-1].time_str.split(":")[-2]) / 5)
+
+            if _market_c == "btcusdt" and _t0_5m != _t1_5m:
+                _bdt_5m = depths1m[_market_c]['bd'][0]
+                _sdt_5m = depths1m[_market_c]['sd'][0]
+                _current_timestamp = _bdt_5m.timestamp - (_min - _t0_5m * 5) * 60 - _sec
+                _bds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2])/5),
+                                     depth_crawl_dict[_market_c].buy_depth_5m))
+                _sds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2])/5),
+                                     depth_crawl_dict[_market_c].sell_depth_5m))
+                _bd_5m = reduce(add_dc, _bds_f_5m)
+                _sd_5m = reduce(add_dc, _sds_f_5m)
+                _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
+                _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
+                _bd_5m.set_time(_current_timestamp)
+                _sd_5m.set_time(_current_timestamp)
+                depth_crawl_dict[_market_c].add_depths_5m(_bd_5m, _sd_5m)
             if _t0_quarter != _t1_quarter:
                 _bdl_1m = depths1m[_market_c]['bd'][-1]
                 _sdl_1m = depths1m[_market_c]['sd'][-1]
-                _bdt = depths1m[_market_c]['bd'][0]
-                _sdt = depths1m[_market_c]['sd'][0]
-                _current_timestamp = _bdt.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
+                _bdt_5m = depths1m[_market_c]['bd'][0]
+                _sdt_5m = depths1m[_market_c]['sd'][0]
+                _current_timestamp = _bdt_5m.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
                 __size = len(depths1m[_market_c]['bd']) - 1
                 for _ii in range(1, __size):
-                    _bdt = add_dc(_bdt, depths1m[_market_c]['bd'][_ii])
-                    _sdt = add_dc(_sdt, depths1m[_market_c]['sd'][_ii])
-                _bdt = divide_dc(_bdt, __size)
-                _sdt = divide_dc(_sdt, __size)
-                _bdt.set_time(_current_timestamp)
-                _sdt.set_time(_current_timestamp)
-                depth_crawl_dict[_market_c].add_depths_15m(_bdt, _sdt)
+                    _bdt_5m = add_dc(_bdt_5m, depths1m[_market_c]['bd'][_ii])
+                    _sdt_5m = add_dc(_sdt_5m, depths1m[_market_c]['sd'][_ii])
+                _bdt_5m = divide_dc(_bdt_5m, __size)
+                _sdt_5m = divide_dc(_sdt_5m, __size)
+                _bdt_5m.set_time(_current_timestamp)
+                _sdt_5m.set_time(_current_timestamp)
+                depth_crawl_dict[_market_c].add_depths_15m(_bdt_5m, _sdt_5m)
             #  day section
             _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
             _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
             _hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
             if _t0_day != _t1_day:
-                _bdt = depths1m[_market_c]['bd'][0]
-                _sdt = depths1m[_market_c]['sd'][0]
-                _current_timestamp = _bdt.timestamp - _hour * 60 * 60 - _min * 60 - _sec
-                _bds_f = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
-                _sds_f = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
-                _bd_1d = reduce(add_dc, _bds_f)
-                _sd_1d = reduce(add_dc, _sds_f)
-                _bd_1d = divide_dc(_bd_1d, len(_bds_f))
-                _sd_1d = divide_dc(_sd_1d, len(_sds_f))
-                _bd_1d.set_time(_current_timestamp)
-                _sd_1d.set_time(_current_timestamp)
-                depth_crawl_dict[_market_c].add_depths_1d(_bd_1d, _sd_1d)
-                j = 1
+                _bdt_5m = depths1m[_market_c]['bd'][0]
+                _sdt_5m = depths1m[_market_c]['sd'][0]
+                _current_timestamp = _bdt_5m.timestamp - _hour * 60 * 60 - _min * 60 - _sec
+                _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
+                _sds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
+                _bd_5m = reduce(add_dc, _bds_f_5m)
+                _sd_5m = reduce(add_dc, _sds_f_5m)
+                _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
+                _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
+                _bd_5m.set_time(_current_timestamp)
+                _sd_5m.set_time(_current_timestamp)
+                depth_crawl_dict[_market_c].add_depths_1d(_bd_5m, _sd_5m)
             if _t0_quarter != _t1_quarter:
                 depths1m[_market_c]['bd'].clear()
                 depths1m[_market_c]['sd'].clear()
