@@ -375,7 +375,7 @@ def ticker2num(_ticker):
 def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _no_such_market=False):
     _exchange = "binance"
     _market = (_market_name + _market_type).lower()
-    logger_global[0].info("get_binance_schedule market {} ticker {}".format(_market, _ticker_val))
+    # logger_global[0].info("get_binance_schedule market {} ticker {}".format(_market, _ticker_val))
     if _market not in depth_crawl_dict:
         _dc = DepthCrawl(_market)
         depth_crawl_dict[_market] = _dc
