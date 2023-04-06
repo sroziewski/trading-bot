@@ -443,8 +443,8 @@ depth_crawl_dict = {}
 schedule.every(1).minutes.do(do_freeze)
 manage_schedule()
 
-_dc = DepthCrawl("btcusdt")
-
-depth_crawl_dict["btcusdt"] = _dc
-manage_depth_scan(_dc)
+# _dc = DepthCrawl("btcusdt")
+#
+# depth_crawl_dict["btcusdt"] = _dc
+# manage_depth_scan(_dc)
 
