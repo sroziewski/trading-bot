@@ -22,31 +22,31 @@ class DepthCrawl(object):
         self.buy_depth_1d = []
 
     def add_depths_1d(self, _bd, _sd):
-        _size = 20
+        _size_1d = 20
         self.buy_depth_1d.append(_bd)
         self.sell_depth_1d.append(_sd)
-        if len(self.buy_depth_1d) > _size:
-            self.buy_depth_1d = self.buy_depth_1d[-_size:]
-        if len(self.sell_depth_1d) > _size:
-            self.sell_depth_1d = self.sell_depth_1d[-_size:]
+        if len(self.buy_depth_1d) > _size_1d:
+            self.buy_depth_1d = self.buy_depth_1d[-_size_1d:]
+        if len(self.sell_depth_1d) > _size_1d:
+            self.sell_depth_1d = self.sell_depth_1d[-_size_1d:]
 
     def add_depths_15m(self, _bd, _sd):
-        _size = 200
+        _size_15m = 200
         self.buy_depth_15m.append(_bd)
         self.sell_depth_15m.append(_sd)
-        if len(self.buy_depth_15m) > _size:
-            self.buy_depth_15m = self.buy_depth_15m[-_size:]
-        if len(self.sell_depth_15m) > _size:
-            self.sell_depth_15m = self.sell_depth_15m[-_size:]
+        if len(self.buy_depth_15m) > _size_15m:
+            self.buy_depth_15m = self.buy_depth_15m[-_size_15m:]
+        if len(self.sell_depth_15m) > _size_15m:
+            self.sell_depth_15m = self.sell_depth_15m[-_size_15m:]
 
     def add_depths_5m(self, _bd, _sd):
-        _size = 24
+        _size_5m = 24
         self.buy_depth_5m.append(_bd)
         self.sell_depth_5m.append(_sd)
-        if len(self.buy_depth_5m) > _size:
-            self.buy_depth_5m = self.buy_depth_5m[-_size:]
-        if len(self.sell_depth_5m) > _size:
-            self.sell_depth_5m = self.sell_depth_5m[-_size:]
+        if len(self.buy_depth_5m) > _size_5m:
+            self.buy_depth_5m = self.buy_depth_5m[-_size_5m:]
+        if len(self.sell_depth_5m) > _size_5m:
+            self.sell_depth_5m = self.sell_depth_5m[-_size_5m:]
 
 
 class DepthMsg(object):
