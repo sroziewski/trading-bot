@@ -343,7 +343,8 @@ def do_freeze():
                 _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
-                depth_crawl_dict[_market_c].add_depths_5m(_bd_5m, _sd_5m)
+                if not any(filter(lambda x: x.timestamp == _current_timestamp, _dc.buy_depth_5m)):
+                    depth_crawl_dict[_market_c].add_depths_5m(_bd_5m, _sd_5m)
             if _t0_quarter != _t1_quarter:
                 _bdl_1m = depths1m[_market_c]['bd'][-1]
                 _sdl_1m = depths1m[_market_c]['sd'][-1]
@@ -421,8 +422,8 @@ depth_crawl_dict = {}
 schedule.every(1).minutes.do(do_freeze)
 manage_schedule()
 
-_dc = DepthCrawl("btcusdt")
+# _dc = DepthCrawl("btcusdt")
 
-depth_crawl_dict["btcusdt"] = _dc
-manage_depth_scan(_dc)
+# depth_crawl_dict["btcusdt"] = _dc
+# manage_depth_scan(_dc)
 
