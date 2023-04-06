@@ -343,8 +343,20 @@ def do_freeze():
                 _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
-                if not any(filter(lambda x: x.timestamp == _current_timestamp, _dc.buy_depth_5m)):
+                if not any(filter(lambda x: x.timestamp == _current_timestamp, depth_crawl_dict[_market_c].buy_depth_5m)):
                     depth_crawl_dict[_market_c].add_depths_5m(_bd_5m, _sd_5m)
+                else:
+                    _tmts = list(map(lambda x: x.timestamp, depths1m[_market_c]['bd']))
+                    _bd_5_l = depth_crawl_dict[_market_c].buy_depth_5m[-1]
+                    _next_5m_tmstmp = int(_bd_5_l.timestamp + 5 * 60)
+                    _idx_5m = _tmts.index(_next_5m_tmstmp)
+                    _bd_5m_l = reduce(add_dc, depths1m[_market_c]['bd'][_idx_5m:_idx_5m + 5])
+                    _sd_5m_l = reduce(add_dc, depths1m[_market_c]['sd'][_idx_5m:_idx_5m + 5])
+                    _bd_5m_l = divide_dc(_bd_5m_l, 5)
+                    _sd_5m_l = divide_dc(_sd_5m_l, 5)
+                    _bd_5m_l.set_time(_next_5m_tmstmp)
+                    _sd_5m_l.set_time(_next_5m_tmstmp)
+                    depth_crawl_dict[_market_c].add_depths_5m(_bd_5m_l, _sd_5m_l)
             if _t0_quarter != _t1_quarter:
                 _bdl_1m = depths1m[_market_c]['bd'][-1]
                 _sdl_1m = depths1m[_market_c]['sd'][-1]
@@ -422,8 +434,8 @@ depth_crawl_dict = {}
 schedule.every(1).minutes.do(do_freeze)
 manage_schedule()
 
-# _dc = DepthCrawl("btcusdt")
+_dc = DepthCrawl("btcusdt")
 
-# depth_crawl_dict["btcusdt"] = _dc
-# manage_depth_scan(_dc)
+depth_crawl_dict["btcusdt"] = _dc
+manage_depth_scan(_dc)
 
