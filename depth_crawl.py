@@ -40,7 +40,7 @@ class DepthCrawl(object):
             self.sell_depth_15m = self.sell_depth_15m[-_size:]
 
     def add_depths_5m(self, _bd, _sd):
-        _size = 600
+        _size = 24
         self.buy_depth_5m.append(_bd)
         self.sell_depth_5m.append(_sd)
         if len(self.buy_depth_5m) > _size:
@@ -329,14 +329,14 @@ def do_freeze():
             _t0_5m = int(_min / 5)
             _t1_5m = int(int(depths1m[_market_c]['bd'][-1].time_str.split(":")[-2]) / 5)
 
-            if _market_c == "btcusdt" and _t0_5m != _t1_5m:
+            if _market_c in ["btcusdt", "luncusdt"] and _t0_5m != _t1_5m:
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _sdt_5m = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt_5m.timestamp - (_min - _t0_5m * 5) * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2])/5),
-                                     depth_crawl_dict[_market_c].buy_depth_5m))
+                                     depths1m[_market_c]['bd']))
                 _sds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2])/5),
-                                     depth_crawl_dict[_market_c].sell_depth_5m))
+                                     depths1m[_market_c]['sd']))
                 _bd_5m = reduce(add_dc, _bds_f_5m)
                 _sd_5m = reduce(add_dc, _sds_f_5m)
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
@@ -421,8 +421,8 @@ depth_crawl_dict = {}
 schedule.every(1).minutes.do(do_freeze)
 manage_schedule()
 
-# _dc = DepthCrawl("avaxusdt")
+_dc = DepthCrawl("btcusdt")
 
-# depth_crawl_dict["avaxusdt"] = _dc
-# manage_depth_scan(_dc)
+depth_crawl_dict["btcusdt"] = _dc
+manage_depth_scan(_dc)
 

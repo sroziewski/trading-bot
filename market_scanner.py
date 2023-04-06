@@ -211,7 +211,10 @@ def set_average_depths(_dc: DepthCrawl, _ticker, _curr_kline):
 
 def inject_market_depth_btf(_curr_kline, _dc, _ticker):
     depth_locker[_dc.market] = True
-    _multiple = 3 if _ticker == "3d" else 7
+    if _ticker == "3d":
+        _multiple = 3
+    elif _ticker == "1w":
+        _multiple = 7
     _tmts_ = list(map(lambda x: x.timestamp, _dc.buy_depth_1d))
     _data_exist_ = True
     try:
@@ -236,9 +239,39 @@ def inject_market_depth_btf(_curr_kline, _dc, _ticker):
     del depth_locker[_dc.market]
 
 
+def inject_market_depth_ltf(_curr_kline, _dc, _ticker):
+    depth_locker[_dc.market] = True
+    _multiple_ = 5
+    _tmts__ = list(map(lambda x: x.timestamp, _dc.buy_depth_5m))
+    _data_exist__ = True
+    try:
+        _idx__ = _tmts__.index(int(_curr_kline.start_time / 1000))
+    except ValueError:
+        _data_exist__ = None
+    if _data_exist__:
+        for __ele_ in _dc.buy_depth_5m[_idx__:_idx__ + _multiple_]:
+            logger_global[0].info("{} dc buy time: {}".format(_ticker, __ele_.time_str))
+        for __ele_ in _dc.sell_depth_5m[_idx__:_idx__ + _multiple_]:
+            logger_global[0].info("{} dc sell time: {}".format(_ticker, __ele_.time_str))
+        __bd_r__ = reduce(add_dc, _dc.buy_depth_5m[_idx__:_idx__ + _multiple_])
+        __sd_r__ = reduce(add_dc, _dc.sell_depth_5m[_idx__:_idx__ + _multiple_])
+        __bd_r__ = divide_dc(__bd_r__, _multiple_)
+        __sd_r__ = divide_dc(__sd_r__, _multiple_)
+        __bd_r__.set_time(int(_curr_kline.start_time / 1000))
+        __sd_r__.set_time(int(_curr_kline.start_time / 1000))
+        _curr_kline.add_buy_depth(__bd_r__)
+        _curr_kline.add_sell_depth(__sd_r__)
+    else:
+        logger_global[0].info("DC data not found {} {}".format(_dc.market, _ticker))
+    del depth_locker[_dc.market]
+
+
 def inject_market_depth(_curr_kline, _dc, _ticker):
     if _ticker == "3d" or _ticker == "1w":
         inject_market_depth_btf(_curr_kline, _dc, _ticker)
+        return
+    if _ticker == '5m':
+        inject_market_depth_ltf(_curr_kline, _dc, _ticker)
         return
     depth_locker[_dc.market] = True
     _ticker_n = ticker2num(_ticker)
