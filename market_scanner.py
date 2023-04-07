@@ -262,7 +262,7 @@ def inject_market_depth_ltf(_curr_kline, _dc, _ticker):
         _curr_kline.add_buy_depth(__bd_r__)
         _curr_kline.add_sell_depth(__sd_r__)
     else:
-        logger_global[0].info("DC data not found {} {}".format(_dc.market, _ticker))
+        logger_global[0].info("DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_kline.start_time/1000), _curr_kline.time_str, _tmts__))
     del depth_locker[_dc.market]
 
 
