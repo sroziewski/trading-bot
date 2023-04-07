@@ -14,7 +14,7 @@ from kucoin.exceptions import KucoinAPIException
 from depth_crawl import compute_depth_percentages, divide_dc, add_dc, depth_crawl_dict, manage_depth_scan, DepthCrawl
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global, save_to_file
+    get_time_from_binance_tmstmp, logger_global, save_to_file, get_time
 from mongodb import mongo_client
 
 db = mongo_client.klines
@@ -262,7 +262,7 @@ def inject_market_depth_ltf(_curr_kline, _dc, _ticker):
         _curr_kline.add_buy_depth(__bd_r__)
         _curr_kline.add_sell_depth(__sd_r__)
     else:
-        logger_global[0].info("DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_kline.start_time/1000), _curr_kline.time_str, _tmts__))
+        logger_global[0].info("DC data not found {} {} {} {} tmts {} {}".format(_dc.market, _ticker, int(_curr_kline.start_time/1000), _curr_kline.time_str, _tmts__, list(map(lambda x: get_time(x), _tmts__))))
     del depth_locker[_dc.market]
 
 
@@ -296,7 +296,7 @@ def inject_market_depth(_curr_kline, _dc, _ticker):
         _curr_kline.add_buy_depth(__bd_r)
         _curr_kline.add_sell_depth(__sd_r)
     else:
-        logger_global[0].info("DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_kline.start_time/1000), _curr_kline.time_str, _tmts))
+        logger_global[0].info("DC data not found {} {} {} {} tmts {} {}".format(_dc.market, _ticker, int(_curr_kline.start_time/1000), _curr_kline.time_str, _tmts, list(map(lambda x: get_time(x), _tmts))))
     del depth_locker[_dc.market]
 
 
