@@ -6,7 +6,7 @@ from functools import reduce
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import binance_obj, get_time
+from library import binance_obj, get_time, logger_global
 
 binance_obj
 
@@ -30,8 +30,9 @@ class DepthCrawl(object):
         if len(self.sell_depth_1d) > _size_1d:
             self.sell_depth_1d = self.sell_depth_1d[-_size_1d:]
 
-    def add_depths_15m(self, _bd, _sd):
+    def add_depths_15m(self, _bd, _sd, _market):
         _size_15m = 200
+        logger_global[0].info("add_depths_15m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
         self.buy_depth_15m.append(_bd)
         self.sell_depth_15m.append(_sd)
         if len(self.buy_depth_15m) > _size_15m:
@@ -39,8 +40,9 @@ class DepthCrawl(object):
         if len(self.sell_depth_15m) > _size_15m:
             self.sell_depth_15m = self.sell_depth_15m[-_size_15m:]
 
-    def add_depths_5m(self, _bd, _sd):
-        _size_5m = 24
+    def add_depths_5m(self, _bd, _sd, _market):
+        _size_5m = 96
+        logger_global[0].info("add_depths_5m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
         self.buy_depth_5m.append(_bd)
         self.sell_depth_5m.append(_sd)
         if len(self.buy_depth_5m) > _size_5m:
@@ -344,7 +346,7 @@ def do_freeze():
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
                 if not any(filter(lambda x: x.timestamp == _current_timestamp, depth_crawl_dict[_market_c].buy_depth_5m)):
-                    depth_crawl_dict[_market_c].add_depths_5m(_bd_5m, _sd_5m)
+                    depth_crawl_dict[_market_c].add_depths_5m(_bd_5m, _sd_5m, _market_c)
                 else:
                     _tmts_tmp = list(map(lambda x: x.timestamp, depths1m[_market_c]['bd']))
                     _tmts = []
@@ -354,8 +356,8 @@ def do_freeze():
                     _bd_5_l = depth_crawl_dict[_market_c].buy_depth_5m[-1]
                     _next_5m_tmstmp = int(_bd_5_l.timestamp + 5 * 60)
                     try:
-                        __in_list = True
                         _idx_5m = _tmts.index(_next_5m_tmstmp)
+                        __in_list = True
                     except ValueError:
                         __in_list = False
                     if __in_list and len(depths1m[_market_c]['bd'][_idx_5m:_idx_5m + 5]) == 5:
@@ -365,7 +367,7 @@ def do_freeze():
                         _sd_5m_l = divide_dc(_sd_5m_l, 5)
                         _bd_5m_l.set_time(_next_5m_tmstmp)
                         _sd_5m_l.set_time(_next_5m_tmstmp)
-                        depth_crawl_dict[_market_c].add_depths_5m(_bd_5m_l, _sd_5m_l)
+                        depth_crawl_dict[_market_c].add_depths_5m(_bd_5m_l, _sd_5m_l, _market_c)
             if _t0_quarter != _t1_quarter:
                 _bdl_1m = depths1m[_market_c]['bd'][-1]
                 _sdl_1m = depths1m[_market_c]['sd'][-1]
@@ -380,7 +382,7 @@ def do_freeze():
                 _sdt_5m = divide_dc(_sdt_5m, __size)
                 _bdt_5m.set_time(_current_timestamp)
                 _sdt_5m.set_time(_current_timestamp)
-                depth_crawl_dict[_market_c].add_depths_15m(_bdt_5m, _sdt_5m)
+                depth_crawl_dict[_market_c].add_depths_15m(_bdt_5m, _sdt_5m, _market_c)
             #  day section
             _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
             _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
