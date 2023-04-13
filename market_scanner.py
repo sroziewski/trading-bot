@@ -308,7 +308,7 @@ def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
     _tmts = list(map(lambda x: x.timestamp, _dc.buy_depth_15m))
     _data_exist = True
     try:
-        _idx = _tmts.index(int(_curr_klines.start_time / 1000))
+        _idx = _tmts.index(int(_curr_klines[0].start_time / 1000))
     except ValueError:
         _data_exist = None
     if _data_exist:
