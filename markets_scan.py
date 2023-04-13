@@ -88,8 +88,10 @@ def process_market_info_entity(_market_entity, _journal_collection):
     guard(_journal_collection)
     if _market_entity['active']:
         _market_name = _market_entity['name']
+        if _market_name != "lunc":
+            return
         for _ticker in _market_entity['tickers']:
-            if _ticker not in ['2d', '4d', '5d'] and validate_time_interval(_ticker):
+            if _ticker not in ['15m', '30m','2d', '4d', '5d'] and validate_time_interval(_ticker):
                 _journal_name = _market_name + _market_type + "_" + _ticker
                 _r = _journal_collection.find({
                     "market": _market_name,
