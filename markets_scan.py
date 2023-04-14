@@ -6,7 +6,7 @@ from time import sleep
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from depth_crawl import depth_crawl_dict
+from depth_crawl import depth_crawl_dict, markets_5m
 from library import setup_logger, DecimalCodec, get_time
 from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
 from mongodb import mongo_client
@@ -33,6 +33,9 @@ thread_limit = 100
 
 
 def do_scan_market(_market_info_collection):
+    _5m_markets_info_cursor = _market_info_collection.find({"tickers": {"$elemMatch": {"$eq": "5m"}}})
+    _5m_market_name_list = [e['name'] for e in _5m_markets_info_cursor]
+    markets_5m[_market_info_collection.name] = list(map(lambda x: x+_market_info_collection.name, _5m_market_name_list))
     _market_info_cursor = _market_info_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
     _journal_cn = _market_info_collection.name + "_" + market_time_interval.lower()

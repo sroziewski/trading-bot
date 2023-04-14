@@ -4163,3 +4163,7 @@ def get_files(_path):
     for _file in os.listdir(_path):
         if os.path.isfile(os.path.join(_path, _file)):
             yield _file
+
+
+def round_same_as(_to_round, _val):
+        return round(_to_round, len(str(_val).split(".")[1]))

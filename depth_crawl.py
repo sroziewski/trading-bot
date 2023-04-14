@@ -1,19 +1,18 @@
 import datetime
 import threading
-from time import sleep
 from functools import reduce
+from time import sleep
 
 import schedule
 from binance.websockets import BinanceSocketManager
 
 from library import binance_obj, get_time, logger_global
 
-binance_obj
-
 
 class DepthCrawl(object):
-    def __init__(self, _market):
+    def __init__(self, _market, _type):
         self.market = _market
+        self.type = _type
         self.sell_depth_5m = []
         self.buy_depth_5m = []
         self.sell_depth_15m = []
@@ -106,7 +105,7 @@ class BuyDepth(MarketDepth):
 
 
 def compute_depth_percentages(_depth, _type):
-    _start_price = float(_depth[0][0])
+    _start_price = _depth[0][0]
     _1p_d = (0, 0)
     _2p_d = (0, 0)
     _3p_d = (0, 0)
@@ -277,6 +276,8 @@ def add_dc(_dc1, _dc2):
 depths = {}
 depths1m = {}
 depths_locker = {}
+markets_5m = {}
+types = {}
 
 
 def process_depth_socket_message(_msg):
@@ -331,7 +332,7 @@ def do_freeze():
             _t0_5m = int(_min / 5)
             _t1_5m = int(int(depths1m[_market_c]['bd'][-1].time_str.split(":")[-2]) / 5)
 
-            if _market_c in ["btcusdt", "luncusdt"] and _t0_5m != _t1_5m:
+            if _market_c in markets_5m[types[_market_c]] and _t0_5m != _t1_5m:
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _sdt_5m = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt_5m.timestamp - (_min - _t0_5m * 5) * 60 - _sec
@@ -416,6 +417,7 @@ def _do_depth_scan(_dc: DepthCrawl):
     depths1m[_dc.market] = {}
     depths1m[_dc.market]['bd'] = []
     depths1m[_dc.market]['sd'] = []
+    types[_dc.market] = _dc.type
     _bm = BinanceSocketManager(binance_obj.client)
     _conn_key = _bm.start_depth_socket(_dc.market.upper(), process_depth_socket_message)
     _bm.start()

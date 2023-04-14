@@ -38,7 +38,7 @@ def to_mongo(_kline):
     if _kline.bid_depth:
         return {
         'exchange': _kline.exchange,
-        'version': "2.1",
+        'version': "2.3",
         'ticker': _kline.ticker,
         'start_time': int(_kline.start_time/1000),
         'opening': _kline.opening,
@@ -228,10 +228,7 @@ def inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter):
     except ValueError:
         _data_exist_ = None
     if _data_exist_:
-        _depth_list_buy = _dc.buy_depth_1d[_idx_:_idx_ + _multiple]
-        _depth_list_sell = _dc.sell_depth_1d[_idx_:_idx_ + _multiple]
-        list(map(lambda x: add_dc_to_kline(x, _depth_list_buy, _depth_list_sell, _multiple, _ticker),
-                 _curr_klines))
+        list(map(lambda x: add_dc_to_kline(x, _tmts_, _dc, _multiple, _ticker), _curr_klines))
     elif _counter == 4:
         logger_global[0].info(
             "DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_klines[0].start_time / 1000),
@@ -251,6 +248,8 @@ def inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter):
 
 
 def inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter):  # for 5m only
+    if len(_curr_klines) > 1:
+        abc = 1
     depth_locker[_dc.market] = True
     _multiple_ = 1
     _tmts__ = list(map(lambda x: x.timestamp, _dc.buy_depth_5m))
@@ -260,9 +259,7 @@ def inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter):  # for 5m onl
     except ValueError:
         _data_exist__ = None
     if _data_exist__:
-        _depth_list_buy = _dc.buy_depth_5m[_idx__:_idx__ + _multiple_]
-        _depth_list_sell = _dc.sell_depth_5m[_idx__:_idx__ + _multiple_]
-        list(map(lambda x: add_dc_to_kline(x, _depth_list_buy, _depth_list_sell, _multiple_, _ticker), _curr_klines))
+        list(map(lambda x: add_dc_to_kline(x, _tmts__, _dc, _multiple_, _ticker), _curr_klines))
     elif _counter == 4:
         logger_global[0].info(
             "DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_klines[0].start_time / 1000),
@@ -279,8 +276,40 @@ def inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter):  # for 5m onl
     if _dc.market in depth_locker:
         del depth_locker[_dc.market]
 
+    if any(filter(lambda x: not x.bid_depth, _curr_klines)):
+        here = 1
 
-def add_dc_to_kline(_curr_kline, _depth_list_buy, _depth_list_sell, _multiple_, _ticker):
+
+def add_dc_to_kline(_curr_kline, _indices, _dc, _multiple_, _ticker):
+    _times_r = 3
+    for _yh in range(_times_r):
+        try:
+            _idx__ = _indices.index(int(_curr_kline.start_time / 1000))
+            if _ticker == '5m':
+                sleep(randrange(20, 50))
+            elif _ticker in ['3d', '1w']:
+                sleep(randrange(300, 500))
+            else:
+                sleep(randrange(50, 100))
+        except ValueError:
+            if _ticker == '5m':
+                _indices = list(map(lambda x: x.timestamp, _dc.buy_depth_5m))
+            elif _ticker in ['3d', '1w']:
+                _indices = list(map(lambda x: x.timestamp, _dc.buy_depth_1d))
+            else:
+                _indices = list(map(lambda x: x.timestamp, _dc.buy_depth_15m))
+            if _yh == _times_r - 1:
+                return
+    if _ticker == '5m':
+        _depth_list_buy = _dc.buy_depth_5m[_idx__:_idx__ + _multiple_]
+        _depth_list_sell = _dc.sell_depth_5m[_idx__:_idx__ + _multiple_]
+    elif _ticker in ['3d', '1w']:
+        _depth_list_buy = _dc.buy_depth_1d[_idx__:_idx__ + _multiple_]
+        _depth_list_sell = _dc.sell_depth_1d[_idx__:_idx__ + _multiple_]
+    else:
+        _depth_list_buy = _dc.buy_depth_15m[_idx__:_idx__ + _multiple_]
+        _depth_list_sell = _dc.sell_depth_15m[_idx__:_idx__ + _multiple_]
+
     for __ele_ in _depth_list_buy:
         logger_global[0].info("{} dc buy time: {}".format(_ticker, __ele_.time_str))
     for __ele_ in _depth_list_sell:
@@ -312,9 +341,7 @@ def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
     except ValueError:
         _data_exist = None
     if _data_exist:
-        _depth_list_buy = _dc.buy_depth_15m[_idx:_idx + _multiple_15]
-        _depth_list_sell = _dc.sell_depth_15m[_idx:_idx + _multiple_15]
-        list(map(lambda x: add_dc_to_kline(x, _depth_list_buy, _depth_list_sell, _multiple_15, _ticker), _curr_klines))
+        list(map(lambda x: add_dc_to_kline(x, _tmts, _dc, _multiple_15, _ticker), _curr_klines))
     elif _counter == 4:
         logger_global[0].info("DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_klines[0].start_time / 1000), _curr_klines[0].time_str, _tmts))
     else:
@@ -340,11 +367,11 @@ def _do_schedule(_schedule):
     sleep(1)
     while True:
         if ticker == BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
-            sleep(randrange(10))
+            sleep(randrange(30, 100))
         elif ticker == BinanceClient.KLINE_INTERVAL_5MINUTE:
-            sleep(randrange(1))
+            sleep(randrange(30, 70))
         else:
-            sleep(randrange(30))
+            sleep(randrange(120, 200))
         if _schedule.exchange == "binance":
             try:
                 klines = try_get_klines(_schedule.exchange, market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
@@ -466,7 +493,7 @@ def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _no_
     _market = (_market_name + _market_type).lower()
     # logger_global[0].info("get_binance_schedule market {} ticker {}".format(_market, _ticker_val))
     if _market not in depth_crawl_dict:
-        _dc = DepthCrawl(_market)
+        _dc = DepthCrawl(_market, _market_type.lower())
         depth_crawl_dict[_market] = _dc
         manage_depth_scan(_dc)
 
