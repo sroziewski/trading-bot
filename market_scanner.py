@@ -369,7 +369,7 @@ def _do_schedule(_schedule):
         if ticker == BinanceClient.KLINE_INTERVAL_15MINUTE or BinanceClient.KLINE_INTERVAL_30MINUTE:
             sleep(randrange(30, 100))
         elif ticker == BinanceClient.KLINE_INTERVAL_5MINUTE:
-            sleep(randrange(30, 70))
+            sleep(randrange(20, 30))
         else:
             sleep(randrange(120, 200))
         if _schedule.exchange == "binance":
