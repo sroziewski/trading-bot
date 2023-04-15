@@ -31,7 +31,7 @@ btc_markets_collection = db_markets_info.get_collection("btc", codec_options=cod
 usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
 busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
-thread_limit = 100
+thread_limit = 150
 
 
 def do_scan_market(_market_info_collection):
@@ -68,7 +68,7 @@ def guard(_data_collection_j):
         while _data_collection_j.count_documents({
             "running": True
         }) > thread_limit:
-            sleep(5 * 60)  # 5 min of sleep
+            sleep(10)  # 5 min of sleep
 
 
 # def guard(_data_collection_j, _market_name_j, _ticker_j):
