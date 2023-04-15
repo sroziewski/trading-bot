@@ -22,8 +22,6 @@ decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
 
-depth_locker = {}
-
 
 def to_mongo_binance(_kline):
     _data = to_mongo(_kline)
@@ -210,13 +208,10 @@ def set_average_depths(_dc: DepthCrawl, _ticker, _curr_klines):
 
     logger_global[0].info("current kline time: {} {}".format(_curr_klines[0].start_time, get_time_from_binance_tmstmp(_curr_klines[0].start_time)))
 
-    while _dc.market in depth_locker:
-        sleep(5)
     inject_market_depth(_curr_klines, _dc, _ticker, 0)
 
 
 def inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter):
-    depth_locker[_dc.market] = True
     if _ticker == "3d":
         _multiple = 3
     elif _ticker == "1w":
@@ -234,7 +229,6 @@ def inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter):
             "DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_klines[0].start_time / 1000),
                                                            _curr_klines[0].time_str, _tmts_))
     else:
-        del depth_locker[_dc.market]
         _sleep_time = 6*60*60 if _multiple == 7 else 3*60*60
         sleep(_sleep_time)
         logger_global[0].info(
@@ -243,14 +237,9 @@ def inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter):
                                                            _curr_klines[0].time_str, _tmts_))
         inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter + 1)
         return
-    if _dc.market in depth_locker:
-        del depth_locker[_dc.market]
 
 
 def inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter):  # for 5m only
-    if len(_curr_klines) > 1:
-        abc = 1
-    depth_locker[_dc.market] = True
     _multiple_ = 1
     _tmts__ = list(map(lambda x: x.timestamp, _dc.buy_depth_5m))
     _data_exist__ = True
@@ -265,7 +254,6 @@ def inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter):  # for 5m onl
             "DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_klines[0].start_time / 1000),
                                                            _curr_klines[0].time_str, _tmts__))
     else:
-        del depth_locker[_dc.market]
         sleep(62)
         logger_global[0].info(
             "Trying {} DC data {} {} {} {} tmts {}".format(_counter, _dc.market, _ticker,
@@ -273,8 +261,6 @@ def inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter):  # for 5m onl
                                                            _curr_klines[0].time_str, _tmts__))
         inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter + 1)
         return
-    if _dc.market in depth_locker:
-        del depth_locker[_dc.market]
 
     if any(filter(lambda x: not x.bid_depth, _curr_klines)):
         here = 1
@@ -331,7 +317,6 @@ def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
     if _ticker == '5m':
         inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter)
         return
-    depth_locker[_dc.market] = True
     _ticker_n = ticker2num(_ticker)
     _multiple_15 = int(_ticker_n * 4)
     _tmts = list(map(lambda x: x.timestamp, _dc.buy_depth_15m))
@@ -345,15 +330,12 @@ def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
     elif _counter == 4:
         logger_global[0].info("DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_klines[0].start_time / 1000), _curr_klines[0].time_str, _tmts))
     else:
-        del depth_locker[_dc.market]
         sleep(62)
         logger_global[0].info(
             "Trying {} DC data {} {} {} {} tmts {}".format(_counter, _dc.market, _ticker, int(_curr_klines[0].start_time / 1000),
                                                            _curr_klines[0].time_str, _tmts))
         inject_market_depth(_curr_klines, _dc, _ticker, _counter + 1)
         return
-    if _dc.market in depth_locker:
-        del depth_locker[_dc.market]
 
 
 def _do_schedule(_schedule):
