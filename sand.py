@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 from bson.codec_options import TypeRegistry, CodecOptions
 
-from library import DecimalCodec, save_to_file, get_pickled
+from library import DecimalCodec, save_to_file, get_pickled, try_get_klines
 from mongodb import mongo_client
 
 
@@ -108,6 +108,9 @@ def compute_trend_exhaustion(_open, _close, _high, _low, _volume):
     return _te
 
 # df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
+
+aa = try_get_klines("binance", "OMGBTC", "1h", "2500 days ago")
+
 
 db_klines = mongo_client.klines
 decimal_codec = DecimalCodec()
