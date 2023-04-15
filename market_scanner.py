@@ -206,7 +206,7 @@ def set_average_depths(_dc: DepthCrawl, _ticker, _curr_klines):
             logger_global[0].info(f"{_dc.market.upper()} set_average_depths sleeping : len(_dc.buy_depth_15m) == 0")
             sleep(2 * 60 + randrange(100))
 
-    logger_global[0].info("current kline time: {} {}".format(_curr_klines[0].start_time, get_time_from_binance_tmstmp(_curr_klines[0].start_time)))
+    logger_global[0].info("current kline time {} {}: {} {}".format(_dc.market, _ticker, _curr_klines[0].start_time, get_time_from_binance_tmstmp(_curr_klines[0].start_time)))
 
     inject_market_depth(_curr_klines, _dc, _ticker, 0)
 

@@ -3,6 +3,7 @@ import sys
 import threading
 from time import sleep
 
+import numpy as np
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
@@ -13,7 +14,8 @@ from mongodb import mongo_client
 
 market_type = sys.argv[1]
 market_time_interval = sys.argv[2]
-repair_mode = sys.argv[3]
+part = sys.argv[3]  # 1, 2 or all
+repair_mode = sys.argv[4]
 
 filename = "Binance-Markets-Scanner-{}-{}".format(market_type.upper(), market_time_interval.upper())
 logger = setup_logger(filename)
@@ -41,7 +43,12 @@ def do_scan_market(_market_info_collection):
     _journal_cn = _market_info_collection.name + "_" + market_time_interval.lower()
     _journal_collection = db_journal.get_collection(_journal_cn, codec_options=codec_options)
 
-    for _market_s in _market_info_list:  # inf loop needed here
+    if part != "all" and int(part) in [1, 2]:
+        _market_info_split = np.array_split(_market_info_list, 2)[int(part)-1]
+    else:
+        _market_info_split = _market_info_list
+
+    for _market_s in _market_info_split:  # inf loop needed here
         process_market_info_entity(_market_s, _journal_collection)
 
 
