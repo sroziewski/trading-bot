@@ -17,7 +17,7 @@ market_time_interval = sys.argv[2]
 part = sys.argv[3]  # 1, 2 or all
 repair_mode = sys.argv[4]
 
-filename = "Binance-Markets-Scanner-{}-{}".format(market_type.upper(), market_time_interval.upper())
+filename = "Binance-Markets-Scanner-{}-{}-{}".format(market_type.upper(), market_time_interval.upper(), part)
 logger = setup_logger(filename)
 
 db_markets_info = mongo_client.markets_info
@@ -48,8 +48,13 @@ def do_scan_market(_market_info_collection):
     else:
         _market_info_split = _market_info_list
 
+    logger.info("Markets to be added {} {}".format(len(_market_info_split), _market_info_split))
+
+    _ccc = 0
     for _market_s in _market_info_split:  # inf loop needed here
         process_market_info_entity(_market_s, _journal_collection)
+        logger.info("ADDED {} - {}".format(_ccc, _market_s['name']))
+        _ccc += 1
 
 
 def scanner(_market_info_collection):
