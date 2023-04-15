@@ -343,6 +343,7 @@ def _do_schedule(_schedule):
     ticker = _schedule.ticker
     collection_name = _schedule.collection_name
     collection = db.get_collection(collection_name, codec_options=codec_options)
+
     cursor = collection.find_one()
     if cursor is None:
         _schedule.no_such_market = True
