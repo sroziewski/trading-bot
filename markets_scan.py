@@ -31,7 +31,7 @@ btc_markets_collection = db_markets_info.get_collection("btc", codec_options=cod
 usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
 busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
-thread_limit = 150
+thread_limit = 500
 
 
 def do_scan_market(_market_info_collection):

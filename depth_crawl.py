@@ -7,6 +7,14 @@ import schedule
 from binance.websockets import BinanceSocketManager
 
 from library import binance_obj, get_time, logger_global
+from bson import CodecOptions
+from bson.codec_options import TypeRegistry
+from library import setup_logger, DecimalCodec, get_time
+from mongodb import mongo_client
+
+
+filename = "Binance-OrderBook-Scanner"
+logger = setup_logger(filename)
 
 
 class DepthCrawl(object):
@@ -447,8 +455,22 @@ depth_crawl_dict = {}
 schedule.every(1).minutes.do(do_freeze)
 manage_schedule()
 
-# _dc = DepthCrawl("btcusdt")
-#
-# depth_crawl_dict["btcusdt"] = _dc
-# manage_depth_scan(_dc)
+
+db_markets_info = mongo_client.markets_info
+decimal_codec = DecimalCodec()
+type_registry = TypeRegistry([decimal_codec])
+codec_options = CodecOptions(type_registry=type_registry)
+usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
+_market_info_cursor = usdt_markets_collection.find()
+_market_info_list = [e for e in _market_info_cursor]
+
+_5m_markets_info_cursor = usdt_markets_collection.find({"tickers": {"$elemMatch": {"$eq": "5m"}}})
+_5m_market_name_list = [e['name'] for e in _5m_markets_info_cursor]
+markets_5m[usdt_markets_collection.name] = list(map(lambda x: x+usdt_markets_collection.name, _5m_market_name_list))
+
+for _market_s in _market_info_list:
+    _market = "{}{}".format(_market_s['name'], usdt_markets_collection.name)
+    _dc = DepthCrawl(_market, usdt_markets_collection.name)
+    depth_crawl_dict[_market] = _dc
+    manage_depth_scan(_dc)
 
