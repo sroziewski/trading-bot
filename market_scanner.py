@@ -1,25 +1,22 @@
 import datetime
+import json
 import threading
 import traceback
 from functools import reduce
 from random import randrange
 from time import sleep
 
+import requests
 from binance.client import Client as BinanceClient
 from binance.exceptions import BinanceAPIException
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
-from kucoin.exceptions import KucoinAPIException
-
-import requests
-import json
 
 from config import config
-
-from depth_crawl import compute_depth_percentages, divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
+from depth_crawl import divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global, save_to_file, get_time
+    get_kucoin_interval_unit, DecimalCodec, try_get_klines, get_last_db_record, \
+    get_time_from_binance_tmstmp, logger_global
 from mongodb import mongo_client
 
 db = mongo_client.klines
@@ -32,27 +29,29 @@ mongo_ip = config.get_parameter('mongo_ip')
 flask_port = config.get_parameter('flask_port')
 
 
-def create_depth_crawl_dict():
+def extract_depth_crawl_dict():
     _response = requests.get("http://{}:{}/qu3ry/{}".format(mongo_ip, flask_port, flask_token))
     _response_dict = json.loads(json.loads(_response.text))
 
     _depth_crawl_dict = {}
 
     for _item in _response_dict.items():
-        _dc = DepthCrawl(_item[1]['market'], _item[1]['type'])
+        _market = _item[1]['market']
+        _type = _item[1]['type']
+        _dc = DepthCrawl(_market, _type)
 
-        _buys = __extract_market_depths(_item, "buy_depth_5m")
-        _sells = __extract_market_depths(_item, "sell_depth_5m")
+        _buys = __extract_market_depths(_item[1], "buy_depth_5m")
+        _sells = __extract_market_depths(_item[1], "sell_depth_5m")
         _dc.buy_depth_5m = _buys
         _dc.sell_depth_5m = _sells
 
-        _buys = __extract_market_depths(_item, "buy_depth_15m")
-        _sells = __extract_market_depths(_item, "sell_depth_15m")
+        _buys = __extract_market_depths(_item[1], "buy_depth_15m")
+        _sells = __extract_market_depths(_item[1], "sell_depth_15m")
         _dc.buy_depth_15m = _buys
         _dc.sell_depth_15m = _sells
 
-        _buys = __extract_market_depths(_item, "buy_depth_1d")
-        _sells = __extract_market_depths(_item, "sell_depth_1d")
+        _buys = __extract_market_depths(_item[1], "buy_depth_1d")
+        _sells = __extract_market_depths(_item[1], "sell_depth_1d")
         _dc.buy_depth_1d = _buys
         _dc.sell_depth_1d = _sells
 
@@ -61,10 +60,32 @@ def create_depth_crawl_dict():
     return _depth_crawl_dict
 
 
-def __extract_market_depths(_item, _type):
+def extract_market_depth(_market):
+    _response = requests.get("http://{}:{}/qu3ry/{}/{}".format(mongo_ip, flask_port, _market.lower(), flask_token))
+    _response_dict = json.loads(json.loads(_response.text))
+    _dc = DepthCrawl(_response_dict['market'], _response_dict['type'])
+
+    _buys = __extract_market_depths(_response_dict, "buy_depth_5m")
+    _sells = __extract_market_depths(_response_dict, "sell_depth_5m")
+    _dc.buy_depth_5m = _buys
+    _dc.sell_depth_5m = _sells
+
+    _buys = __extract_market_depths(_response_dict, "buy_depth_15m")
+    _sells = __extract_market_depths(_response_dict, "sell_depth_15m")
+    _dc.buy_depth_15m = _buys
+    _dc.sell_depth_15m = _sells
+
+    _buys = __extract_market_depths(_response_dict, "buy_depth_1d")
+    _sells = __extract_market_depths(_response_dict, "sell_depth_1d")
+    _dc.buy_depth_1d = _buys
+    _dc.sell_depth_1d = _sells
+    return _dc
+
+
+def __extract_market_depths(_item, _depth_type):
     _out = []
-    for _md_15m in _item[1][_type]:
-        if 'buy' in _type:
+    for _md_15m in _item[_depth_type]:
+        if 'buy' in _depth_type:
             _md = BuyDepth(_md_15m['bid_price'], _md_15m['p1'], _md_15m['p2'], _md_15m['p3'], _md_15m['p4'],
                        _md_15m['p5'], _md_15m['p10'], _md_15m['p15'], _md_15m['p20'], _md_15m['p25'],
                        _md_15m['p30'], _md_15m['p35'], _md_15m['p40'], _md_15m['p45'], _md_15m['p50'],
@@ -217,40 +238,6 @@ def manage_crawling(_schedule):
     _scheduler.start()
 
 
-def _do_depth_crawl(_dc):
-    while True:
-        sleep(randrange(60))
-        try:
-            if _dc.exchange == "binance":
-                _order = binance_obj.client.get_order_book(symbol=_dc.market, limit=1000)
-            elif _dc.exchange == "kucoin":
-                _order = kucoin_client.get_full_order_book(_dc.market)
-        except BinanceAPIException as err:
-            traceback.print_tb(err.__traceback__)
-            logger_global[0].exception("BinanceAPIException -> sleeping 5 min {} {}".format(_dc.market, err.__traceback__))
-            sleep(randrange(60))
-        except ConnectionError as err:
-            traceback.print_tb(err.__traceback__)
-            logger_global[0].exception("ConnectionError -> sleeping{} {}".format(_dc.market, err.__traceback__))
-            sleep(60)
-        except KucoinAPIException as err:
-            traceback.print_tb(err.__traceback__)
-            logger_global[0].exception("KucoinAPIException -> sleeping{} {}".format(_dc.market, err.__traceback__))
-            _order = "sleeping"
-            sleep(60)
-            _order = kucoin_client.get_full_order_book(_dc.market)
-        except Exception as err:
-            traceback.print_tb(err.__traceback__)
-            logger_global[0].exception("{} {}".format(_dc.market, err.__traceback__))
-
-        _bd = compute_depth_percentages(_order['bids'], "bids")
-        if _dc.exchange == "kucoin":
-            _order['asks'].reverse()
-        _sd = compute_depth_percentages(_order['asks'], "asks")
-        _dc.add_depths(_bd, _sd)
-        sleep(3 * 60)
-
-
 def set_average_depths(_dc: DepthCrawl, _ticker, _curr_klines):
     if _ticker == '5m':
         while len(_dc.buy_depth_5m) == 0:
@@ -326,19 +313,16 @@ def add_dc_to_kline(_curr_kline, _indices, _dc, _multiple_, _ticker):
     for _yh in range(_times_r):
         try:
             _idx__ = _indices.index(int(_curr_kline.start_time / 1000))
-            if _ticker == '5m':
-                sleep(randrange(20, 50))
-            elif _ticker in ['3d', '1w']:
-                sleep(randrange(300, 500))
-            else:
-                sleep(randrange(50, 100))
         except ValueError:
             if _ticker == '5m':
                 _indices = list(map(lambda x: x.timestamp, _dc.buy_depth_5m))
+                sleep(randrange(20, 50))
             elif _ticker in ['3d', '1w']:
                 _indices = list(map(lambda x: x.timestamp, _dc.buy_depth_1d))
+                sleep(randrange(300, 500))
             else:
                 _indices = list(map(lambda x: x.timestamp, _dc.buy_depth_15m))
+                sleep(randrange(50, 100))
             if _yh == _times_r - 1:
                 return
     if _ticker == '5m':
@@ -372,10 +356,9 @@ def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
     if _ticker == '5m':
         inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter)
         return
-    _market_depth = create_depth_crawl_dict()
     _ticker_n = ticker2num(_ticker)
     _multiple_15 = int(_ticker_n * 4)
-    _tmts = list(map(lambda x: x.timestamp, _market_depth.buy_depth_15m))
+    _tmts = list(map(lambda x: x.timestamp, _dc.buy_depth_15m))
     _data_exist = True
     try:
         _idx = _tmts.index(int(_curr_klines[0].start_time / 1000))
@@ -438,8 +421,8 @@ def _do_schedule(_schedule):
         current_klines = filter_current_klines(klines, collection_name, collection)
         sleep(5)
         if len(current_klines) > 0:
-            depth_crawl_dict = create_depth_crawl_dict()
-            set_average_depths(_schedule.depth_crawl, ticker, current_klines)
+            _market_depth = extract_market_depth(market)
+            set_average_depths(_market_depth, ticker, current_klines)
             list(map(lambda x: x.add_market(market), current_klines))
             list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
             persist_klines(current_klines, collection)

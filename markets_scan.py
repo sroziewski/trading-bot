@@ -8,7 +8,7 @@ from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
 from depth_crawl import depth_crawl_dict, markets_5m
-from library import setup_logger, DecimalCodec, get_time
+from library import setup_logger, DecimalCodec, get_time, lib_initialize
 from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
 from mongodb import mongo_client
 
@@ -16,6 +16,8 @@ market_type = sys.argv[1]
 market_time_interval = sys.argv[2]
 part = sys.argv[3]  # 1, 2 or all
 repair_mode = sys.argv[4]
+
+lib_initialize()
 
 filename = "Binance-Markets-Scanner-{}-{}-{}".format(market_type.upper(), market_time_interval.upper(), part)
 logger = setup_logger(filename)
@@ -103,8 +105,10 @@ def process_market_info_entity(_market_entity, _journal_collection):
     guard(_journal_collection)
     if _market_entity['active']:
         _market_name = _market_entity['name']
+        if _market_name != "btc":
+            return
         for _ticker in _market_entity['tickers']:
-            if _ticker not in ['2d', '4d', '5d'] and validate_time_interval(_ticker):
+            if _ticker not in ['15m', '30m', '2d', '4d', '5d'] and validate_time_interval(_ticker):
                 _journal_name = _market_name + _market_type + "_" + _ticker
                 _r = _journal_collection.find({
                     "market": _market_name,
@@ -137,8 +141,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         logger.info("Market {} NOT OPERATING --> handled".format(_journal_name.upper()))
                         # run a thread here
                         manage_crawling(
-                            get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection,
-                                                 depth_crawl_dict))
+                            get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
                 elif not is_repaired and repair_mode == "repair" and len(list(filter(lambda x: x['running'], _r))) > 0:
                     is_repaired = True
                     logger.info("Market {} was running --> handled".format(_journal_name.upper()))

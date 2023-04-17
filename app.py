@@ -1,10 +1,10 @@
 import json
 
 from flask import Flask
-from flask import request, jsonify
+from flask import jsonify
 from flask_caching import Cache
-from config import config
 
+from config import config
 
 flask_config = {
     "DEBUG": True,          # some Flask specific configs
@@ -25,7 +25,7 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import binance_obj, get_time, logger_global
+from library import binance_obj, logger_global
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
