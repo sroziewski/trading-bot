@@ -338,7 +338,8 @@ def freeze_order_book(_market):
 
 
 def unlock(_locker, _key):
-    del _locker[_key]
+    if _key in _locker:
+        del _locker[_key]
 
 
 def do_freeze():
