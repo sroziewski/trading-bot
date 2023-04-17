@@ -497,6 +497,7 @@ def _stuff(_market_type):
 
 
 if __name__ == "app":
+    lib_initialize()
     _stuff("usdt")
     _stuff("btc")
     _stuff("busd")
