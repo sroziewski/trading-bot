@@ -69,21 +69,6 @@ def guard(_data_collection_j):
             sleep(10)  # 5 min of sleep
 
 
-# def guard(_data_collection_j, _market_name_j, _ticker_j):
-#     while _data_collection_j.count_documents({
-#         "running": True
-#     }) > thread_limit:
-#         _now = datetime.datetime.now().timestamp()
-#         _delta_t = 2 * ticker2sec(_ticker_j)
-#         __r = _data_collection_j.find({
-#                     "market": _market_name_j,
-#                     "ticker": _ticker_j
-#                 })
-#         len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
-#                                      __r))) > 0:
-#         sleep(5 * 60)  # 5 min of sleep
-
-
 def validate_time_interval(_ticker):
     if market_time_interval == "ltf":
         return _ticker in ['1m', '5m', '15m', '30m']
@@ -101,10 +86,8 @@ def process_market_info_entity(_market_entity, _journal_collection):
     guard(_journal_collection)
     if _market_entity['active']:
         _market_name = _market_entity['name']
-        if _market_name != "btc":
-            return
         for _ticker in _market_entity['tickers']:
-            if _ticker not in ['15m', '30m', '2d', '4d', '5d'] and validate_time_interval(_ticker):
+            if _ticker not in ['2d', '4d', '5d'] and validate_time_interval(_ticker):
                 _journal_name = _market_name + _market_type + "_" + _ticker
                 _r = _journal_collection.find({
                     "market": _market_name,
@@ -157,4 +140,4 @@ while True:
     sleep(hr)
 
 # how to run?
-# e.g. btc ltf repair
+# e.g. btc ltf all repair
