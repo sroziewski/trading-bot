@@ -504,12 +504,12 @@ flask_token = config.get_parameter('flask_token')
 
 @app.route("/qu3ry/{}".format(flask_token))
 @cache.cached(timeout=30)
-def hello_world():
+def markets():
     return jsonify(json.dumps(depth_crawl_dict, default=lambda o: o.__dict__, sort_keys=True))
 
 
 @app.route("/qu3ry/<market>/{}".format(flask_token))
 @cache.cached(timeout=30)
-def hello_world(market):
+def market(market):
     return jsonify(json.dumps(depth_crawl_dict[market], default=lambda o: o.__dict__, sort_keys=True))
 
