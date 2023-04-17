@@ -1495,6 +1495,10 @@ def lib_initialize():
     binance_obj = Binance(keys_b[0], keys_b[1])
 
 
+def get_binance_obj():
+    return binance_obj
+
+
 sat = 1e-8
 delta = 1e-21
 

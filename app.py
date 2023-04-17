@@ -25,7 +25,7 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import binance_obj, logger_global, lib_initialize
+from library import get_binance_obj, logger_global, lib_initialize
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
@@ -445,7 +445,7 @@ def _do_depth_scan(_dc: DepthCrawl):
     depths1m[_dc.market]['bd'] = []
     depths1m[_dc.market]['sd'] = []
     types[_dc.market] = _dc.type
-    _bm = BinanceSocketManager(binance_obj.client)
+    _bm = BinanceSocketManager(get_binance_obj().client)
     _conn_key = _bm.start_depth_socket(_dc.market.upper(), process_depth_socket_message)
     _bm.start()
 
