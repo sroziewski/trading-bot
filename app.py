@@ -2,6 +2,7 @@ import json
 
 from flask import Flask
 from flask import request, jsonify
+from config import config
 
 app = Flask(__name__)
 
@@ -488,6 +489,8 @@ if __name__ == "app":
     _stuff()
 
 
-@app.route("/qu3ry/dfjkhn98437jnbnljudWNI89283123123sfsdfgfpJH")
+flask_token = config.get_parameter('flask_token')
+
+@app.route("/qu3ry/{}".format(flask_token))
 def hello_world():
     return jsonify(json.dumps(depth_crawl_dict, default=lambda o: o.__dict__, sort_keys=True))
