@@ -11,7 +11,12 @@ from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from kucoin.exceptions import KucoinAPIException
 
-from depth_crawl import compute_depth_percentages, divide_dc, add_dc, depth_crawl_dict, manage_depth_scan, DepthCrawl
+import requests
+import json
+
+from config import config
+
+from depth_crawl import compute_depth_percentages, divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, get_last_db_record, \
     get_time_from_binance_tmstmp, logger_global, save_to_file, get_time
@@ -21,6 +26,57 @@ db = mongo_client.klines
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
+
+flask_token = config.get_parameter('flask_token')
+mongo_ip = config.get_parameter('mongo_ip')
+flask_port = config.get_parameter('flask_port')
+
+
+def create_depth_crawl_dict():
+    _response = requests.get("http://{}:{}/qu3ry/{}".format(mongo_ip, flask_port, flask_token))
+    _response_dict = json.loads(json.loads(_response.text))
+
+    _depth_crawl_dict = {}
+
+    for _item in _response_dict.items():
+        _dc = DepthCrawl(_item[1]['market'], _item[1]['type'])
+
+        _buys = __extract_market_depths(_item, "buy_depth_5m")
+        _sells = __extract_market_depths(_item, "sell_depth_5m")
+        _dc.buy_depth_5m = _buys
+        _dc.sell_depth_5m = _sells
+
+        _buys = __extract_market_depths(_item, "buy_depth_15m")
+        _sells = __extract_market_depths(_item, "sell_depth_15m")
+        _dc.buy_depth_15m = _buys
+        _dc.sell_depth_15m = _sells
+
+        _buys = __extract_market_depths(_item, "buy_depth_1d")
+        _sells = __extract_market_depths(_item, "sell_depth_1d")
+        _dc.buy_depth_1d = _buys
+        _dc.sell_depth_1d = _sells
+
+        _depth_crawl_dict[_item[0]] = _dc
+
+    return _depth_crawl_dict
+
+
+def __extract_market_depths(_item, _type):
+    _out = []
+    for _md_15m in _item[1][_type]:
+        if 'buy' in _type:
+            _md = BuyDepth(_md_15m['bid_price'], _md_15m['p1'], _md_15m['p2'], _md_15m['p3'], _md_15m['p4'],
+                       _md_15m['p5'], _md_15m['p10'], _md_15m['p15'], _md_15m['p20'], _md_15m['p25'],
+                       _md_15m['p30'], _md_15m['p35'], _md_15m['p40'], _md_15m['p45'], _md_15m['p50'],
+                       _md_15m['p55'], _md_15m['p60'], _md_15m['p65'], _md_15m['p70'])
+        else:
+            _md = SellDepth(_md_15m['ask_price'], _md_15m['p1'], _md_15m['p2'], _md_15m['p3'], _md_15m['p4'],
+                           _md_15m['p5'], _md_15m['p10'], _md_15m['p15'], _md_15m['p20'], _md_15m['p25'],
+                           _md_15m['p30'], _md_15m['p35'], _md_15m['p40'], _md_15m['p45'], _md_15m['p50'],
+                           _md_15m['p55'], _md_15m['p60'], _md_15m['p65'], _md_15m['p70'])
+        _md.set_time(_md_15m['timestamp'])
+        _out.append(_md)
+    return _out
 
 
 def to_mongo_binance(_kline):
@@ -143,14 +199,13 @@ def persist_klines(_klines, _collection):
 
 
 class Schedule(object):
-    def __init__(self, _asset, _market, _collection_name, _ticker, _sleep, _exchange, _dc, _journal, _no_such_market=False):
+    def __init__(self, _asset, _market, _collection_name, _ticker, _sleep, _exchange, _journal, _no_such_market=False):
         self.asset = _asset
         self.market = _market
         self.collection_name = _collection_name
         self.ticker = _ticker
         self.sleep = _sleep
         self.exchange = _exchange
-        self.depth_crawl = _dc
         self.journal = _journal
         self.no_such_market = _no_such_market
 
@@ -317,9 +372,10 @@ def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
     if _ticker == '5m':
         inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter)
         return
+    _market_depth = create_depth_crawl_dict()
     _ticker_n = ticker2num(_ticker)
     _multiple_15 = int(_ticker_n * 4)
-    _tmts = list(map(lambda x: x.timestamp, _dc.buy_depth_15m))
+    _tmts = list(map(lambda x: x.timestamp, _market_depth.buy_depth_15m))
     _data_exist = True
     try:
         _idx = _tmts.index(int(_curr_klines[0].start_time / 1000))
@@ -382,6 +438,7 @@ def _do_schedule(_schedule):
         current_klines = filter_current_klines(klines, collection_name, collection)
         sleep(5)
         if len(current_klines) > 0:
+            depth_crawl_dict = create_depth_crawl_dict()
             set_average_depths(_schedule.depth_crawl, ticker, current_klines)
             list(map(lambda x: x.add_market(market), current_klines))
             list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
@@ -474,13 +531,6 @@ def ticker2num(_ticker):
 def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _no_such_market=False):
     _exchange = "binance"
     _market = (_market_name + _market_type).lower()
-    # logger_global[0].info("get_binance_schedule market {} ticker {}".format(_market, _ticker_val))
-    if _market not in depth_crawl_dict:
-        _dc = DepthCrawl(_market, _market_type.lower())
-        depth_crawl_dict[_market] = _dc
-        manage_depth_scan(_dc)
-
-    _dc = depth_crawl_dict[_market]
 
     if _market_type == "btc":
         _collection_name = _market_name + _ticker_val
@@ -488,6 +538,4 @@ def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _no_
         _collection_name = _market_name + "_" + _market_type + "_" + _ticker_val
 
     return Schedule(_market_name, _market.upper(), _collection_name, _ticker_val,
-                    ticker2sec(_ticker_val), _exchange, _dc, _journal, _no_such_market)
-
-
+                    ticker2sec(_ticker_val), _exchange, _journal, _no_such_market)

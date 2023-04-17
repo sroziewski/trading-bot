@@ -2,10 +2,20 @@ import json
 
 from flask import Flask
 from flask import request, jsonify
+from flask_caching import Cache
 from config import config
 
-app = Flask(__name__)
 
+flask_config = {
+    "DEBUG": True,          # some Flask specific configs
+    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
+    "CACHE_DEFAULT_TIMEOUT": 30
+}
+
+app = Flask(__name__)
+# tell Flask to use the above defined config
+app.config.from_mapping(flask_config)
+cache = Cache(app)
 
 import datetime
 import threading
@@ -491,6 +501,15 @@ if __name__ == "app":
 
 flask_token = config.get_parameter('flask_token')
 
+
 @app.route("/qu3ry/{}".format(flask_token))
+@cache.cached(timeout=30)
 def hello_world():
     return jsonify(json.dumps(depth_crawl_dict, default=lambda o: o.__dict__, sort_keys=True))
+
+
+@app.route("/qu3ry/<market>/{}".format(flask_token))
+@cache.cached(timeout=30)
+def hello_world(market):
+    return jsonify(json.dumps(depth_crawl_dict[market], default=lambda o: o.__dict__, sort_keys=True))
+

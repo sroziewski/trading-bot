@@ -1,11 +1,15 @@
 import requests
 import json
 
+from config import config
 from depth_crawl import DepthCrawl, BuyDepth, SellDepth
 
 
+flask_token = config.get_parameter('flask_token')
+
+
 def create_depth_crawl_dict():
-    _response = requests.get("http://127.0.0.1:5000/qu3ry/dfjkhn98437jnbnljudWNI89283123123sfsdfgfpJH")
+    _response = requests.get("http://154.26.155.250:5000/qu3ry/{}".format(flask_token))
     _response_dict = json.loads(json.loads(_response.text))
 
     _depth_crawl_dict = {}
