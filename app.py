@@ -25,13 +25,14 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import binance_obj, logger_global
+from library import binance_obj, logger_global, lib_initialize
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
 from mongodb import mongo_client
 
 
+lib_initialize()
 depth_crawl_dict = {}
 
 
