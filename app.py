@@ -1,3 +1,11 @@
+import json
+
+from flask import Flask
+from flask import request, jsonify
+
+app = Flask(__name__)
+
+
 import datetime
 import threading
 from functools import reduce
@@ -452,6 +460,7 @@ def manage_schedule():
 def _stuff():
     filename = "Binance-OrderBook-Scanner"
     logger = setup_logger(filename)
+    logger.info("Starting Order Book Depth Crawl...")
     schedule.every(1).minutes.do(do_freeze)
     manage_schedule()
 
@@ -475,5 +484,10 @@ def _stuff():
         manage_depth_scan(_dc)
 
 
-if __name__ == "__main__":
+if __name__ == "app":
     _stuff()
+
+
+@app.route("/qu3ry/dfjkhn98437jnbnljudWNI89283123123sfsdfgfpJH")
+def hello_world():
+    return jsonify(json.dumps(depth_crawl_dict, default=lambda o: o.__dict__, sort_keys=True))

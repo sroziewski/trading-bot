@@ -297,9 +297,9 @@ def add_dc_to_kline(_curr_kline, _indices, _dc, _multiple_, _ticker):
         _depth_list_sell = _dc.sell_depth_15m[_idx__:_idx__ + _multiple_]
 
     for __ele_ in _depth_list_buy:
-        logger_global[0].info("{} dc buy time: {}".format(_ticker, __ele_.time_str))
+        logger_global[0].info("{} dc buy time: {} {}".format(_dc.market, _ticker, __ele_.time_str))
     for __ele_ in _depth_list_sell:
-        logger_global[0].info("{} dc sell time: {}".format(_ticker, __ele_.time_str))
+        logger_global[0].info("{} dc sell time: {} {}".format(_dc.market, _ticker, __ele_.time_str))
     __bd_r__ = reduce(add_dc, _depth_list_buy)
     __sd_r__ = reduce(add_dc, _depth_list_sell)
     __bd_r__ = divide_dc(__bd_r__, _multiple_)
