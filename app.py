@@ -468,7 +468,7 @@ def manage_schedule():
     _thread.start()
 
 
-def _stuff():
+def _stuff(_market_type):
     filename = "Binance-OrderBook-Scanner"
     logger = setup_logger(filename)
     logger.info("Starting Order Book Depth Crawl...")
@@ -479,7 +479,7 @@ def _stuff():
     decimal_codec = DecimalCodec()
     type_registry = TypeRegistry([decimal_codec])
     codec_options = CodecOptions(type_registry=type_registry)
-    usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
+    usdt_markets_collection = db_markets_info.get_collection(_market_type, codec_options=codec_options)
     _market_info_cursor = usdt_markets_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
 
@@ -496,7 +496,9 @@ def _stuff():
 
 
 if __name__ == "app":
-    _stuff()
+    _stuff("usdt")
+    _stuff("btc")
+    _stuff("busd")
 
 
 flask_token = config.get_parameter('flask_token')
