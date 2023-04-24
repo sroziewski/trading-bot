@@ -113,7 +113,7 @@ def to_mongo(_kline):
     if _kline.bid_depth:
         return {
         'exchange': _kline.exchange,
-        'version': "2.3",
+        'version': "2.4",
         'ticker': _kline.ticker,
         'start_time': int(_kline.start_time/1000),
         'opening': _kline.opening,
@@ -170,7 +170,7 @@ def to_mongo(_kline):
     else:
         return {
             'exchange': _kline.exchange,
-            'version': "2.0",
+            'version': "2.4",
             'ticker': _kline.ticker,
             'start_time': int(_kline.start_time / 1000),
             'opening': _kline.opening,
@@ -421,7 +421,11 @@ def _do_schedule(_schedule):
         current_klines = filter_current_klines(klines, collection_name, collection)
         sleep(5)
         if len(current_klines) > 0:
-            _market_depth = extract_market_depth(market)
+            try:
+                _market_depth = extract_market_depth(market)
+            except ConnectionRefusedError as err:
+                logger_global[0].error("Flask connection refused error : {}-{} {}".format(collection_name, ticker, err.__traceback__))
+
             set_average_depths(_market_depth, ticker, current_klines)
             list(map(lambda x: x.add_market(market), current_klines))
             list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
