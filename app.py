@@ -1,3 +1,22 @@
+import json
+
+from flask import Flask
+from flask import jsonify
+from flask_caching import Cache
+
+from config import config
+
+flask_config = {
+    "DEBUG": True,          # some Flask specific configs
+    "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
+    "CACHE_DEFAULT_TIMEOUT": 30
+}
+
+app = Flask(__name__)
+# tell Flask to use the above defined config
+app.config.from_mapping(flask_config)
+cache = Cache(app)
+
 import datetime
 import threading
 from functools import reduce
@@ -6,13 +25,14 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import binance_obj, get_time, logger_global
+from library import get_binance_obj, logger_global, lib_initialize
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
 from mongodb import mongo_client
 
 
+lib_initialize()
 depth_crawl_dict = {}
 
 
@@ -318,7 +338,8 @@ def freeze_order_book(_market):
 
 
 def unlock(_locker, _key):
-    del _locker[_key]
+    if _key in _locker:
+        del _locker[_key]
 
 
 def do_freeze():
@@ -425,7 +446,7 @@ def _do_depth_scan(_dc: DepthCrawl):
     depths1m[_dc.market]['bd'] = []
     depths1m[_dc.market]['sd'] = []
     types[_dc.market] = _dc.type
-    _bm = BinanceSocketManager(binance_obj.client)
+    _bm = BinanceSocketManager(get_binance_obj().client)
     _conn_key = _bm.start_depth_socket(_dc.market.upper(), process_depth_socket_message)
     _bm.start()
 
@@ -449,9 +470,10 @@ def manage_schedule():
     _thread.start()
 
 
-def _stuff():
+def _stuff(_market_type):
     filename = "Binance-OrderBook-Scanner"
     logger = setup_logger(filename)
+    logger.info("Starting Order Book Depth Crawl...")
     schedule.every(1).minutes.do(do_freeze)
     manage_schedule()
 
@@ -459,7 +481,7 @@ def _stuff():
     decimal_codec = DecimalCodec()
     type_registry = TypeRegistry([decimal_codec])
     codec_options = CodecOptions(type_registry=type_registry)
-    usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
+    usdt_markets_collection = db_markets_info.get_collection(_market_type, codec_options=codec_options)
     _market_info_cursor = usdt_markets_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
 
@@ -475,5 +497,24 @@ def _stuff():
         manage_depth_scan(_dc)
 
 
-if __name__ == "__main__":
-    _stuff()
+if __name__ == "app":
+    lib_initialize()
+    _stuff("usdt")
+    _stuff("btc")
+    _stuff("busd")
+
+
+flask_token = config.get_parameter('flask_token')
+
+
+@app.route("/qu3ry/{}".format(flask_token))
+@cache.cached(timeout=30)
+def markets():
+    return jsonify(json.dumps(depth_crawl_dict, default=lambda o: o.__dict__, sort_keys=True))
+
+
+@app.route("/qu3ry/<market>/{}".format(flask_token))
+@cache.cached(timeout=30)
+def market(market):
+    return jsonify(json.dumps(depth_crawl_dict[market], default=lambda o: o.__dict__, sort_keys=True))
+

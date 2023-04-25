@@ -7,8 +7,7 @@ import numpy as np
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from depth_crawl import depth_crawl_dict, markets_5m
-from library import setup_logger, DecimalCodec, get_time
+from library import setup_logger, DecimalCodec, get_time, lib_initialize
 from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
 from mongodb import mongo_client
 
@@ -16,6 +15,8 @@ market_type = sys.argv[1]
 market_time_interval = sys.argv[2]
 part = sys.argv[3]  # 1, 2 or all
 repair_mode = sys.argv[4]
+
+lib_initialize()
 
 filename = "Binance-Markets-Scanner-{}-{}-{}".format(market_type.upper(), market_time_interval.upper(), part)
 logger = setup_logger(filename)
@@ -35,9 +36,6 @@ thread_limit = 500
 
 
 def do_scan_market(_market_info_collection):
-    _5m_markets_info_cursor = _market_info_collection.find({"tickers": {"$elemMatch": {"$eq": "5m"}}})
-    _5m_market_name_list = [e['name'] for e in _5m_markets_info_cursor]
-    markets_5m[_market_info_collection.name] = list(map(lambda x: x+_market_info_collection.name, _5m_market_name_list))
     _market_info_cursor = _market_info_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
     _journal_cn = _market_info_collection.name + "_" + market_time_interval.lower()
@@ -69,21 +67,6 @@ def guard(_data_collection_j):
             "running": True
         }) > thread_limit:
             sleep(10)  # 5 min of sleep
-
-
-# def guard(_data_collection_j, _market_name_j, _ticker_j):
-#     while _data_collection_j.count_documents({
-#         "running": True
-#     }) > thread_limit:
-#         _now = datetime.datetime.now().timestamp()
-#         _delta_t = 2 * ticker2sec(_ticker_j)
-#         __r = _data_collection_j.find({
-#                     "market": _market_name_j,
-#                     "ticker": _ticker_j
-#                 })
-#         len(list(filter(lambda x: _now - x['last_seen'] >= _delta_t,
-#                                      __r))) > 0:
-#         sleep(5 * 60)  # 5 min of sleep
 
 
 def validate_time_interval(_ticker):
@@ -137,8 +120,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                         logger.info("Market {} NOT OPERATING --> handled".format(_journal_name.upper()))
                         # run a thread here
                         manage_crawling(
-                            get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection,
-                                                 depth_crawl_dict))
+                            get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
                 elif not is_repaired and repair_mode == "repair" and len(list(filter(lambda x: x['running'], _r))) > 0:
                     is_repaired = True
                     logger.info("Market {} was running --> handled".format(_journal_name.upper()))
@@ -158,4 +140,4 @@ while True:
     sleep(hr)
 
 # how to run?
-# e.g. btc ltf repair
+# e.g. btc ltf all repair

@@ -1475,13 +1475,29 @@ def get_pickled(_dir, filename):
         return data
 
 
-keys = get_pickled(key_dir, keys_filename)
-keys_b = keys['binance']
-# keys_k = keys['kucoin']
-binance_client = BinanceClient(keys_b[0], keys_b[1])
+keys = None
+keys_b = None
+binance_client = None
 kucoin_client = []
 
-binance_obj = Binance(keys_b[0], keys_b[1])
+binance_obj = None
+kucoin_client = []
+
+
+def lib_initialize():
+    global keys
+    global keys_b
+    global binance_client
+    global binance_obj
+    keys = get_pickled(key_dir, keys_filename)
+    keys_b = keys['binance']
+    binance_client = BinanceClient(keys_b[0], keys_b[1])
+    binance_obj = Binance(keys_b[0], keys_b[1])
+
+
+def get_binance_obj():
+    return binance_obj
+
 
 sat = 1e-8
 delta = 1e-21
