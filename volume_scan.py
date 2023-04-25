@@ -4,17 +4,12 @@ import threading
 from time import sleep
 
 import schedule
-
 from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from library import TradeMsg, MakerVolumeUnit, TakerVolumeUnit, setup_logger, VolumeContainer, add_volume_containers
-
-from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
-    get_kucoin_interval_unit, binance_obj, kucoin_client, DecimalCodec, try_get_klines, TradeMsg, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global
-from market_scanner import VolumeCrawl
+from library import MakerVolumeUnit, TakerVolumeUnit, setup_logger, VolumeContainer, add_volume_containers
+from library import binance_obj, DecimalCodec, TradeMsg, get_time_from_binance_tmstmp
 from mongodb import mongo_client
 
 trades = {}
@@ -30,6 +25,11 @@ db_volume = mongo_client.volume
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
+
+
+class VolumeCrawl(object):
+    def __init__(self, _market):
+        self.market = _market
 
 
 def process_trade_socket_message(_msg):
@@ -409,13 +409,13 @@ market_info_list = [e for e in market_info_cursor]
 #     manage_volume_scan(_vc)
 
 # manage_volume_scan(VolumeCrawl("BTCUSDT"))
-manage_volume_scan(VolumeCrawl("ETHUSDT"))
-manage_volume_scan(VolumeCrawl("LTCUSDT"))
-manage_volume_scan(VolumeCrawl("BNBUSDT"))
-manage_volume_scan(VolumeCrawl("OMGUSDT"))
-manage_volume_scan(VolumeCrawl("HOOKUSDT"))
-manage_volume_scan(VolumeCrawl("NEARUSDT"))
-manage_volume_scan(VolumeCrawl("SANDUSDT"))
+# manage_volume_scan(VolumeCrawl("ETHUSDT"))
+# manage_volume_scan(VolumeCrawl("LTCUSDT"))
+# manage_volume_scan(VolumeCrawl("BNBUSDT"))
+# manage_volume_scan(VolumeCrawl("OMGUSDT"))
+# manage_volume_scan(VolumeCrawl("HOOKUSDT"))
+# manage_volume_scan(VolumeCrawl("NEARUSDT"))
+# manage_volume_scan(VolumeCrawl("SANDUSDT"))
 manage_volume_scan(VolumeCrawl("OGNBTC"))
 
 schedule.every(1).minutes.do(process_volume)
