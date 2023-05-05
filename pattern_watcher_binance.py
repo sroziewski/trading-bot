@@ -26,7 +26,7 @@ while 1:
             if mas:
                 i = 1
             breakout_type = filter(lambda x: x, [("horizon", price_to_string(asset.buy_price), asset.horizon) if horizon else False,
-                                                 ("slope", asset.line.type) if slope else False])
+                                                 ("slope", asset.line.market_type) if slope else False])
             if horizon or slope or mas:
                 closing_price = get_last_closing_price(asset)
                 types = ' '.join([i for sub in breakout_type for i in sub])

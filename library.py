@@ -1642,7 +1642,7 @@ def stop_when_not_exchange(_name):
 
 
 def get_time_from_binance_tmstmp(_tmstmp):
-    return get_time(datetime.datetime.fromtimestamp(_tmstmp / 1000).timestamp())
+    return get_time(datetime.datetime.fromtimestamp(_tmstmp / 1000).timestamp()) if _tmstmp > 0 else 0
 
 
 def get_sell_price(asset):
@@ -3768,7 +3768,7 @@ def break_line(_asset, _klines):
     _a, _b = get_line(_line.p1, _line.p2, _line.dt)
     _res = False
     _closing_price = get_last_closing_price2(_klines)
-    if _line.type == "down":
+    if _line.market_type == "down":
         _res = True if 0 < _a * (_line.dt + 1) + _b - _closing_price else False
     else:
         _res = True if 0 > _a * (_line.dt + 1) + _b - _closing_price else False
@@ -3880,7 +3880,7 @@ def log_assets(_assets):
         if _asset.horizon:
             logger_global[0].info(f"{_asset.market} horizon {_asset.horizon}")
         if _asset.line:
-            logger_global[0].info(f"{_asset.market} line {_asset.line.type}")
+            logger_global[0].info(f"{_asset.market} line {_asset.line.market_type}")
         if _asset.mas:
             logger_global[0].info(f"{_asset.market} {mas_to_string(_asset.mas)}")
 
@@ -3903,6 +3903,10 @@ class TradeMsg(object):
         
 
 class VolumeUnit(object):
+
+    def __init__(self):
+        pass
+
     def __init__(self, _trade_msg_list) -> None:
         self.base_volume = 0.0
         self.quantity = 0.0
@@ -4000,41 +4004,85 @@ class VolumeContainer(object):
         self.total_quantity = 0
     def print(self):
         logger_global[0].info("market: {}, total_base_volume: {}, total_quantity: {}, start_time_str: {}".format(self.market, self.maker_volume.base_volume+self.taker_volume.base_volume, self.maker_volume.quantity+self.taker_volume.quantity, get_time_from_binance_tmstmp(self.maker_volume.timestamp)))
+    def round(self):
+        if self.avg_weighted_maker_price > 100:
+            self.avg_weighted_maker_price = round(self.avg_weighted_maker_price, 3)
+        elif self.avg_weighted_maker_price > 10:
+            self.avg_weighted_maker_price = round(self.avg_weighted_maker_price, 4)
+        if self.avg_weighted_taker_price > 100:
+            self.avg_weighted_taker_price = round(self.avg_weighted_taker_price, 3)
+        elif self.avg_weighted_taker_price > 10:
+            self.avg_weighted_taker_price = round(self.avg_weighted_taker_price, 4)
+        if self.avg_price > 100:
+            self.avg_price = round(self.avg_price, 3)
+        elif self.avg_price > 10:
+            self.avg_price = round(self.avg_price, 4)
+        if self.mean_price > 100:
+            self.mean_price = round(self.mean_price, 3)
+        elif self.mean_price > 10:
+            self.mean_price = round(self.mean_price, 4)
+        if self.maker_volume.avg_price > 100:
+            self.maker_volume.avg_price = round(self.maker_volume.avg_price, 3)
+        elif self.maker_volume.avg_price > 10:
+            self.maker_volume.avg_price = round(self.maker_volume.avg_price, 4)
+        if self.maker_volume.mean_price > 100:
+            self.maker_volume.mean_price = round(self.maker_volume.mean_price, 3)
+        elif self.maker_volume.mean_price > 10:
+            self.maker_volume.mean_price = round(self.maker_volume.mean_price, 4)
+
+        if self.taker_volume.avg_price > 100:
+            self.taker_volume.avg_price = round(self.taker_volume.avg_price, 3)
+        elif self.taker_volume.avg_price > 10:
+            self.taker_volume.avg_price = round(self.taker_volume.avg_price, 4)
+        if self.taker_volume.mean_price > 100:
+            self.taker_volume.mean_price = round(self.taker_volume.mean_price, 3)
+        elif self.taker_volume.mean_price > 10:
+            self.taker_volume.mean_price = round(self.taker_volume.mean_price, 4)
+        self.total_base_volume = int(self.total_base_volume)
+        self.total_quantity = int(self.total_quantity)
+        self.maker_volume.base_volume = int(self.maker_volume.base_volume)
+        self.maker_volume.quantity = int(self.maker_volume.quantity)
 
 
 def add_volume_containers(_c1: VolumeContainer, _c2: VolumeContainer):
-    _c1.maker_volume = add_volume_units(_c1.maker_volume, _c2.maker_volume)
-    _c1.taker_volume = add_volume_units(_c1.taker_volume, _c2.taker_volume)
-    if _c1.start_time == 0:
-        _c1.start_time = _c2.start_time
-    return _c1
+    __vc = VolumeContainer(_c1.market, None, _c1.start_time, None, None)
+    try:
+        __vc.maker_volume = add_volume_units(_c1.maker_volume, _c2.maker_volume)
+        __vc.taker_volume = add_volume_units(_c1.taker_volume, _c2.taker_volume)
+    except AttributeError:
+        pass
+    if __vc.start_time == 0:
+        __vc.start_time = _c2.start_time
+    return __vc
 
 
-def add_volume_units(_a : VolumeUnit, _b : VolumeUnit):
-    _a.l00 = _a.l00 + _b.l00
-    _a.l01 = _a.l01 + _b.l01
-    _a.l02 = _a.l02 + _b.l02
-    _a.l0 = _a.l0 + _b.l0
-    _a.l0236 = _a.l0236 + _b.l0236
-    _a.l0382 = _a.l0382 + _b.l0382
-    _a.l05 = _a.l05 + _b.l05
-    _a.l0618 = _a.l0618 + _b.l0618
-    _a.l0786 = _a.l0786 + _b.l0786
-    _a.l1 = _a.l1 + _b.l1
-    _a.l1382 = _a.l1382 + _b.l1382
-    _a.l162 = _a.l162 + _b.l162
-    _a.l2 = _a.l2 + _b.l2
-    _a.l5 = _a.l5 + _b.l5
-    _a.l10 = _a.l10 + _b.l10
-    _a.l20 = _a.l20 + _b.l20
-    _a.l50 = _a.l50 + _b.l50
-    _a.l100 = _a.l100 + _b.l100
-    _a.mean_price = round((_a.mean_price + _b.mean_price)/2, 8)
-    _a.base_volume = round(_a.base_volume + _b.base_volume, 8)
-    _a.quantity = round(_a.quantity + _b.quantity, 8)
-    if _a.quantity > 0:
-        _a.avg_price = round(_a.base_volume / _a.quantity, 8)
-    return _a
+def add_volume_units(_a: VolumeUnit, _b: VolumeUnit):
+    _vu = VolumeUnit([])
+    _vu.l00 = _a.l00 + _b.l00
+    _vu.l01 = _a.l01 + _b.l01
+    _vu.l02 = _a.l02 + _b.l02
+    _vu.l0 = _a.l0 + _b.l0
+    _vu.l0236 = _a.l0236 + _b.l0236
+    _vu.l0382 = _a.l0382 + _b.l0382
+    _vu.l05 = _a.l05 + _b.l05
+    _vu.l0618 = _a.l0618 + _b.l0618
+    _vu.l0786 = _a.l0786 + _b.l0786
+    _vu.l1 = _a.l1 + _b.l1
+    _vu.l1382 = _a.l1382 + _b.l1382
+    _vu.l162 = _a.l162 + _b.l162
+    _vu.l2 = _a.l2 + _b.l2
+    _vu.l5 = _a.l5 + _b.l5
+    _vu.l10 = _a.l10 + _b.l10
+    _vu.l20 = _a.l20 + _b.l20
+    _vu.l50 = _a.l50 + _b.l50
+    _vu.l100 = _a.l100 + _b.l100
+    _vu.mean_price = round((_a.mean_price + _b.mean_price)/2, 8)
+    _vu.base_volume = round(_a.base_volume + _b.base_volume, 8)
+    _vu.quantity = round(_a.quantity + _b.quantity, 8)
+    _vu.timestamp = _a.timestamp
+    if _vu.quantity > 0:
+        _vu.avg_price = round(_vu.base_volume / _vu.quantity, 8)
+    return _vu
 
 
 class MakerVolumeUnit(VolumeUnit):
@@ -4182,4 +4230,4 @@ def get_files(_path):
 
 
 def round_same_as(_to_round, _val):
-        return round(_to_round, len(str(_val).split(".")[1]))
+    return round(_to_round, len(str(_val).split(".")[1]))

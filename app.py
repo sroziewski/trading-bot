@@ -85,6 +85,21 @@ class DepthMsg(object):
         self.market = _msg['s'].lower()
         self.time = datetime.datetime.now().timestamp()
 
+    def round(self):
+        if len(self.bids) > 0:
+            _p_tmp = self.bids[0]
+            if _p_tmp > 100:
+                self.bids = list(map(lambda x: round(x, 0)))
+            elif _p_tmp > 10:
+                self.bids = list(map(lambda x: round(x, 1)))
+
+        if len(self.asks) > 0:
+            _p_tmp = self.asks[0]
+            if _p_tmp > 100:
+                self.asks = list(map(lambda x: round(x, 0)))
+            elif _p_tmp > 10:
+                self.asks = list(map(lambda x: round(x, 1)))
+
 
 class MarketDepth(object):
     def __init__(self, _1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p,
@@ -309,6 +324,7 @@ types = {}
 
 def process_depth_socket_message(_msg):
     _depth_msg = DepthMsg(_msg)
+    _depth_msg.round()
     while _depth_msg.market in depths_locker:
         sleep(1)
     for _ask in _depth_msg.asks:
@@ -343,6 +359,7 @@ def unlock(_locker, _key):
 
 
 def do_freeze():
+    logger_global[0].info(depths)
     for _market_c in depths.keys():
         depths_locker[_market_c] = True
         if len(depths[_market_c]['asks']) > 0 and len(depths[_market_c]['bids']) > 0:

@@ -71,7 +71,7 @@ def break_line(_line):
     _a, _b = get_line(_line.p1, _line.p2, _line.dt)
     _btcd = get_current_btcd()
     _res = False
-    if _line.type == "down":
+    if _line.market_type == "down":
         _res = True if 0 < _a * (_line.dt + 1) + _b - _btcd else False
     else:
         _res = True if 0 > _a * (_line.dt + 1) + _b - _btcd else False
