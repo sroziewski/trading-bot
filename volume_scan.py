@@ -65,9 +65,8 @@ def post_process_volume_container(_vc: VolumeContainer):
         return
     handle_volume_container(_vc)
     try:
-        _second = int(get_time_from_binance_tmstmp(_vc.maker_volume.timestamp).split(":")[-1])
-        _vc.start_time = _vc.maker_volume.timestamp - 1000 * _second
-        _vc.start_time_str = get_time_from_binance_tmstmp(_vc.maker_volume.timestamp - 1000 * _second)
+        _vc.start_time = _vc.maker_volume.timestamp
+        _vc.start_time_str = get_time(_vc.maker_volume.timestamp)
     except Exception as e:
         logger.info("_vc.buy_volume.timestamp = {}".format(get_time_from_binance_tmstmp(_vc.maker_volume.timestamp)))
         logger.exception(e.__traceback__)
