@@ -302,7 +302,10 @@ types = {}
 
 
 def process_depth_socket_message(_msg):
-    _depth_msg = DepthMsg(_msg)
+    try:
+        _depth_msg = DepthMsg(_msg)
+    except Exception:
+        return
     while _depth_msg.market in depths_locker:
         sleep(1)
     for _ask in _depth_msg.asks:
