@@ -86,26 +86,6 @@ def post_process_volume_container(_vc: VolumeContainer):
                                                                                           volume_collection.name.upper(),
                                                                                           _vc.total_base_volume,
                                                                                           _vc.total_quantity))
-        # if _vc.market not in volumes15:
-        #     try:
-        #         _minutes = int(_vc.start_time_str.split(":")[-2])
-        #         volumes15[_vc.market] = []
-        #         if _minutes % 15 == 0:
-        #             volumes15[_vc.market].append(_vc)
-        #     except AttributeError as e:
-        #         logger.info("_minutes= {}".format(_vc.start_time_str))
-        #         logger.exception(e.__traceback__)
-        # else:
-        #     volumes15[_vc.market].append(_vc)
-        # if _vc.market in volumes15 and len(volumes15[_vc.market]) == 3:
-        #     _vc = handle_volume_container(functools.reduce(lambda x, y: add_volume_containers(x, y), volumes15[_vc.market][0:3]))
-        #     _vc.ticker = '15m'
-        #     volume_collection.insert_one(to_mongo(_vc))
-        #     logger.info("Volume market {}_{} has been written to volume {} collection".format(_vc.market.lower(),
-        #                                                                                       _vc.ticker.lower(),
-        #                                                                                       volume_collection.name.upper()))
-        #     del volumes15[_vc.market]
-    kk = 1
 
 
 def handle_volume_container(_vc: VolumeContainer):
@@ -119,7 +99,7 @@ def handle_volume_container(_vc: VolumeContainer):
 
         return _vc
     except AttributeError:
-        iiik = 1
+        logger.error("AttributeError {}".format(_vc))
         pass
 
 
@@ -185,12 +165,6 @@ def handle_volume_containers(_message):
     if len(_merged) == 0:
         del locker[_market]
         return
-    # for _m in _merged:
-    #     logger.info("{} : {} {}".format(_m.start_time, _m.maker_volume.quantity, _m.taker_volume.quantity))
-    # if len(_merged) < 2:
-    #     del locker[_market]
-    #     _merged.clear()
-    #     return
     _server_time = datetime.datetime.now().timestamp()
     _server_time_str = get_time(_server_time)
     _min = int(_server_time_str.split(":")[-2])
@@ -215,7 +189,6 @@ def handle_volume_containers(_message):
         if _entry_quarter != volumes15[_market]['quarter']:
             _stop = 0
             _rc = volumes15[_market]['vc']
-            # logger.info("Stop: {} {}".format(_stop, _market))
             _persist = True
 
     if len(_merged) == 2:
@@ -268,7 +241,6 @@ def handle_volume_containers(_message):
             post_process_volume_container(_rc)
             del volumes15[_market]
         except AttributeError:
-            asdasd = 123
             pass
         if _market not in initialization:
             initialization[_market] = 1
@@ -279,12 +251,6 @@ def handle_volume_containers(_message):
             volumes[_market][_el.start_time] = [_el]
     del locker[_market]
     _merged.clear()
-    # # if not is_empty_volume(_rc):
-    # try:
-    #     _rc.print()
-    # except AttributeError:
-    #     asdasd=1
-    #     pass
 
 
 def set_rc_timestamp(_entry_quarter_0, _rc, _server_time, _server_time_str):
@@ -326,8 +292,8 @@ def process_volume():
             if _tv.timestamp == 0:
                 _tv.timestamp = _mv.timestamp
 
-            logger.info("maker {} : {}".format(get_time_from_binance_tmstmp(_mv.timestamp), _mv.quantity))
-            logger.info("taker {} : {}".format(get_time_from_binance_tmstmp(_tv.timestamp), _tv.quantity))
+            # logger.info("maker {} : {}".format(get_time_from_binance_tmstmp(_mv.timestamp), _mv.quantity))
+            # logger.info("taker {} : {}".format(get_time_from_binance_tmstmp(_tv.timestamp), _tv.quantity))
 
             if _k not in volumes[_market]:
                 try:
@@ -345,8 +311,6 @@ def process_volume():
                 handle_volume_containers(_message)
                 if not _message['done']:
                     trades[_market] = _bag[_market].copy()
-        # elif len(trades[_market]) > 0:
-        #     trades[_market] = _bag[_market].copy()
         _bag[_market].clear()
 
 
@@ -368,14 +332,6 @@ def _do_volume_scan(_vc: VolumeCrawl):
     _bm = BinanceSocketManager(get_binance_obj().client)
     _conn_key = _bm.start_aggtrade_socket(_vc.market, process_trade_socket_message)
     _bm.start()
-    # while True:
-    #     _tmstmp_diff = datetime.datetime.now().timestamp() - last_tmstmp
-    #     # if _tmstmp_diff > 60 * 60:
-    #     #     logger_global[0].warning(
-    #     #         f"{_vc.market} last trading volume tmstmp ({last_tmstmp}) is older than 60 minutes, diff = {_tmstmp_diff}")
-    #     if len(trades[_vc.market]) > 0:
-    #         logger_global[0].info(f"{_vc.market} last trading volume : {trades[_vc.market][-1].timestamp_str} {_vc.market}")
-    #     sleep(60 * 60)
 
 
 def manage_volume_scan(_vc):
@@ -456,14 +412,14 @@ market_info_list = [e for e in market_info_cursor]
 
 lib_initialize()
 
-# for _market_s in market_info_list:  # inf loop needed here
-#     _vc = VolumeCrawl("{}{}".format(_market_s['name'], type).upper())
-#     manage_volume_scan(_vc)
+for _market_s in market_info_list:  # inf loop needed here
+    _vc = VolumeCrawl("{}{}".format(_market_s['name'], market_type).upper())
+    manage_volume_scan(_vc)
 
 # manage_volume_scan(VolumeCrawl("BTCUSDT"))
 # manage_volume_scan(VolumeCrawl("ETHUSDT"))
 # manage_volume_scan(VolumeCrawl("LTCUSDT"))
-manage_volume_scan(VolumeCrawl("BNBUSDT"))
+# manage_volume_scan(VolumeCrawl("BNBUSDT"))
 # manage_volume_scan(VolumeCrawl("OMGUSDT"))
 # manage_volume_scan(VolumeCrawl("HOOKUSDT"))
 # manage_volume_scan(VolumeCrawl("NEARUSDT"))
