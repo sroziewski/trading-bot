@@ -4038,10 +4038,10 @@ class VolumeContainer(object):
             self.taker_volume.mean_price = round(self.taker_volume.mean_price, 3)
         elif self.taker_volume.mean_price > 10:
             self.taker_volume.mean_price = round(self.taker_volume.mean_price, 4)
-        self.total_base_volume = int(self.total_base_volume)
-        self.total_quantity = int(self.total_quantity)
-        self.maker_volume.base_volume = int(self.maker_volume.base_volume)
-        self.maker_volume.quantity = int(self.maker_volume.quantity)
+        self.total_base_volume = round(self.total_base_volume)
+        self.total_quantity = round(self.total_quantity)
+        self.maker_volume.base_volume = round(self.maker_volume.base_volume)
+        self.maker_volume.quantity = round(self.maker_volume.quantity)
 
 
 def add_volume_containers(_c1: VolumeContainer, _c2: VolumeContainer):
