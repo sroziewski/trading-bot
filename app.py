@@ -87,6 +87,7 @@ class DepthMsg(object):
 
     def round(self):
         if len(self.bids) > 0:
+            logger_global[0].info(self.bids)
             _p_tmp = self.bids[0]
             if _p_tmp > 100:
                 self.bids = list(map(lambda x: round(x, 0)))
