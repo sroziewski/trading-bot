@@ -35,7 +35,10 @@ class VolumeCrawl(object):
 
 
 def process_trade_socket_message(_msg):
-    _trade_msg = TradeMsg(_msg)
+    try:
+        _trade_msg = TradeMsg(_msg)
+    except Exception:
+        logger.error(_msg)
     # logger.info("{} : {}".format(_trade_msg.timestamp_str, _trade_msg.quantity))
     while "lock" in trades[_trade_msg.market]:
         sleep(1)
