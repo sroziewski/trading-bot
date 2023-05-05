@@ -308,12 +308,9 @@ def process_volume():
 
         if len(_aggs.items()) > 0 or all(x == "lock" for x in trades[_market]):
             trades[_market].clear()
-            if _market == "BTCUSDT":
-                handle_volume_containers_5m(_market)
-            else:
-                handle_volume_containers(_message)
-                if not _message['done']:
-                    trades[_market] = _bag[_market].copy()
+            handle_volume_containers(_message)
+            if not _message['done']:
+                trades[_market] = _bag[_market].copy()
         _bag[_market].clear()
 
 
