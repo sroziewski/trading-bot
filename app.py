@@ -25,7 +25,7 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import get_binance_obj, logger_global, lib_initialize
+from library import get_binance_obj, logger_global, lib_initialize, round_price
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
@@ -86,18 +86,10 @@ class DepthMsg(object):
 
     def round(self):
         if len(self.bids) > 0:
-            _p_tmp = self.bids[0][0]
-            if _p_tmp > 100:
-                self.bids = tuple(zip(list(map(lambda x: round(x[0], 0), self.bids)), list(map(lambda x: round(x[1], 0), self.bids))))
-            elif _p_tmp > 10:
-                self.bids = tuple(zip(list(map(lambda x: round(x[0], 1), self.bids)), list(map(lambda x: round(x[1], 0), self.bids))))
+            self.bids = tuple(zip(list(map(lambda x: round_price(x[0], 1), self.bids)), list(map(lambda x: round(x[1], 0), self.bids))))
 
         if len(self.asks) > 0:
-            _p_tmp = self.asks[0][0]
-            if _p_tmp > 100:
-                self.asks = tuple(zip(list(map(lambda x: round(x[0], 0), self.asks)), list(map(lambda x: round(x[1], 0), self.asks))))
-            elif _p_tmp > 10:
-                self.asks = tuple(zip(list(map(lambda x: round(x[0], 1), self.asks)), list(map(lambda x: round(x[1], 0), self.asks))))
+            self.asks = tuple(zip(list(map(lambda x: round_price(x[0], 1), self.asks)), list(map(lambda x: round(x[1], 0), self.asks))))
 
 
 class MarketDepth(object):
@@ -231,7 +223,7 @@ def compute_depth_percentages(_depth, _type):
 
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
-        return BuyDepth(round(_dc.bid_price / _by, 10),
+        return BuyDepth(round_price(_dc.bid_price / _by),
                         (round(_dc.p1[0] / _by, 1) if _dc.p1[0] / _by < 100 else round(_dc.p1[0] / _by), round(_dc.p1[1] / _by)),
                         (round(_dc.p2[0] / _by), round(_dc.p2[1] / _by)),
                         (round(_dc.p3[0] / _by), round(_dc.p3[1] / _by)),
@@ -251,7 +243,7 @@ def divide_dc(_dc, _by):
                         (round(_dc.p65[0] / _by), round(_dc.p65[1] / _by)),
                         (round(_dc.p70[0] / _by), round(_dc.p70[1] / _by)))
     elif isinstance(_dc, SellDepth):
-        return SellDepth(round(_dc.ask_price / _by, 10),
+        return SellDepth(round_price(_dc.ask_price / _by),
                          (round(_dc.p1[0] / _by, 1) if _dc.p1[0] / _by < 100 else round(_dc.p1[0] / _by), round(_dc.p1[1] / _by)),
                          (round(_dc.p2[0] / _by), round(_dc.p2[1] / _by)),
                          (round(_dc.p3[0] / _by), round(_dc.p3[1] / _by)),
