@@ -249,7 +249,7 @@ def handle_volume_containers(_message):
             volumes[_market][_el.start_time] = [_el]
     del locker[_market]
     _merged.clear()
-    _rc.print()
+    # _rc.print()
 
 
 def set_rc_timestamp(_entry_quarter_0, _rc, _server_time, _server_time_str):
@@ -291,8 +291,8 @@ def process_volume():
             if _tv.timestamp == 0:
                 _tv.timestamp = _mv.timestamp
 
-            logger.info("maker {} : {}".format(get_time_from_binance_tmstmp(_mv.timestamp), _mv.quantity))
-            logger.info("taker {} : {}".format(get_time_from_binance_tmstmp(_tv.timestamp), _tv.quantity))
+            # logger.info("maker {} : {}".format(get_time_from_binance_tmstmp(_mv.timestamp), _mv.quantity))
+            # logger.info("taker {} : {}".format(get_time_from_binance_tmstmp(_tv.timestamp), _tv.quantity))
 
             if _k not in volumes[_market]:
                 try:
