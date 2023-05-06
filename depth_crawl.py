@@ -69,16 +69,16 @@ class DepthMsg(object):
         if len(self.bids) > 0:
             _p_tmp = self.bids[0][0]
             if _p_tmp > 100:
-                self.bids = list(map(lambda x: round(x, 0)))
+                self.bids = tuple(zip(list(map(lambda x: round(x[0], 0), self.bids)), list(map(lambda x: round(x[1], 0), self.bids))))
             elif _p_tmp > 10:
-                self.bids = list(map(lambda x: round(x, 1)))
+                self.bids = tuple(zip(list(map(lambda x: round(x[0], 1), self.bids)), list(map(lambda x: round(x[1], 0), self.bids))))
 
         if len(self.asks) > 0:
             _p_tmp = self.asks[0][0]
             if _p_tmp > 100:
-                self.asks = list(map(lambda x: round(x, 0)))
+                self.asks = tuple(zip(list(map(lambda x: round(x[0], 0), self.asks)), list(map(lambda x: round(x[1], 0), self.asks))))
             elif _p_tmp > 10:
-                self.asks = list(map(lambda x: round(x, 1)))
+                self.asks = tuple(zip(list(map(lambda x: round(x[0], 1), self.asks)), list(map(lambda x: round(x[1], 0), self.asks))))
 
 class MarketDepth(object):
     def __init__(self, _1p, _2p, _3p, _4p, _5p, _10p, _15p, _20p, _25p, _30p, _35p, _40p, _45p, _50p, _55p, _60p, _65p,

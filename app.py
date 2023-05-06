@@ -85,23 +85,19 @@ class DepthMsg(object):
         self.time = datetime.datetime.now().timestamp()
 
     def round(self):
-        if len(self.bids) > 0 and len(self.bids[0]) > 0 and len(self.bids[1]) > 0:
-            _p_tmp = self.bids[0][0]  # price
+        if len(self.bids) > 0:
+            _p_tmp = self.bids[0][0]
             if _p_tmp > 100:
-                self.bids[0] = list(map(lambda x: round(x, 0), self.bids[0]))
-                self.bids[1] = list(map(lambda x: round(x, 0), self.bids[1]))
+                self.bids = tuple(zip(list(map(lambda x: round(x[0], 0), self.bids)), list(map(lambda x: round(x[1], 0), self.bids))))
             elif _p_tmp > 10:
-                self.bids[0] = list(map(lambda x: round(x, 1), self.bids[0]))
-                self.bids[1] = list(map(lambda x: round(x, 0), self.bids[1]))
+                self.bids = tuple(zip(list(map(lambda x: round(x[0], 1), self.bids)), list(map(lambda x: round(x[1], 0), self.bids))))
 
-        if len(self.asks) > 0 and len(self.asks[0]) > 0 and len(self.asks[1]) > 0:
-            _p_tmp = self.asks[0][0]  # price
+        if len(self.asks) > 0:
+            _p_tmp = self.asks[0][0]
             if _p_tmp > 100:
-                self.asks[0] = list(map(lambda x: round(x, 0), self.asks[0]))
-                self.asks[1] = list(map(lambda x: round(x, 0), self.asks[1]))
+                self.asks = tuple(zip(list(map(lambda x: round(x[0], 0), self.asks)), list(map(lambda x: round(x[1], 0), self.asks))))
             elif _p_tmp > 10:
-                self.asks[0] = list(map(lambda x: round(x, 1), self.asks[0]))
-                self.asks[1] = list(map(lambda x: round(x, 0), self.asks[1]))
+                self.asks = tuple(zip(list(map(lambda x: round(x[0], 1), self.asks)), list(map(lambda x: round(x[1], 0), self.asks))))
 
 
 class MarketDepth(object):
