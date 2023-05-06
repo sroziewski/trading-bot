@@ -75,16 +75,11 @@ def post_process_volume_container(_vc: VolumeContainer):
         logger.exception(e.__traceback__)
 
     volume_collection = db_volume.get_collection(_vc.market.lower(), codec_options=codec_options)
-    if _vc.market == "BTCUSDT":
-        volume_collection.insert_one(to_mongo(_vc))
-        logger.info("Volume market {}_{} has been written to volume {} collection".format(_vc.market.lower(),
-                                                                                          _vc.ticker.lower(),
-                                                                                          volume_collection.name.upper()))
-    else:
-        _vc.ticker = '15m'
-        _vc.round()
-        volume_collection.insert_one(to_mongo(_vc))
-        logger.info("Volume market {}_{} has been written to volume {} collection -- base_volume: {}, quantity: {}".format(_vc.market.lower(),
+
+    _vc.ticker = '15m'
+    _vc.round()
+    volume_collection.insert_one(to_mongo(_vc))
+    logger.info("Volume market {}_{} has been written to volume {} collection -- base_volume: {}, quantity: {}".format(_vc.market.lower(),
                                                                                           _vc.ticker.lower(),
                                                                                           volume_collection.name.upper(),
                                                                                           _vc.total_base_volume,
