@@ -1794,13 +1794,13 @@ def round_price(_p, _s=0):
     elif _p > 10:
         _r = round(_p, 2-_s)
     elif _p > 1:
-        _r = round(_p, 3-_s)
+        _r = round(_p, 3)
     elif _p > 0.1:
-        _r = round(_p, 4-_s)
+        _r = round(_p, 4)
     elif _p > 0.01:
-        _r = round(_p, 5-_s)
+        _r = round(_p, 5)
     elif _p > 0.001:
-        _r = round(_p, 6-_s)
+        _r = round(_p, 6)
     else:
         _r = _p
     return _r
