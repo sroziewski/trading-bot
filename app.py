@@ -423,8 +423,14 @@ def do_freeze():
                 _current_timestamp = _bdt_5m.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
                 __size = len(depths1m[_market_c]['bd']) - 1
                 for _ii in range(1, __size):
-                    _bdt_5m = add_dc(_bdt_5m, depths1m[_market_c]['bd'][_ii])
-                    _sdt_5m = add_dc(_sdt_5m, depths1m[_market_c]['sd'][_ii])
+                    try:
+                        _bdt_5m = add_dc(_bdt_5m, depths1m[_market_c]['bd'][_ii])
+                    except IndexError as err:
+                        logger_global[0].error("bd trace: {} {}".format(depths1m[_market_c], err.__traceback__))
+                    try:
+                        _sdt_5m = add_dc(_sdt_5m, depths1m[_market_c]['sd'][_ii])
+                    except IndexError as err:
+                        logger_global[0].error("sd trace: {} {}".format(depths1m[_market_c], err.__traceback__))
                 _bdt_5m = divide_dc(_bdt_5m, __size)
                 _sdt_5m = divide_dc(_sdt_5m, __size)
                 _bdt_5m.set_time(_current_timestamp)

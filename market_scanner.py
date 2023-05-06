@@ -113,7 +113,7 @@ def to_mongo(_kline):
     if _kline.bid_depth:
         return {
         'exchange': _kline.exchange,
-        'version': "2.4",
+        'version': "2.5",
         'ticker': _kline.ticker,
         'start_time': int(_kline.start_time/1000),
         'opening': _kline.opening,
@@ -170,7 +170,7 @@ def to_mongo(_kline):
     else:
         return {
             'exchange': _kline.exchange,
-            'version': "2.4",
+            'version': "2.5",
             'ticker': _kline.ticker,
             'start_time': int(_kline.start_time / 1000),
             'opening': _kline.opening,
