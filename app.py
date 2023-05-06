@@ -426,11 +426,11 @@ def do_freeze():
                     try:
                         _bdt_5m = add_dc(_bdt_5m, depths1m[_market_c]['bd'][_ii])
                     except IndexError as err:
-                        logger_global[0].error("_bdt_5m depths1m: {} trace: {}".format(depths1m[_market_c], err.__traceback__))
+                        logger_global[0].error("_bdt_5m depths1m: {} {} trace: {}".format(_market_c, depths1m[_market_c], err.__traceback__))
                     try:
                         _sdt_5m = add_dc(_sdt_5m, depths1m[_market_c]['sd'][_ii])
                     except IndexError as err:
-                        logger_global[0].error("_sdt_5m depths1m: {} trace: {}".format(depths1m[_market_c], err.__traceback__))
+                        logger_global[0].error("_sdt_5m depths1m: {} {} trace: {}".format(_market_c, depths1m[_market_c], err.__traceback__))
                 _bdt_5m = divide_dc(_bdt_5m, __size)
                 _sdt_5m = divide_dc(_sdt_5m, __size)
                 _bdt_5m.set_time(_current_timestamp)
@@ -440,24 +440,28 @@ def do_freeze():
             try:
                 _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
             except IndexError as err:
-                logger_global[0].error("_t0_day bd depths1m: {} trace: {}".format(depths1m[_market_c], err.__traceback__))
+                logger_global[0].error("_t0_day bd depths1m: {} {} trace: {}".format(_market_c, depths1m[_market_c], err.__traceback__))
             try:
                 _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
             except IndexError as err:
-                logger_global[0].error("_t1_day bd depths1m: {} trace: {}".format(depths1m[_market_c], err.__traceback__))
+                logger_global[0].error("_t1_day bd depths1m: {} {} trace: {}".format(_market_c, depths1m[_market_c], err.__traceback__))
 
-            _hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
+            try:
+                _hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
+            except IndexError as err:
+                logger_global[0].error("_hour bd depths1m: {} {} trace: {}".format(_market_c, depths1m[_market_c], err.__traceback__))
+
             if _t0_day != _t1_day:
                 try:
                     _bdt_5m = depths1m[_market_c]['bd'][0]
                 except IndexError as err:
                     logger_global[0].error(
-                        "_bdt_5m depths1m: {} trace: {}".format(depths1m[_market_c], err.__traceback__))
+                        "_bdt_5m depths1m: {} {} trace: {}".format(_market_c, depths1m[_market_c], err.__traceback__))
                 try:
                     _sdt_5m = depths1m[_market_c]['sd'][0]
                 except IndexError as err:
                     logger_global[0].error(
-                        "_sdt_5m depths1m: {} trace: {}".format(depths1m[_market_c], err.__traceback__))
+                        "_sdt_5m depths1m: {} {} trace: {}".format(_market_c, depths1m[_market_c], err.__traceback__))
 
                 _current_timestamp = _bdt_5m.timestamp - _hour * 60 * 60 - _min * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]),

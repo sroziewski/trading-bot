@@ -4003,7 +4003,7 @@ class VolumeContainer(object):
         self.total_base_volume = 0
         self.total_quantity = 0
     def print(self):
-        logger_global[0].info("market: {}, total_base_volume: {}, total_quantity: {}, start_time_str: {}".format(self.market, self.maker_volume.base_volume+self.taker_volume.base_volume, self.maker_volume.quantity+self.taker_volume.quantity, get_time_from_binance_tmstmp(self.maker_volume.timestamp)))
+        logger_global[0].info("market: {}, total_base_volume: {}, total_quantity: {}, start_time_str: {}".format(self.market, self.maker_volume.base_volume+self.taker_volume.base_volume, self.maker_volume.quantity+self.taker_volume.quantity, get_time(self.maker_volume.timestamp)))
     def round(self):
         if self.avg_weighted_maker_price > 100:
             self.avg_weighted_maker_price = round(self.avg_weighted_maker_price, 3)
