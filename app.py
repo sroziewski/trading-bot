@@ -85,7 +85,7 @@ class DepthMsg(object):
         self.time = datetime.datetime.now().timestamp()
 
     def round(self):
-        if len(self.bids) > 0:
+        if len(self.bids) > 0 and len(self.bids[0]) > 0 and len(self.bids[1]) > 0:
             _p_tmp = self.bids[0][0]  # price
             if _p_tmp > 100:
                 self.bids[0] = list(map(lambda x: round(x, 0), self.bids[0]))
@@ -94,7 +94,7 @@ class DepthMsg(object):
                 self.bids[0] = list(map(lambda x: round(x, 1), self.bids[0]))
                 self.bids[1] = list(map(lambda x: round(x, 0), self.bids[1]))
 
-        if len(self.asks) > 0:
+        if len(self.asks) > 0 and len(self.asks[0]) > 0 and len(self.asks[1]) > 0:
             _p_tmp = self.asks[0][0]  # price
             if _p_tmp > 100:
                 self.asks[0] = list(map(lambda x: round(x, 0), self.asks[0]))
