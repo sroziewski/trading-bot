@@ -232,44 +232,44 @@ def compute_depth_percentages(_depth, _type):
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
         return BuyDepth(round(_dc.bid_price / _by, 10),
-                        (round(_dc.p1[0] / _by, 4), round(_dc.p1[1] / _by, 4)),
-                        (round(_dc.p2[0] / _by, 4), round(_dc.p2[1] / _by, 4)),
-                        (round(_dc.p3[0] / _by, 4), round(_dc.p3[1] / _by, 4)),
-                        (round(_dc.p4[0] / _by, 4), round(_dc.p4[1] / _by, 4)),
-                        (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
-                        (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
-                        (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
-                        (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
-                        (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)),
-                        (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
-                        (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)),
-                        (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
-                        (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)),
-                        (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
-                        (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)),
-                        (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
-                        (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
-                        (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
+                        (round(_dc.p1[0] / _by), round(_dc.p1[1] / _by)),
+                        (round(_dc.p2[0] / _by), round(_dc.p2[1] / _by)),
+                        (round(_dc.p3[0] / _by), round(_dc.p3[1] / _by)),
+                        (round(_dc.p4[0] / _by), round(_dc.p4[1] / _by)),
+                        (round(_dc.p5[0] / _by), round(_dc.p5[1] / _by)),
+                        (round(_dc.p10[0] / _by), round(_dc.p10[1] / _by)),
+                        (round(_dc.p15[0] / _by), round(_dc.p15[1] / _by)),
+                        (round(_dc.p20[0] / _by), round(_dc.p20[1] / _by)),
+                        (round(_dc.p25[0] / _by), round(_dc.p25[1] / _by)),
+                        (round(_dc.p30[0] / _by), round(_dc.p30[1] / _by)),
+                        (round(_dc.p35[0] / _by), round(_dc.p35[1] / _by)),
+                        (round(_dc.p40[0] / _by), round(_dc.p40[1] / _by)),
+                        (round(_dc.p45[0] / _by), round(_dc.p45[1] / _by)),
+                        (round(_dc.p50[0] / _by), round(_dc.p50[1] / _by)),
+                        (round(_dc.p55[0] / _by), round(_dc.p55[1] / _by)),
+                        (round(_dc.p60[0] / _by), round(_dc.p60[1] / _by)),
+                        (round(_dc.p65[0] / _by), round(_dc.p65[1] / _by)),
+                        (round(_dc.p70[0] / _by), round(_dc.p70[1] / _by)))
     elif isinstance(_dc, SellDepth):
         return SellDepth(round(_dc.ask_price / _by, 10),
-                         (round(_dc.p1[0] / _by, 4), round(_dc.p1[1] / _by, 4)),
-                         (round(_dc.p2[0] / _by, 4), round(_dc.p2[1] / _by, 4)),
-                         (round(_dc.p3[0] / _by, 4), round(_dc.p3[1] / _by, 4)),
-                         (round(_dc.p4[0] / _by, 4), round(_dc.p4[1] / _by, 4)),
-                         (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
-                         (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
-                         (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
-                         (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
-                         (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)),
-                         (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
-                         (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)),
-                         (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
-                         (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)),
-                         (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
-                         (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)),
-                         (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
-                         (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
-                         (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
+                         (round(_dc.p1[0] / _by), round(_dc.p1[1] / _by)),
+                         (round(_dc.p2[0] / _by), round(_dc.p2[1] / _by)),
+                         (round(_dc.p3[0] / _by), round(_dc.p3[1] / _by)),
+                         (round(_dc.p4[0] / _by), round(_dc.p4[1] / _by)),
+                         (round(_dc.p5[0] / _by), round(_dc.p5[1] / _by)),
+                         (round(_dc.p10[0] / _by), round(_dc.p10[1] / _by)),
+                         (round(_dc.p15[0] / _by), round(_dc.p15[1] / _by)),
+                         (round(_dc.p20[0] / _by), round(_dc.p20[1] / _by)),
+                         (round(_dc.p25[0] / _by), round(_dc.p25[1] / _by)),
+                         (round(_dc.p30[0] / _by), round(_dc.p30[1] / _by)),
+                         (round(_dc.p35[0] / _by), round(_dc.p35[1] / _by)),
+                         (round(_dc.p40[0] / _by), round(_dc.p40[1] / _by)),
+                         (round(_dc.p45[0] / _by), round(_dc.p45[1] / _by)),
+                         (round(_dc.p50[0] / _by), round(_dc.p50[1] / _by)),
+                         (round(_dc.p55[0] / _by), round(_dc.p55[1] / _by)),
+                         (round(_dc.p60[0] / _by), round(_dc.p60[1] / _by)),
+                         (round(_dc.p65[0] / _by), round(_dc.p65[1] / _by)),
+                         (round(_dc.p70[0] / _by), round(_dc.p70[1] / _by)))
 
 
 def add_dc(_dc1, _dc2):
@@ -426,11 +426,11 @@ def do_freeze():
                     try:
                         _bdt_5m = add_dc(_bdt_5m, depths1m[_market_c]['bd'][_ii])
                     except IndexError as err:
-                        logger_global[0].error("bd trace: {} {}".format(depths1m[_market_c], err.__traceback__))
+                        logger_global[0].error("bd depths1m: {} trace: {}".format(depths1m[_market_c], err.__traceback__))
                     try:
                         _sdt_5m = add_dc(_sdt_5m, depths1m[_market_c]['sd'][_ii])
                     except IndexError as err:
-                        logger_global[0].error("sd trace: {} {}".format(depths1m[_market_c], err.__traceback__))
+                        logger_global[0].error("sd depths1m: {} trace: {}".format(depths1m[_market_c], err.__traceback__))
                 _bdt_5m = divide_dc(_bdt_5m, __size)
                 _sdt_5m = divide_dc(_sdt_5m, __size)
                 _bdt_5m.set_time(_current_timestamp)
