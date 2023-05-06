@@ -408,11 +408,11 @@ market_info_list = [e for e in market_info_cursor]
 
 lib_initialize()
 
-# for _market_s in market_info_list:  # inf loop needed here
-#     _vc = VolumeCrawl("{}{}".format(_market_s['name'], market_type).upper())
-#     manage_volume_scan(_vc)
+for _market_s in market_info_list:  # inf loop needed here
+    _vc = VolumeCrawl("{}{}".format(_market_s['name'], market_type).upper())
+    manage_volume_scan(_vc)
 
-manage_volume_scan(VolumeCrawl("BTCUSDT"))
+# manage_volume_scan(VolumeCrawl("BTCUSDT"))
 # manage_volume_scan(VolumeCrawl("ETHUSDT"))
 # manage_volume_scan(VolumeCrawl("LTCUSDT"))
 # manage_volume_scan(VolumeCrawl("BNBUSDT"))
