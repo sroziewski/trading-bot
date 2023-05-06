@@ -97,7 +97,7 @@ def handle_volume_container(_vc: VolumeContainer):
 
         return _vc
     except AttributeError:
-        logger.error("AttributeError {}".format(_vc))
+        logger.error("AttributeError {} total_quantity: {} total_base_volume: {} mean_price: {} avg_price: {}".format(_vc.market, _vc.total_quantity, _vc.total_base_volume, _vc.mean_price, _vc.avg_price))
         pass
 
 
