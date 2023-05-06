@@ -89,19 +89,19 @@ class DepthMsg(object):
             _p_tmp = self.bids[0][0]  # price
             if _p_tmp > 100:
                 self.bids[0] = list(map(lambda x: round(x, 0), self.bids[0]))
-                self.bids[1] = list(map(lambda x: round(x, 0)), self.bids[1])
+                self.bids[1] = list(map(lambda x: round(x, 0), self.bids[1]))
             elif _p_tmp > 10:
                 self.bids[0] = list(map(lambda x: round(x, 1), self.bids[0]))
-                self.bids[1] = list(map(lambda x: round(x, 0)), self.bids[1])
+                self.bids[1] = list(map(lambda x: round(x, 0), self.bids[1]))
 
         if len(self.asks) > 0:
             _p_tmp = self.asks[0][0]  # price
             if _p_tmp > 100:
                 self.asks[0] = list(map(lambda x: round(x, 0), self.asks[0]))
-                self.asks[1] = list(map(lambda x: round(x, 0)), self.asks[1])
+                self.asks[1] = list(map(lambda x: round(x, 0), self.asks[1]))
             elif _p_tmp > 10:
                 self.asks[0] = list(map(lambda x: round(x, 1), self.asks[0]))
-                self.asks[1] = list(map(lambda x: round(x, 0)), self.asks[1])
+                self.asks[1] = list(map(lambda x: round(x, 0), self.asks[1]))
 
 
 class MarketDepth(object):
