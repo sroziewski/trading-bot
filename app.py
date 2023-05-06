@@ -232,7 +232,7 @@ def compute_depth_percentages(_depth, _type):
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
         return BuyDepth(round(_dc.bid_price / _by, 10),
-                        (round(_dc.p1[0] / _by), round(_dc.p1[1] / _by)),
+                        (round(_dc.p1[0] / _by, 1), round(_dc.p1[1] / _by)),
                         (round(_dc.p2[0] / _by), round(_dc.p2[1] / _by)),
                         (round(_dc.p3[0] / _by), round(_dc.p3[1] / _by)),
                         (round(_dc.p4[0] / _by), round(_dc.p4[1] / _by)),
