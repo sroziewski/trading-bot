@@ -6,7 +6,7 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import binance_obj, get_time, logger_global
+from library import binance_obj, get_time, logger_global, get_binance_obj, lib_initialize
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
@@ -67,14 +67,14 @@ class DepthMsg(object):
 
     def round(self):
         if len(self.bids) > 0:
-            _p_tmp = self.bids[0]
+            _p_tmp = self.bids[0][0]
             if _p_tmp > 100:
                 self.bids = list(map(lambda x: round(x, 0)))
             elif _p_tmp > 10:
                 self.bids = list(map(lambda x: round(x, 1)))
 
         if len(self.asks) > 0:
-            _p_tmp = self.asks[0]
+            _p_tmp = self.asks[0][0]
             if _p_tmp > 100:
                 self.asks = list(map(lambda x: round(x, 0)))
             elif _p_tmp > 10:
@@ -304,6 +304,7 @@ types = {}
 def process_depth_socket_message(_msg):
     try:
         _depth_msg = DepthMsg(_msg)
+        _depth_msg.round()
     except Exception:
         return
     while _depth_msg.market in depths_locker:
@@ -442,14 +443,14 @@ def _do_depth_scan(_dc: DepthCrawl):
     depths1m[_dc.market]['bd'] = []
     depths1m[_dc.market]['sd'] = []
     types[_dc.market] = _dc.type
-    _bm = BinanceSocketManager(binance_obj.client)
+    _bm = BinanceSocketManager(get_binance_obj().client)
     _conn_key = _bm.start_depth_socket(_dc.market.upper(), process_depth_socket_message)
     _bm.start()
 
 
 def manage_depth_scan(_dc):
     _crawler = threading.Thread(target=_do_depth_scan, args=(_dc,),
-                                name='_do_depth_scan : {}'.format("ABC"))
+                                name='_do_depth_scan : {}'.format(_dc.market))
     _crawler.start()
 
 
@@ -467,6 +468,7 @@ def manage_schedule():
 
 
 def _stuff():
+    lib_initialize()
     filename = "Binance-OrderBook-Scanner"
     logger = setup_logger(filename)
     schedule.every(1).minutes.do(do_freeze)
@@ -490,6 +492,7 @@ def _stuff():
         _dc = DepthCrawl(_market, usdt_markets_collection.name)
         depth_crawl_dict[_market] = _dc
         manage_depth_scan(_dc)
+        break
 
 
 if __name__ == "__main__":

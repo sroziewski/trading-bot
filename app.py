@@ -7,7 +7,7 @@ from flask_caching import Cache
 from config import config
 
 flask_config = {
-    "DEBUG": True,          # some Flask specific configs
+    "DEBUG": True,  # some Flask specific configs
     "CACHE_TYPE": "SimpleCache",  # Flask-Caching related configs
     "CACHE_DEFAULT_TIMEOUT": 30
 }
@@ -30,7 +30,6 @@ from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
 from mongodb import mongo_client
-
 
 lib_initialize()
 depth_crawl_dict = {}
@@ -87,15 +86,14 @@ class DepthMsg(object):
 
     def round(self):
         if len(self.bids) > 0:
-            logger_global[0].error("AAAAAAAAAAAAAAAAAAAAAAAAAA")
-            _p_tmp = self.bids[0]
+            _p_tmp = self.bids[0][0]  # price
             if _p_tmp > 100:
                 self.bids = list(map(lambda x: round(x, 0)))
             elif _p_tmp > 10:
                 self.bids = list(map(lambda x: round(x, 1)))
 
         if len(self.asks) > 0:
-            _p_tmp = self.asks[0]
+            _p_tmp = self.asks[0][0]  # price
             if _p_tmp > 100:
                 self.asks = list(map(lambda x: round(x, 0)))
             elif _p_tmp > 10:
@@ -316,6 +314,7 @@ def add_dc(_dc1, _dc2):
                          (_dc1.p65[0] + _dc2.p65[0], _dc1.p65[1] + _dc2.p65[1]),
                          (_dc1.p70[0] + _dc2.p70[0], _dc1.p70[1] + _dc2.p70[1]))
 
+
 depths = {}
 depths1m = {}
 depths_locker = {}
@@ -373,7 +372,7 @@ def do_freeze():
             _sec = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-1])
             _min = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-2])
             _t0_quarter = int(_min / 15)
-            _t1_quarter = int(int(depths1m[_market_c]['bd'][-1].time_str.split(":")[-2])/15)
+            _t1_quarter = int(int(depths1m[_market_c]['bd'][-1].time_str.split(":")[-2]) / 15)
 
             _t0_5m = int(_min / 5)
             _t1_5m = int(int(depths1m[_market_c]['bd'][-1].time_str.split(":")[-2]) / 5)
@@ -382,24 +381,25 @@ def do_freeze():
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _sdt_5m = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt_5m.timestamp - (_min - _t0_5m * 5) * 60 - _sec
-                _bds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2])/5),
-                                     depths1m[_market_c]['bd']))
-                _sds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2])/5),
-                                     depths1m[_market_c]['sd']))
+                _bds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2]) / 5),
+                                        depths1m[_market_c]['bd']))
+                _sds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2]) / 5),
+                                        depths1m[_market_c]['sd']))
                 _bd_5m = reduce(add_dc, _bds_f_5m)
                 _sd_5m = reduce(add_dc, _sds_f_5m)
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
                 _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
-                if not any(filter(lambda x: x.timestamp == _current_timestamp, depth_crawl_dict[_market_c].buy_depth_5m)):
+                if not any(
+                        filter(lambda x: x.timestamp == _current_timestamp, depth_crawl_dict[_market_c].buy_depth_5m)):
                     depth_crawl_dict[_market_c].add_depths_5m(_bd_5m, _sd_5m, _market_c)
                 else:
                     _tmts_tmp = list(map(lambda x: x.timestamp, depths1m[_market_c]['bd']))
                     _tmts = []
                     for __ts in _tmts_tmp:
                         __s = int(get_time(__ts).split(":")[-1])
-                        _tmts.append(__ts-__s)
+                        _tmts.append(__ts - __s)
                     _bd_5_l = depth_crawl_dict[_market_c].buy_depth_5m[-1]
                     _next_5m_tmstmp = int(_bd_5_l.timestamp + 5 * 60)
                     try:
@@ -438,8 +438,10 @@ def do_freeze():
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _sdt_5m = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt_5m.timestamp - _hour * 60 * 60 - _min * 60 - _sec
-                _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
-                _sds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
+                _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]),
+                                        depth_crawl_dict[_market_c].buy_depth_15m))
+                _sds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]),
+                                        depth_crawl_dict[_market_c].sell_depth_15m))
                 _bd_5m = reduce(add_dc, _bds_f_5m)
                 _sd_5m = reduce(add_dc, _sds_f_5m)
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
@@ -471,7 +473,7 @@ def _do_depth_scan(_dc: DepthCrawl):
 
 def manage_depth_scan(_dc):
     _crawler = threading.Thread(target=_do_depth_scan, args=(_dc,),
-                                name='_do_depth_scan : {}'.format("ABC"))
+                                name='_do_depth_scan : {}'.format(_dc.market))
     _crawler.start()
 
 
@@ -521,7 +523,6 @@ if __name__ == "app":
     _stuff("btc")
     _stuff("busd")
 
-
 flask_token = config.get_parameter('flask_token')
 
 
@@ -535,4 +536,3 @@ def markets():
 @cache.cached(timeout=30)
 def market(market):
     return jsonify(json.dumps(depth_crawl_dict[market], default=lambda o: o.__dict__, sort_keys=True))
-
