@@ -183,6 +183,7 @@ def handle_volume_containers(_message):
 
     if len(_merged) == 1:
         _entry_quarter = int(int(_merged[0].start_time) / 15)
+        # logger.info("quarter: {} _entry_quarter: {}".format(volumes15[_market]['quarter'], _entry_quarter))
         _rc = _merged[0]
         set_rc_timestamp(_entry_quarter, _rc, _server_time, _server_time_str)
 
@@ -195,6 +196,7 @@ def handle_volume_containers(_message):
     if len(_merged) == 2:
         _entry_quarter_0 = int(int(_merged[0].start_time) / 15)
         _entry_quarter_1 = int(int(_merged[1].start_time) / 15)
+        # logger.info("quarter: {} _entry_quarter_0: {} _entry_quarter_1: {}".format(volumes15[_market]['quarter'], _entry_quarter_0, _entry_quarter_1))
         if _entry_quarter_0 == volumes15[_market]['quarter'] and _entry_quarter_1 == volumes15[_market]['quarter']:
             _rc: VolumeContainer = add_volume_containers(_merged[0], _merged[1])
             set_rc_timestamp(_entry_quarter_0, _rc, _server_time, _server_time_str)
@@ -258,15 +260,15 @@ def handle_volume_containers(_message):
         if _market not in initialization:
             initialization[_market] = 1
     del volumes[_market]
-    if _stop:
+    if _stop >= 0:
         volumes[_market] = {}
         for _el in _merged[_stop:]:
             volumes[_market][_el.start_time] = [_el]
     del locker[_market]
-    try:
-        _rc.print()
-    except AttributeError:
-        i = 1
+    # try:
+    #     _rc.print()
+    # except AttributeError:
+    #     i = 1
     _merged.clear()
 
 
@@ -313,8 +315,8 @@ def process_volume():
             if _mv.quantity == 0 or _tv.quantity == 0:
                 sdf=1
 
-            logger.info("maker {} : {}".format(get_time_from_binance_tmstmp(_mv.timestamp), _mv.quantity))
-            logger.info("taker {} : {}".format(get_time_from_binance_tmstmp(_tv.timestamp), _tv.quantity))
+            # logger.info("maker {} : {}".format(get_time_from_binance_tmstmp(_mv.timestamp), _mv.quantity))
+            # logger.info("taker {} : {}".format(get_time_from_binance_tmstmp(_tv.timestamp), _tv.quantity))
 
             if _k not in volumes[_market]:
                 try:
