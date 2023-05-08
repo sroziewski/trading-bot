@@ -179,6 +179,8 @@ def handle_volume_containers(_message):
     _stop = None
     _message['done'] = True
 
+    _to_add = True
+
     if len(_merged) == 1:
         _entry_quarter = int(int(_merged[0].start_time) / 15)
         _rc = _merged[0]
@@ -187,6 +189,7 @@ def handle_volume_containers(_message):
         if _entry_quarter != volumes15[_market]['quarter']:
             _stop = 0
             _rc = volumes15[_market]['vc']
+            _to_add = False
             _persist = True
 
     if len(_merged) == 2:
@@ -203,6 +206,7 @@ def handle_volume_containers(_message):
         if _entry_quarter_0 != volumes15[_market]['quarter'] and _entry_quarter_1 != volumes15[_market]['quarter']:
             _stop = 0
             _rc = volumes15[_market]['vc']
+            _to_add = False
             _persist = True
         if _entry_quarter_0 != volumes15[_market]['quarter'] and _entry_quarter_1 == volumes15[_market]['quarter']:  #  a new quarter (not persisting)
             _rc = _merged[1]
@@ -229,6 +233,7 @@ def handle_volume_containers(_message):
         if _entry_quarter_0 != volumes15[_market]['quarter'] and _entry_quarter_1 != volumes15[_market]['quarter'] and _entry_quarter_2 != volumes15[_market]['quarter']:
             _stop = 0
             _rc = volumes15[_market]['vc']
+            _to_add = False
             _persist = True
         if _entry_quarter_0 != volumes15[_market]['quarter'] and _entry_quarter_1 == volumes15[_market]['quarter'] and _entry_quarter_2 == volumes15[_market]['quarter']:
             _rc: VolumeContainer = add_volume_containers(_merged[1], _merged[2])
@@ -240,8 +245,9 @@ def handle_volume_containers(_message):
     if volumes15[_market]['vc'] is None:
         volumes15[_market]['vc'] = _rc
     else:
-        _rc = add_volume_containers(volumes15[_market]['vc'], _rc)
-        volumes15[_market]['vc'] = _rc
+        if _to_add:
+            _rc = add_volume_containers(volumes15[_market]['vc'], _rc)
+            volumes15[_market]['vc'] = _rc
 
     if _persist:
         try:
@@ -313,7 +319,7 @@ def process_volume():
             if _k not in volumes[_market]:
                 try:
                     volumes[_market][_k] = [VolumeContainer(_market, _volume_ticker, _k, _mv, _tv)]
-                except Exception:
+                except Exception as e:
                     pass
             else:
                 volumes[_market][_k].append(VolumeContainer(_market, _volume_ticker, _k, _mv, _tv))
