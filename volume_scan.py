@@ -7,7 +7,6 @@ import schedule
 from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
-from more_itertools import peekable
 
 from library import DecimalCodec, TradeMsg, get_time_from_binance_tmstmp, get_time
 from library import MakerVolumeUnit, TakerVolumeUnit, setup_logger, VolumeContainer, add_volume_containers, \
@@ -437,14 +436,6 @@ for _market_s in market_info_list:  # inf loop needed here
     manage_volume_scan(_vc)
 
 # manage_volume_scan(VolumeCrawl("OMGUSDT"))
-# manage_volume_scan(VolumeCrawl("ETHUSDT"))
-# manage_volume_scan(VolumeCrawl("LTCUSDT"))
-# manage_volume_scan(VolumeCrawl("BNBUSDT"))
-# manage_volume_scan(VolumeCrawl("OMGUSDT"))
-# manage_volume_scan(VolumeCrawl("HOOKUSDT"))
-# manage_volume_scan(VolumeCrawl("NEARUSDT"))
-# manage_volume_scan(VolumeCrawl("SANDUSDT"))
-# manage_volume_scan(VolumeCrawl("WAXPUSDT"))
 
 schedule.every(1).minutes.do(process_volume)
 
