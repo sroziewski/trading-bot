@@ -260,7 +260,7 @@ def handle_volume_containers(_message):
         if _market not in initialization:
             initialization[_market] = 1
     del volumes[_market]
-    if _stop >= 0:
+    if str(_stop) != "None" and _stop >= 0:
         volumes[_market] = {}
         for _el in _merged[_stop:]:
             volumes[_market][_el.start_time] = [_el]
@@ -302,7 +302,7 @@ def process_volume():
         if _market not in volumes:
             volumes[_market] = {}
         for _k, _v in _aggs.items():
-            logger.info("_k: {}".format(_k))
+            # logger.info("_k: {}".format(_k))
             _maker_volume = filter(lambda x: x.maker, _v)
             _taker_volume = filter(lambda x: x.taker, _v)
             _mv = MakerVolumeUnit(_maker_volume)
