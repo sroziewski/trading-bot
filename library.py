@@ -4006,6 +4006,9 @@ class VolumeUnit(object):
         if _ii > 0:
             self.mean_price = round(self.mean_price / _ii, 8)
 
+        if self.mean_price + 0.02 < self.avg_price:
+            kk =1
+
 
 class VolumeContainer(object):
     def __init__(self, _market, _ticker, _start_time, _maker_volume : VolumeUnit, _taker_volume : VolumeUnit) -> None:
@@ -4095,7 +4098,7 @@ def add_volume_units(_a: VolumeUnit, _b: VolumeUnit):
     _vu.l20 = _a.l20 + _b.l20
     _vu.l50 = _a.l50 + _b.l50
     _vu.l100 = _a.l100 + _b.l100
-    _vu.mean_price = round((_a.mean_price + _b.mean_price)/2, 8)
+    _vu.mean_price = round((_a.mean_price + _b.mean_price)/2, 8) if _a.mean_price > 0 and _b.mean_price > 0 else max(_a.mean_price, _b.mean_price)
     _vu.base_volume = round(_a.base_volume + _b.base_volume, 8)
     _vu.quantity = round(_a.quantity + _b.quantity, 8)
     _vu.timestamp = _a.timestamp
@@ -4106,7 +4109,7 @@ def add_volume_units(_a: VolumeUnit, _b: VolumeUnit):
 
 class MakerVolumeUnit(VolumeUnit):
     def __init__(self, _trade_msg_list):
-        super().__init__(_trade_msg_list)
+        super().__init__(list(_trade_msg_list))
 
 
 class TakerVolumeUnit(VolumeUnit):
