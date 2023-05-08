@@ -90,7 +90,7 @@ def handle_volume_container(_vc: VolumeContainer):
     try:
         _vc.avg_weighted_maker_price = _vc.maker_volume.avg_price
         _vc.avg_weighted_taker_price = _vc.taker_volume.avg_price
-        _vc.mean_price = (_vc.maker_volume.mean_price + _vc.taker_volume.mean_price) / 2
+        _vc.mean_price = (_vc.maker_volume.mean_price + _vc.taker_volume.mean_price) / 2 if _vc.maker_volume.mean_price > 0 and _vc.taker_volume.mean_price > 0 else max(_vc.maker_volume.mean_price, _vc.taker_volume.mean_price)
         _vc.total_quantity = _vc.maker_volume.quantity + _vc.taker_volume.quantity
         _vc.total_base_volume = _vc.maker_volume.base_volume + _vc.taker_volume.base_volume
         _vc.avg_price = round(_vc.total_base_volume / _vc.total_quantity, 8) if _vc.total_quantity > 0.0 else 0.0
@@ -204,6 +204,9 @@ def handle_volume_containers(_message):
             _stop = 0
             _rc = volumes15[_market]['vc']
             _persist = True
+        if _entry_quarter_0 != volumes15[_market]['quarter'] and _entry_quarter_1 == volumes15[_market]['quarter']:  #  a new quarter (not persisting)
+            _rc = _merged[1]
+            set_rc_timestamp(_entry_quarter_1, _rc, _server_time, _server_time_str)
 
     if len(_merged) == 3:
         _entry_quarter_0 = int(int(_merged[0].start_time) / 15)
@@ -227,6 +230,12 @@ def handle_volume_containers(_message):
             _stop = 0
             _rc = volumes15[_market]['vc']
             _persist = True
+        if _entry_quarter_0 != volumes15[_market]['quarter'] and _entry_quarter_1 == volumes15[_market]['quarter'] and _entry_quarter_2 == volumes15[_market]['quarter']:
+            _rc: VolumeContainer = add_volume_containers(_merged[1], _merged[2])
+            set_rc_timestamp(_entry_quarter_1, _rc, _server_time, _server_time_str)
+        if _entry_quarter_0 != volumes15[_market]['quarter'] and _entry_quarter_1 != volumes15[_market]['quarter'] and _entry_quarter_2 == volumes15[_market]['quarter']:
+            _rc = _merged[2]
+            set_rc_timestamp(_entry_quarter_2, _rc, _server_time, _server_time_str)
 
     if volumes15[_market]['vc'] is None:
         volumes15[_market]['vc'] = _rc
@@ -248,11 +257,11 @@ def handle_volume_containers(_message):
         for _el in _merged[_stop:]:
             volumes[_market][_el.start_time] = [_el]
     del locker[_market]
-    _merged.clear()
     try:
         _rc.print()
     except AttributeError:
         i = 1
+    _merged.clear()
 
 
 def set_rc_timestamp(_entry_quarter_0, _rc, _server_time, _server_time_str):
@@ -285,6 +294,7 @@ def process_volume():
         if _market not in volumes:
             volumes[_market] = {}
         for _k, _v in _aggs.items():
+            logger.info("_k: {}".format(_k))
             _maker_volume = filter(lambda x: x.maker, _v)
             _taker_volume = filter(lambda x: x.taker, _v)
             _mv = MakerVolumeUnit(_maker_volume)
@@ -293,6 +303,9 @@ def process_volume():
                 _mv.timestamp = _tv.timestamp
             if _tv.timestamp == 0:
                 _tv.timestamp = _mv.timestamp
+
+            if _mv.quantity == 0 or _tv.quantity == 0:
+                sdf=1
 
             logger.info("maker {} : {}".format(get_time_from_binance_tmstmp(_mv.timestamp), _mv.quantity))
             logger.info("taker {} : {}".format(get_time_from_binance_tmstmp(_tv.timestamp), _tv.quantity))
