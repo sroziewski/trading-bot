@@ -8,7 +8,7 @@ from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from library import DecimalCodec, TradeMsg, get_time_from_binance_tmstmp, get_time
+from library import DecimalCodec, TradeMsg, get_time_from_binance_tmstmp, get_time, round_price
 from library import MakerVolumeUnit, TakerVolumeUnit, setup_logger, VolumeContainer, add_volume_containers, \
     lib_initialize, get_binance_obj
 from mongodb import mongo_client
@@ -367,15 +367,15 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
         'start_time_str': _vc.start_time_str,
         'total_base_volume': _vc.total_base_volume,
         'total_quantity': _vc.total_quantity,
-        'avg_weighted_maker_price': _vc.avg_weighted_maker_price,
-        'avg_weighted_taker_price': _vc.avg_weighted_taker_price,
-        'avg_price': _vc.avg_price,
-        'mean_price': _vc.mean_price,
+        'avg_weighted_maker_price': round_price(_vc.avg_weighted_maker_price),
+        'avg_weighted_taker_price': round_price(_vc.avg_weighted_taker_price),
+        'avg_price': round_price(_vc.avg_price),
+        'mean_price': round_price(_vc.mean_price),
         'maker_volume': {
             'base_volume': _vc.maker_volume.base_volume,
             'quantity': _vc.maker_volume.quantity,
-            'avg_price': _vc.maker_volume.avg_price,
-            'mean_price': _vc.maker_volume.mean_price,
+            'avg_price': round_price(_vc.maker_volume.avg_price),
+            'mean_price': round_price(_vc.maker_volume.mean_price),
             '5k': _vc.maker_volume.l00,
             '10k': _vc.maker_volume.l01,
             '23_6k': _vc.maker_volume.l02,
@@ -398,8 +398,8 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
         'taker_volume': {
             'base_volume': _vc.taker_volume.base_volume,
             'quantity': _vc.taker_volume.quantity,
-            'avg_price': _vc.taker_volume.avg_price,
-            'mean_price': _vc.taker_volume.mean_price,
+            'avg_price': round_price(_vc.taker_volume.avg_price),
+            'mean_price': round_price(_vc.taker_volume.mean_price),
             '5k': _vc.taker_volume.l00,
             '10k': _vc.taker_volume.l01,
             '23_6k': _vc.taker_volume.l02,
