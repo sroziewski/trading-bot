@@ -4064,6 +4064,8 @@ class VolumeContainer(object):
         self.total_quantity = round(self.total_quantity)
         self.maker_volume.base_volume = round(self.maker_volume.base_volume)
         self.maker_volume.quantity = round(self.maker_volume.quantity)
+        self.taker_volume.base_volume = round(self.taker_volume.base_volume)
+        self.taker_volume.quantity = round(self.taker_volume.quantity)
 
 
 def add_volume_containers(_c1: VolumeContainer, _c2: VolumeContainer):
