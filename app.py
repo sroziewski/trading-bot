@@ -379,8 +379,11 @@ def do_freeze():
                                         depths1m[_market_c]['sd']))
                 _bd_5m = reduce(add_dc, _bds_f_5m)
                 _sd_5m = reduce(add_dc, _sds_f_5m)
-                _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
-                _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
+                try:
+                    _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
+                    _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
+                except Exception:
+                    return
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
                 if not any(
@@ -522,12 +525,12 @@ def check_scanner():
         _market = "{}{}".format(_market_s['name'], usdt_markets_collection.name)
         _dc = DepthCrawl(_market, usdt_markets_collection.name)
         _now = datetime.datetime.now().timestamp()
-        if _market in depth_crawl_dict:
+        if _market in depth_crawl_dict and len(depth_crawl_dict[_market].buy_depth_15m) > 0:
             if _now - depth_crawl_dict[_market].buy_depth_15m[-1].timestamp > 16 * 60:
                 depth_crawl_dict[_market] = _dc
                 manage_depth_scan(_dc)
                 logger_global[0].warning("Market {} restarted...".format(_market))
-        else:
+        elif _market not in depth_crawl_dict:
             depth_crawl_dict[_market] = _dc
             manage_depth_scan(_dc)
             logger_global[0].warning("Market {} restarted...".format(_market))
