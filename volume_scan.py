@@ -432,10 +432,10 @@ restart = {}
 
 
 def get_market_info_list(_l):
-    if int(part) in [1, 2]:
+    if part != "all" and int(part) in [1, 2]:
         return np.array_split(_l, 2)[int(part) - 1]
-    else:
-        return None
+    elif part == "all":
+        return _l
 
 
 def check_markets():
@@ -488,9 +488,9 @@ def handle_init():
     __ii = 1
     for _market_s in _market_info_list:  # inf loop needed here
         _market = "{}{}".format(_market_s['name'], market_type).upper()
-        db_volume.drop_collection(_market.lower())
-        # _vc = VolumeCrawl(_market)
-        # manage_volume_scan(_vc)
+        # db_volume.drop_collection(_market.lower())
+        _vc = VolumeCrawl(_market)
+        manage_volume_scan(_vc)
         logger.info("{} {} scanning...".format(__ii, _market))
         __ii += 1
 
@@ -498,8 +498,8 @@ def handle_init():
 handle_init()
 
 schedule.every(1).minutes.do(process_volume)
-schedule.every(60).minutes.do(check_markets)
-schedule.every(21).minutes.do(check_markets_scan)
+# schedule.every(60).minutes.do(check_markets)
+# schedule.every(21).minutes.do(check_markets_scan)
 
 while True:
     # Checks whether a scheduled task
