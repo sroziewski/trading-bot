@@ -446,9 +446,6 @@ market_info_list = [e for e in market_info_cursor]
 
 lib_initialize()
 
-
-check_markets()
-
 for _market_s in market_info_list:  # inf loop needed here
     _vc = VolumeCrawl("{}{}".format(_market_s['name'], market_type).upper())
     manage_volume_scan(_vc)
