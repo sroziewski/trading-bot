@@ -7,8 +7,9 @@ import schedule
 from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
+from pymongo import DESCENDING
 
-from library import DecimalCodec, TradeMsg, get_time_from_binance_tmstmp, get_time, round_price
+from library import DecimalCodec, TradeMsg, get_time_from_binance_tmstmp, get_time, round_price, round_price_s
 from library import MakerVolumeUnit, TakerVolumeUnit, setup_logger, VolumeContainer, add_volume_containers, \
     lib_initialize, get_binance_obj
 from mongodb import mongo_client
@@ -347,7 +348,6 @@ def aggregate_by_minute(_list):
 def _do_volume_scan(_vc: VolumeCrawl):
     logger.info("Start scanning market {}".format(_vc.market))
     trades[_vc.market] = []
-    last_tmstmp = datetime.datetime.now().timestamp()
     _bm = BinanceSocketManager(get_binance_obj().client)
     _conn_key = _bm.start_aggtrade_socket(_vc.market, process_trade_socket_message)
     _bm.start()
@@ -367,15 +367,15 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
         'start_time_str': _vc.start_time_str,
         'total_base_volume': _vc.total_base_volume,
         'total_quantity': _vc.total_quantity,
-        'avg_weighted_maker_price': round_price(_vc.avg_weighted_maker_price),
-        'avg_weighted_taker_price': round_price(_vc.avg_weighted_taker_price),
-        'avg_price': round_price(_vc.avg_price),
-        'mean_price': round_price(_vc.mean_price),
+        'avg_weighted_maker_price': round_price_s(_vc.avg_weighted_maker_price),
+        'avg_weighted_taker_price': round_price_s(_vc.avg_weighted_taker_price),
+        'avg_price': round_price_s(_vc.avg_price),
+        'mean_price': round_price_s(_vc.mean_price),
         'maker_volume': {
             'base_volume': _vc.maker_volume.base_volume,
             'quantity': _vc.maker_volume.quantity,
-            'avg_price': round_price(_vc.maker_volume.avg_price),
-            'mean_price': round_price(_vc.maker_volume.mean_price),
+            'avg_price': round_price_s(_vc.maker_volume.avg_price),
+            'mean_price': round_price_s(_vc.maker_volume.mean_price),
             '5k': _vc.maker_volume.l00,
             '10k': _vc.maker_volume.l01,
             '23_6k': _vc.maker_volume.l02,
@@ -398,8 +398,8 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
         'taker_volume': {
             'base_volume': _vc.taker_volume.base_volume,
             'quantity': _vc.taker_volume.quantity,
-            'avg_price': round_price(_vc.taker_volume.avg_price),
-            'mean_price': round_price(_vc.taker_volume.mean_price),
+            'avg_price': round_price_s(_vc.taker_volume.avg_price),
+            'mean_price': round_price_s(_vc.taker_volume.mean_price),
             '5k': _vc.taker_volume.l00,
             '10k': _vc.taker_volume.l01,
             '23_6k': _vc.taker_volume.l02,
@@ -424,12 +424,30 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
 
 market_type = "usdt"
 
+
+def check_markets():
+    _el = usdt_markets_collection.find_one(sort=[('_id', DESCENDING)])
+    _market_name_tmp = "{}{}".format(_el['name'], market_type).upper()
+    if _market_name_tmp not in trades:
+        _market_info_cursor = usdt_markets_collection.find()
+        _market_info_list = [e for e in _market_info_cursor]
+        for __market_s in _market_info_list:
+            _market_name = "{}{}".format(__market_s['name'], market_type).upper()
+            if _market_name not in trades:
+                __vc = VolumeCrawl(_market_name)
+                manage_volume_scan(__vc)
+                logger.info("New market: {} added to volume scan...".format(_market_name))
+
+
 db_markets_info = mongo_client.markets_info
 usdt_markets_collection = db_markets_info.get_collection(market_type, codec_options=codec_options)
 market_info_cursor = usdt_markets_collection.find()
 market_info_list = [e for e in market_info_cursor]
 
 lib_initialize()
+
+
+check_markets()
 
 for _market_s in market_info_list:  # inf loop needed here
     _vc = VolumeCrawl("{}{}".format(_market_s['name'], market_type).upper())
@@ -438,6 +456,7 @@ for _market_s in market_info_list:  # inf loop needed here
 # manage_volume_scan(VolumeCrawl("OMGUSDT"))
 
 schedule.every(1).minutes.do(process_volume)
+schedule.every(10).minutes.do(check_markets)
 
 while True:
     # Checks whether a scheduled task

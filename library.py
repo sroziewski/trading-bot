@@ -1805,6 +1805,27 @@ def round_price(_p, _s=0):
         _r = _p
     return _r
 
+
+def round_price_s(_p):
+    if _p > 1000:
+        _r = round(_p, 1)
+    elif _p > 100:
+        _r = round(_p, 2)
+    elif _p > 10:
+        _r = round(_p, 3)
+    elif _p > 1:
+        _r = round(_p, 4)
+    elif _p > 0.1:
+        _r = round(_p, 5)
+    elif _p > 0.01:
+        _r = round(_p, 6)
+    elif _p > 0.001:
+        _r = round(_p, 7)
+    else:
+        _r = _p
+    return _r
+
+
 def adjust_kucoin_order_size(_asset, _value):
     return round_float_price(_value, _asset.kucoin_increment)
 
