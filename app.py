@@ -315,8 +315,13 @@ types = {}
 
 
 def process_depth_socket_message(_msg):
-    _depth_msg = DepthMsg(_msg)
-    _depth_msg.round()
+    try:
+        _depth_msg = DepthMsg(_msg)
+        _depth_msg.round()
+    except Exception:
+        logger_global[0].error(_msg)
+        return
+
     while _depth_msg.market in depths_locker:
         sleep(1)
     for _ask in _depth_msg.asks:
@@ -541,7 +546,7 @@ def _stuff(_market_type):
     logger = setup_logger(filename)
     logger.info("Starting Order Book Depth Crawl...")
     schedule.every(1).minutes.do(do_freeze)
-    schedule.every(12).minutes.do(check_scanner)
+    # schedule.every(12).minutes.do(check_scanner)
     manage_schedule()
 
     usdt_markets_collection = db_markets_info.get_collection(_market_type, codec_options=codec_options)

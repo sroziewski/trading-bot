@@ -488,8 +488,9 @@ def handle_init():
     __ii = 1
     for _market_s in _market_info_list:  # inf loop needed here
         _market = "{}{}".format(_market_s['name'], market_type).upper()
-        _vc = VolumeCrawl(_market)
-        manage_volume_scan(_vc)
+        db_volume.drop_collection(_market.lower())
+        # _vc = VolumeCrawl(_market)
+        # manage_volume_scan(_vc)
         logger.info("{} {} scanning...".format(__ii, _market))
         __ii += 1
 
