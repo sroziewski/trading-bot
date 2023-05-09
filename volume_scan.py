@@ -1,8 +1,10 @@
 import datetime
 import functools
+import sys
 import threading
 from time import sleep
 
+import numpy as np
 import schedule
 from binance.websockets import BinanceSocketManager
 from bson import CodecOptions
@@ -19,8 +21,9 @@ volumes = {}
 locker = {}
 volumes15 = {}
 initialization = {}
+part = sys.argv[1]  # 1, 2
 
-logger = setup_logger("Binance-Volume-Scanner")
+logger = setup_logger("Binance-Volume-Scanner-{}".format(part))
 
 db_volume = mongo_client.volume
 
@@ -428,6 +431,13 @@ usdt_markets_collection = db_markets_info.get_collection(market_type, codec_opti
 restart = {}
 
 
+def get_market_info_list(_l):
+    if int(part) in [1, 2]:
+        return np.array_split(_l, 2)[int(part) - 1]
+    else:
+        return None
+
+
 def check_markets():
     _el = usdt_markets_collection.find_one(sort=[('_id', DESCENDING)])
     _market_name_tmp = "{}{}".format(_el['name'], market_type).upper()
@@ -472,7 +482,8 @@ def check_markets_scan():
 
 def handle_init():
     _market_info_cursor = usdt_markets_collection.find()
-    _market_info_list = [e for e in _market_info_cursor]
+    _market_info_list = get_market_info_list([e for e in _market_info_cursor])
+
     lib_initialize()
     __ii = 1
     for _market_s in _market_info_list:  # inf loop needed here
