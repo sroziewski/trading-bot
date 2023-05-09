@@ -454,7 +454,7 @@ def check_markets():
 
 def check_markets_scan():
     _market_info_cursor = usdt_markets_collection.find()
-    _market_info_list = [e for e in _market_info_cursor]
+    _market_info_list = get_market_info_list([e for e in _market_info_cursor])
     for __market_s in _market_info_list:
         _market_name = "{}{}".format(__market_s['name'], market_type).lower()
         if _market_name in restart:
