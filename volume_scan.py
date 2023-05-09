@@ -425,6 +425,7 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
 market_type = "usdt"
 db_markets_info = mongo_client.markets_info
 usdt_markets_collection = db_markets_info.get_collection(market_type, codec_options=codec_options)
+restart = {}
 
 
 def check_markets():
@@ -441,19 +442,52 @@ def check_markets():
                 logger.info("New market: {} added to volume scan...".format(_market_name))
 
 
+def check_markets_scan():
+    _market_info_cursor = usdt_markets_collection.find()
+    _market_info_list = [e for e in _market_info_cursor]
+    for __market_s in _market_info_list:
+        _market_name = "{}{}".format(__market_s['name'], market_type).lower()
+        if _market_name in restart:
+            sleep(16*60)
+        _market_collection_s = db_volume.get_collection(_market_name, codec_options=codec_options)
+        _el = _market_collection_s.find_one(sort=[('_id', DESCENDING)])
+        _now = datetime.datetime.now().timestamp()
+        if _el is None or _now - _el['start_time'] >= 30 * 60:
+            _market_name_up = _market_name.upper()
+            if _market_name_up in trades:
+                del trades[_market_name_up]
+            if _market_name_up in initialization:
+                del initialization[_market_name_up]
+            if _market_name_up in locker:
+                del locker[_market_name_up]
+            if _market_name_up in volumes15:
+                del volumes15[_market_name_up]
+            if _market_name_up in volumes:
+                del volumes[_market_name_up]
+            _vc = VolumeCrawl("{}".format(_market_name_up))
+            manage_volume_scan(_vc)
+            restart[_vc.market.lower()] = True
+            logger.warning("Market {} restarted...".format(_vc.market))
+
+
 def handle_init():
-    market_info_cursor = usdt_markets_collection.find()
-    market_info_list = [e for e in market_info_cursor]
+    _market_info_cursor = usdt_markets_collection.find()
+    _market_info_list = [e for e in _market_info_cursor]
     lib_initialize()
-    for _market_s in market_info_list:  # inf loop needed here
-        _vc = VolumeCrawl("{}{}".format(_market_s['name'], market_type).upper())
+    __ii = 1
+    for _market_s in _market_info_list:  # inf loop needed here
+        _market = "{}{}".format(_market_s['name'], market_type).upper()
+        _vc = VolumeCrawl(_market)
         manage_volume_scan(_vc)
+        logger.info("{} {} scanning...".format(__ii, _market))
+        __ii += 1
 
 
 handle_init()
 
 schedule.every(1).minutes.do(process_volume)
-schedule.every(10).minutes.do(check_markets)
+schedule.every(60).minutes.do(check_markets)
+schedule.every(21).minutes.do(check_markets_scan)
 
 while True:
     # Checks whether a scheduled task

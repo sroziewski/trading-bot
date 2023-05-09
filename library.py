@@ -4027,9 +4027,6 @@ class VolumeUnit(object):
         if _ii > 0:
             self.mean_price = round(self.mean_price / _ii, 8)
 
-        if self.mean_price + 0.02 < self.avg_price:
-            kk =1
-
 
 class VolumeContainer(object):
     def __init__(self, _market, _ticker, _start_time, _maker_volume : VolumeUnit, _taker_volume : VolumeUnit) -> None:
