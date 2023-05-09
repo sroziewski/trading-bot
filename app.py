@@ -503,9 +503,34 @@ def run_schedule():
         sleep(1)
 
 
+db_markets_info = mongo_client.markets_info
+decimal_codec = DecimalCodec()
+type_registry = TypeRegistry([decimal_codec])
+codec_options = CodecOptions(type_registry=type_registry)
+
+
 def manage_schedule():
     _thread = threading.Thread(target=run_schedule, name='manage_depth_crawl')
     _thread.start()
+
+
+def check_scanner():
+    usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
+    _market_info_cursor = usdt_markets_collection.find()
+    _market_info_list = [e for e in _market_info_cursor]
+    for _market_s in _market_info_list:
+        _market = "{}{}".format(_market_s['name'], usdt_markets_collection.name)
+        _dc = DepthCrawl(_market, usdt_markets_collection.name)
+        _now = datetime.datetime.now().timestamp()
+        if _market in depth_crawl_dict:
+            if _now - depth_crawl_dict[_market].buy_depth_15m[-1].timestamp > 16 * 60:
+                depth_crawl_dict[_market] = _dc
+                manage_depth_scan(_dc)
+                logger_global[0].warning("Market {} restarted...".format(_market))
+        else:
+            depth_crawl_dict[_market] = _dc
+            manage_depth_scan(_dc)
+            logger_global[0].warning("Market {} restarted...".format(_market))
 
 
 def _stuff(_market_type):
@@ -513,13 +538,11 @@ def _stuff(_market_type):
     logger = setup_logger(filename)
     logger.info("Starting Order Book Depth Crawl...")
     schedule.every(1).minutes.do(do_freeze)
+    schedule.every(12).minutes.do(check_scanner)
     manage_schedule()
 
-    db_markets_info = mongo_client.markets_info
-    decimal_codec = DecimalCodec()
-    type_registry = TypeRegistry([decimal_codec])
-    codec_options = CodecOptions(type_registry=type_registry)
     usdt_markets_collection = db_markets_info.get_collection(_market_type, codec_options=codec_options)
+
     _market_info_cursor = usdt_markets_collection.find()
     _market_info_list = [e for e in _market_info_cursor]
 
