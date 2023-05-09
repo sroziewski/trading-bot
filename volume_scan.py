@@ -423,6 +423,8 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
 
 
 market_type = "usdt"
+db_markets_info = mongo_client.markets_info
+usdt_markets_collection = db_markets_info.get_collection(market_type, codec_options=codec_options)
 
 
 def check_markets():
@@ -439,18 +441,16 @@ def check_markets():
                 logger.info("New market: {} added to volume scan...".format(_market_name))
 
 
-db_markets_info = mongo_client.markets_info
-usdt_markets_collection = db_markets_info.get_collection(market_type, codec_options=codec_options)
-market_info_cursor = usdt_markets_collection.find()
-market_info_list = [e for e in market_info_cursor]
+def handle_init():
+    market_info_cursor = usdt_markets_collection.find()
+    market_info_list = [e for e in market_info_cursor]
+    lib_initialize()
+    for _market_s in market_info_list:  # inf loop needed here
+        _vc = VolumeCrawl("{}{}".format(_market_s['name'], market_type).upper())
+        manage_volume_scan(_vc)
 
-lib_initialize()
 
-for _market_s in market_info_list:  # inf loop needed here
-    _vc = VolumeCrawl("{}{}".format(_market_s['name'], market_type).upper())
-    manage_volume_scan(_vc)
-
-# manage_volume_scan(VolumeCrawl("OMGUSDT"))
+handle_init()
 
 schedule.every(1).minutes.do(process_volume)
 schedule.every(10).minutes.do(check_markets)
