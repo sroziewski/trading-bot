@@ -52,7 +52,7 @@ _market_info_list = [e for e in _market_info_cursor]
 
 for _market_s in _market_info_list:
     for _ticker in _market_s['tickers']:
-        if _ticker not in ['2d', '4d', '5d']:
+        if _ticker in ['5m']:
             _market = "{}{}".format(_market_s['name'], "usdt")
             manage_retrieve_scan(Retrieve(_market, _ticker))
             while len(threads.values()) > 5:
