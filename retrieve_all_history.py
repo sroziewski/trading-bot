@@ -4,11 +4,12 @@ from time import sleep
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from library import DecimalCodec, lib_initialize, try_get_klines, save_to_file
+from library import DecimalCodec, lib_initialize, try_get_klines, save_to_file, setup_logger
 from mongodb import mongo_client
 
 lib_initialize()
 
+logger = setup_logger("Binance-History-Retriever-{}".format(part))
 
 class Retrieve(object):
     def __init__(self, _market, _ticker):
@@ -23,7 +24,9 @@ def _do_retrieve(_retrieve: Retrieve):
     klines = try_get_klines("binance", _retrieve.market.upper(), _retrieve.ticker, "3000 days ago")
     _filename = "{}_{}".format(_retrieve.market, _retrieve.ticker)
     save_to_file("/home/0agent1/store/history-klines/usdt/", _filename, klines)
-    del threads["{}{}".format(_retrieve.market, _retrieve.ticker)]
+    _name = "{}{}".format(_retrieve.market, _retrieve.ticker)
+    logger.info(_name)
+    del threads[_name]
 
 
 def manage_retrieve_scan(_r: Retrieve):
