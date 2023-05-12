@@ -55,5 +55,5 @@ for _market_s in _market_info_list:
         if _ticker in ['5m']:
             _market = "{}{}".format(_market_s['name'], "usdt")
             manage_retrieve_scan(Retrieve(_market, _ticker))
-            while len(threads.values()) > 5:
+            while len(threads.values()) > 2:
                 sleep(1)
