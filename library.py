@@ -3950,10 +3950,14 @@ class VolumeUnit(object):
     def __init__(self, _trade_msg_list) -> None:
         self.base_volume = 0.0
         self.quantity = 0.0
-        self.l00 = 0
+        self.n100 = 0.0
+        self.n200 = 0.0
+        self.n500 = 0.0
+        self.n1000 = 0.0
+        self.n2000 = 0.0
+        self.n5000 = 0.0
         self.l01 = 0
         self.l02 = 0
-        self.l0 = 0
         self.l0236 = 0
         self.l0382 = 0
         self.l05 = 0
@@ -3985,41 +3989,49 @@ class VolumeUnit(object):
                 self.base_volume += _trade_msg.base_volume
                 self.quantity += _trade_msg.quantity
                 self.mean_price += _trade_msg.price
-            if 0.0 < _trade_msg.base_volume < 5000.0:  # between 0 and 5k USDT
-                self.l00 += 1
-            if 5000.0 < _trade_msg.base_volume < 10000.0:  # between 5k and 10k USDT
+            if 0.0 < _trade_msg.base_volume < 100.0:  # between 0 and 5k USDT
+                self.n100 += 1
+            if 100.0 <= _trade_msg.base_volume < 200.0:  # between 0 and 5k USDT
+                self.n200 += 1
+            if 200.0 <= _trade_msg.base_volume < 500.0:  # between 0 and 5k USDT
+                self.n500 += 1
+            if 500.0 <= _trade_msg.base_volume < 1000.0:  # between 0 and 5k USDT
+                self.n1000 += 1
+            if 1000.0 <= _trade_msg.base_volume < 2000.0:  # between 0 and 5k USDT
+                self.n2000 += 1
+            if 2000.0 <= _trade_msg.base_volume < 5000.0:  # between 0 and 5k USDT
+                self.n5000 += 1
+            if 5000.0 <= _trade_msg.base_volume < 10000.0:  # between 5k and 10k USDT
                 self.l01 += 1
-            if 10000.0 < _trade_msg.base_volume < 23600.0:  # between 10k and 23.6k USDT
+            if 10000.0 <= _trade_msg.base_volume < 23600.0:  # between 10k and 23.6k USDT
                 self.l02 += 1
-            if _trade_msg.base_volume < 23600.0:  # between 0 and 23.6k USDT
-                self.l0 += 1
-            elif 23600.0 < _trade_msg.base_volume < 38200.0:  # between 23.6k and 38.2k USDT
+            elif 23600.0 <= _trade_msg.base_volume < 38200.0:  # between 23.6k and 38.2k USDT
                 self.l0236 += 1
-            elif 38200.0 < _trade_msg.base_volume < 50000.0:  # between 38.2k and 50k USDT
+            elif 38200.0 <= _trade_msg.base_volume < 50000.0:  # between 38.2k and 50k USDT
                 self.l0382 += 1
-            elif 50000.0 < _trade_msg.base_volume < 61800.0:  # between 50k and 61.8k USDT
+            elif 50000.0 <= _trade_msg.base_volume < 61800.0:  # between 50k and 61.8k USDT
                 self.l05 += 1
-            elif 61800.0 < _trade_msg.base_volume < 78600.0:  # between 61.8k and 78.6k USDT
+            elif 61800.0 <= _trade_msg.base_volume < 78600.0:  # between 61.8k and 78.6k USDT
                 self.l0618 += 1
-            elif 78600.0 < _trade_msg.base_volume < 100000.0:  # between 78.6k and 100k USDT
+            elif 78600.0 <= _trade_msg.base_volume < 100000.0:  # between 78.6k and 100k USDT
                 self.l0786 += 1
-            elif 100000.0 < _trade_msg.base_volume < 138200.0:  # between 100k and 138k USDT
+            elif 100000.0 <= _trade_msg.base_volume < 138200.0:  # between 100k and 138k USDT
                 self.l1 += 1
-            elif 138200.0 < _trade_msg.base_volume < 162000.0:  # between 138k and 162k USDT
+            elif 138200.0 <= _trade_msg.base_volume < 162000.0:  # between 138k and 162k USDT
                 self.l1382 += 1
-            elif 162000.0 < _trade_msg.base_volume < 200000.0:  # between 162k and 200k USDT
+            elif 162000.0 <= _trade_msg.base_volume < 200000.0:  # between 162k and 200k USDT
                 self.l162 += 1
-            elif 200000.0 < _trade_msg.base_volume < 500000.0:  # between 200k and 500k USDT
+            elif 200000.0 <= _trade_msg.base_volume < 500000.0:  # between 200k and 500k USDT
                 self.l2 += 1
-            elif 500000.0 < _trade_msg.base_volume < 1000000.0:  # between 500k and 1 mln USDT
+            elif 500000.0 <= _trade_msg.base_volume < 1000000.0:  # between 500k and 1 mln USDT
                 self.l5 += 1
-            elif 1000000.0 < _trade_msg.base_volume < 2000000.0:  # between 1 and 2 mln USDT
+            elif 1000000.0 <= _trade_msg.base_volume < 2000000.0:  # between 1 and 2 mln USDT
                 self.l10 += 1
-            elif 2000000.0 < _trade_msg.base_volume < 5000000.0:  # between 2 and 5 mln USDT
+            elif 2000000.0 <= _trade_msg.base_volume < 5000000.0:  # between 2 and 5 mln USDT
                 self.l20 += 1
-            elif 5000000.0 < _trade_msg.base_volume < 10000000.0:  # between 5 and 10 mln USDT
+            elif 5000000.0 <= _trade_msg.base_volume < 10000000.0:  # between 5 and 10 mln USDT
                 self.l50 += 1
-            elif 10000000.0 < _trade_msg.base_volume:  # greater than 10 mln USDT
+            elif 10000000.0 <= _trade_msg.base_volume:  # greater than 10 mln USDT
                 self.l100 += 1
 
         if self.quantity > 0:
@@ -4100,10 +4112,14 @@ def add_volume_containers(_c1: VolumeContainer, _c2: VolumeContainer):
 
 def add_volume_units(_a: VolumeUnit, _b: VolumeUnit):
     _vu = VolumeUnit([])
-    _vu.l00 = _a.l00 + _b.l00
+    _vu.n100 = _a.n100 + _b.n100
+    _vu.n200 = _a.n200 + _b.n200
+    _vu.n500 = _a.n500 + _b.n500
+    _vu.n1000 = _a.n1000 + _b.n1000
+    _vu.n2000 = _a.n2000 + _b.n2000
+    _vu.n5000 = _a.n5000 + _b.n5000
     _vu.l01 = _a.l01 + _b.l01
     _vu.l02 = _a.l02 + _b.l02
-    _vu.l0 = _a.l0 + _b.l0
     _vu.l0236 = _a.l0236 + _b.l0236
     _vu.l0382 = _a.l0382 + _b.l0382
     _vu.l05 = _a.l05 + _b.l05
