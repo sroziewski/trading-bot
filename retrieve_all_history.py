@@ -9,7 +9,7 @@ from mongodb import mongo_client
 
 lib_initialize()
 
-logger = setup_logger("Binance-History-Retriever-{}".format(part))
+logger = setup_logger("Binance-History-Retriever")
 
 class Retrieve(object):
     def __init__(self, _market, _ticker):
