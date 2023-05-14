@@ -273,6 +273,10 @@ def handle_volume_containers(_message):
     # except AttributeError:
     #     i = 1
     _merged.clear()
+    if _rc:
+        _rc.print()
+    else:
+        kfk=1
 
 
 def set_rc_timestamp(_entry_quarter_0, _rc, _server_time, _server_time_str):
@@ -379,9 +383,9 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
             'quantity': _vc.maker_volume.quantity,
             'avg_price': round_price_s(_vc.maker_volume.avg_price),
             'mean_price': round_price_s(_vc.maker_volume.mean_price),
-            '100': _vc.maker_volume.n100,
-            '200': _vc.maker_volume.n200,
-            '500': _vc.maker_volume.n500,
+            '0.1k': _vc.maker_volume.n100,
+            '0.2k': _vc.maker_volume.n200,
+            '0.5k': _vc.maker_volume.n500,
             '1k': _vc.maker_volume.n1000,
             '2k': _vc.maker_volume.n2000,
             '5k': _vc.maker_volume.n5000,
@@ -407,15 +411,14 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
             'quantity': _vc.taker_volume.quantity,
             'avg_price': round_price_s(_vc.taker_volume.avg_price),
             'mean_price': round_price_s(_vc.taker_volume.mean_price),
-            '100': _vc.taker_volume.n100,
-            '200': _vc.taker_volume.n200,
-            '500': _vc.taker_volume.n500,
+            '0.1k': _vc.taker_volume.n100,
+            '0.2k': _vc.taker_volume.n200,
+            '0.5k': _vc.taker_volume.n500,
             '1k': _vc.taker_volume.n1000,
             '2k': _vc.taker_volume.n2000,
             '5k': _vc.taker_volume.n5000,
             '10k': _vc.taker_volume.l01,
             '23_6k': _vc.taker_volume.l02,
-            '0-23_6k': _vc.taker_volume.l0,
             '38_2k': _vc.taker_volume.l0236,
             '50k': _vc.taker_volume.l0382,
             '61_8k': _vc.taker_volume.l05,
@@ -497,7 +500,6 @@ def handle_init():
     __ii = 1
     for _market_s in _market_info_list:  # inf loop needed here
         _market = "{}{}".format(_market_s['name'], market_type).upper()
-        # db_volume.drop_collection(_market.lower())
         _vc = VolumeCrawl(_market)
         manage_volume_scan(_vc)
         logger.info("{} {} scanning...".format(__ii, _market))
