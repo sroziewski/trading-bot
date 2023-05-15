@@ -82,11 +82,11 @@ def post_process_volume_container(_vc: VolumeContainer):
     _vc.ticker = '15m'
     _vc.round()
     volume_collection.insert_one(to_mongo(_vc))
-    logger.info("Volume market {}_{} has been written to volume {} collection -- base_volume: {}, quantity: {}".format(_vc.market.lower(),
-                                                                                          _vc.ticker.lower(),
-                                                                                          volume_collection.name.upper(),
-                                                                                          _vc.total_base_volume,
-                                                                                          _vc.total_quantity))
+    # logger.info("Volume market {}_{} has been written to volume {} collection -- base_volume: {}, quantity: {}".format(_vc.market.lower(),
+    #                                                                                       _vc.ticker.lower(),
+    #                                                                                       volume_collection.name.upper(),
+    #                                                                                       _vc.total_base_volume,
+    #                                                                                       _vc.total_quantity))
 
 
 def handle_volume_container(_vc: VolumeContainer):
@@ -273,10 +273,6 @@ def handle_volume_containers(_message):
     # except AttributeError:
     #     i = 1
     _merged.clear()
-    if _rc:
-        _rc.print()
-    else:
-        kfk=1
 
 
 def set_rc_timestamp(_entry_quarter_0, _rc, _server_time, _server_time_str):
