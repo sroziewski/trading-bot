@@ -3999,8 +3999,6 @@ class VolumeUnit(object):
                 self.n2618 += 1
             if 2618.0 <= _trade_msg.base_volume < 4236.0:  # between 0 and 5k USDT
                 self.n4236 += 1
-            if 4236.0 <= _trade_msg.base_volume < 5000.0:  # between 0 and 5k USDT
-                self.n5000 += 1
             if 4236.0 <= _trade_msg.base_volume < 6180.0:  # between 0 and 5k USDT
                 self.n6180 += 1
             if 6180.0 <= _trade_msg.base_volume < 10000.0:  # between 5k and 10k USDT
