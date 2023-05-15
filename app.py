@@ -420,6 +420,8 @@ def do_freeze():
             depths1m[_market_c]['bd'].append(_bd)
             depths1m[_market_c]['sd'].append(_sd)
             #   15m section
+            if len(depths1m[_market_c]['bd']) == 0:
+                return
             _sec = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-1])
             _min = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-2])
             _t0_quarter = int(_min / 15)
