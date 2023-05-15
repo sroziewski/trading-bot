@@ -383,12 +383,12 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
             'quantity': _vc.maker_volume.quantity,
             'avg_price': round_price_s(_vc.maker_volume.avg_price),
             'mean_price': round_price_s(_vc.maker_volume.mean_price),
-            '0.1k': _vc.maker_volume.n100,
-            '0.2k': _vc.maker_volume.n200,
-            '0.5k': _vc.maker_volume.n500,
+            '0_236k': _vc.maker_volume.n236,
+            '0_618k': _vc.maker_volume.n618,
             '1k': _vc.maker_volume.n1000,
-            '2k': _vc.maker_volume.n2000,
-            '5k': _vc.maker_volume.n5000,
+            '2_618k': _vc.maker_volume.n2618,
+            '4_236k': _vc.maker_volume.n4236,
+            '6_180k': _vc.maker_volume.n6180,
             '10k': _vc.maker_volume.l01,
             '23_6k': _vc.maker_volume.l02,
             '38_2k': _vc.maker_volume.l0236,
@@ -411,12 +411,12 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
             'quantity': _vc.taker_volume.quantity,
             'avg_price': round_price_s(_vc.taker_volume.avg_price),
             'mean_price': round_price_s(_vc.taker_volume.mean_price),
-            '0.1k': _vc.taker_volume.n100,
-            '0.2k': _vc.taker_volume.n200,
-            '0.5k': _vc.taker_volume.n500,
+            '0_236k': _vc.taker_volume.n236,
+            '0_618k': _vc.taker_volume.n618,
             '1k': _vc.taker_volume.n1000,
-            '2k': _vc.taker_volume.n2000,
-            '5k': _vc.taker_volume.n5000,
+            '2_618k': _vc.taker_volume.n2618,
+            '4_236k': _vc.taker_volume.n4236,
+            '6_180k': _vc.taker_volume.n6180,
             '10k': _vc.taker_volume.l01,
             '23_6k': _vc.taker_volume.l02,
             '38_2k': _vc.taker_volume.l0236,
@@ -504,6 +504,7 @@ def handle_init():
         manage_volume_scan(_vc)
         logger.info("{} {} scanning...".format(__ii, _market))
         __ii += 1
+        break
 
 
 handle_init()
