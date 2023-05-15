@@ -504,7 +504,6 @@ def handle_init():
         manage_volume_scan(_vc)
         logger.info("{} {} scanning...".format(__ii, _market))
         __ii += 1
-        break
 
 
 handle_init()
