@@ -50,6 +50,11 @@ def extract_depth_crawl_dict():
         _dc.buy_depth_15m = _buys
         _dc.sell_depth_15m = _sells
 
+        _buys = __extract_market_depths(_item[1], "buy_depth_1h")
+        _sells = __extract_market_depths(_item[1], "sell_depth_1h")
+        _dc.buy_depth_1h = _buys
+        _dc.sell_depth_1h = _sells
+
         _buys = __extract_market_depths(_item[1], "buy_depth_1d")
         _sells = __extract_market_depths(_item[1], "sell_depth_1d")
         _dc.buy_depth_1d = _buys
@@ -75,6 +80,11 @@ def extract_market_depth(_market):
     _dc.buy_depth_15m = _buys
     _dc.sell_depth_15m = _sells
 
+    _buys = __extract_market_depths(_response_dict, "buy_depth_1h")
+    _sells = __extract_market_depths(_response_dict, "sell_depth_1h")
+    _dc.buy_depth_1h = _buys
+    _dc.sell_depth_1h = _sells
+
     _buys = __extract_market_depths(_response_dict, "buy_depth_1d")
     _sells = __extract_market_depths(_response_dict, "sell_depth_1d")
     _dc.buy_depth_1d = _buys
@@ -94,7 +104,7 @@ def __extract_market_depths(_item, _depth_type):
             _md = SellDepth(_md_15m['ask_price'], _md_15m['p1'], _md_15m['p2'], _md_15m['p3'], _md_15m['p4'],
                            _md_15m['p5'], _md_15m['p10'], _md_15m['p15'], _md_15m['p20'], _md_15m['p25'],
                            _md_15m['p30'], _md_15m['p35'], _md_15m['p40'], _md_15m['p45'], _md_15m['p50'],
-                           _md_15m['p55'], _md_15m['p60'], _md_15m['p65'], _md_15m['p70'])
+                           _md_15m['p55'], _md_15m['p60'], _md_15m['p65'], _md_15m['p70'], _md_15m['p80'], _md_15m['p90'], _md_15m['p100'], _md_15m['p120'], _md_15m['p138'], _md_15m['p160'], _md_15m['p200'])
         _md.set_time(_md_15m['timestamp'])
         _out.append(_md)
     return _out
@@ -164,7 +174,14 @@ def to_mongo(_kline):
             'p55': _kline.ask_depth.p55,
             'p60': _kline.ask_depth.p60,
             'p65': _kline.ask_depth.p65,
-            'p70': _kline.ask_depth.p70
+            'p70': _kline.ask_depth.p70,
+            'p80': _kline.ask_depth.p80,
+            'p90': _kline.ask_depth.p90,
+            'p100': _kline.ask_depth.p100,
+            'p120': _kline.ask_depth.p120,
+            'p138': _kline.ask_depth.p138,
+            'p160': _kline.ask_depth.p160,
+            'p200': _kline.ask_depth.p200
             }
         }
     else:
@@ -304,9 +321,6 @@ def inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter):  # for 5m onl
         inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter + 1)
         return
 
-    if any(filter(lambda x: not x.bid_depth, _curr_klines)):
-        here = 1
-
 
 def add_dc_to_kline(_curr_kline, _indices, _dc, _multiple_, _ticker):
     _times_r = 3
@@ -349,12 +363,39 @@ def add_dc_to_kline(_curr_kline, _indices, _dc, _multiple_, _ticker):
     _curr_kline.add_sell_depth(__sd_r__)
 
 
+def inject_market_depth_htf(_curr_klines, _dc, _ticker, _counter):
+    _multiple_1h = int(ticker2num(_ticker))
+    _tmts_ = list(map(lambda x: x.timestamp, _dc.buy_depth_1h))
+    _data_exist_ = True
+    try:
+        _idx_ = _tmts_.index(int(_curr_klines[0].start_time/1000))
+    except ValueError:
+        _data_exist_ = None
+    if _data_exist_:
+        list(map(lambda x: add_dc_to_kline(x, _tmts_, _dc, _multiple_1h, _ticker), _curr_klines))
+    elif _counter == 4:
+        logger_global[0].info(
+            "DC data not found {} {} {} {} tmts {}".format(_dc.market, _ticker, int(_curr_klines[0].start_time / 1000),
+                                                           _curr_klines[0].time_str, _tmts_))
+    else:
+        sleep(62)
+        logger_global[0].info(
+            "Trying {} DC data {} {} {} {} tmts {}".format(_counter, _dc.market, _ticker,
+                                                           int(_curr_klines[0].start_time / 1000),
+                                                           _curr_klines[0].time_str, _tmts_))
+        inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter + 1)
+        return
+
+
 def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
     if _ticker == "3d" or _ticker == "1w":
         inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter)
         return
     if _ticker == '5m':
         inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter)
+        return
+    if _ticker in ['1h', '2h', '4h', '6h', '8h', '12h']:
+        inject_market_depth_htf(_curr_klines, _dc, _ticker, _counter)
         return
     _ticker_n = ticker2num(_ticker)
     _multiple_15 = int(_ticker_n * 4)
