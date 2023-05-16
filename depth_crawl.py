@@ -485,11 +485,11 @@ def do_freeze():
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_1d(_bd_5m, _sd_5m)
-            if _t0_hour != _t1_hour:
+            if _t0_hour != _t1_hour and len(depth_crawl_dict[_market_c].buy_depth_15m) > 0:
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _current_timestamp = _bdt_5m.timestamp - _min * 60 - _sec
-                _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(":")[0].split(" ")[-1]), depth_crawl_dict[_market_c].buy_depth_15m))
-                _sds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(":")[0].split(" ")[-1]), depth_crawl_dict[_market_c].sell_depth_15m))
+                _bds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]), depth_crawl_dict[_market_c].buy_depth_15m))
+                _sds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]), depth_crawl_dict[_market_c].sell_depth_15m))
                 _bd_5m = reduce(add_dc, _bds_f_5m)
                 _sd_5m = reduce(add_dc, _sds_f_5m)
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
