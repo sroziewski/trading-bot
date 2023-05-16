@@ -458,20 +458,21 @@ def do_freeze():
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _sdt_5m = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt_5m.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
-                __size = len(depths1m[_market_c]['bd']) - 1
-                for _ii in range(1, __size):
-                    _bdt_5m = add_dc(_bdt_5m, depths1m[_market_c]['bd'][_ii])
-                    _sdt_5m = add_dc(_sdt_5m, depths1m[_market_c]['sd'][_ii])
-                _bdt_5m = divide_dc(_bdt_5m, __size)
-                _sdt_5m = divide_dc(_sdt_5m, __size)
+
+                _bds_5m = reduce(add_dc, _bdt_5m)
+                _sds_5m = reduce(add_dc, _sdt_5m)
+                _bdt_5m = divide_dc(_bds_5m, len(_bdt_5m))
+                _sdt_5m = divide_dc(_sds_5m, len(_sdt_5m))
+
                 _bdt_5m.set_time(_current_timestamp)
                 _sdt_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_15m(_bdt_5m, _sdt_5m, _market_c)
             #  day section
-            _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
-            _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
-            _t0_hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
-            _t1_hour = int(depths1m[_market_c]['bd'][-1].time_str.split(":")[0].split(" ")[-1])
+            if len(depths1m[_market_c]['bd']) > 0:
+                _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
+                _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
+                _t0_hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
+                _t1_hour = int(depths1m[_market_c]['bd'][-1].time_str.split(":")[0].split(" ")[-1])
             if _t0_day != _t1_day:
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _sdt_5m = depths1m[_market_c]['sd'][0]
