@@ -480,8 +480,9 @@ def do_freeze():
                             _sdt_5m = add_dc(_sdt_5m, depths1m[_market_c]['sd'][_ii])
                         except IndexError as e:
                             logger_global[0].error("{} {} {} {}".format(depths1m[_market_c], _ii, __size, e.__traceback__))
-                _bdt_5m = divide_dc(_bdt_5m, __size)
-                _sdt_5m = divide_dc(_sdt_5m, __size)
+                if __size > 0:
+                    _bdt_5m = divide_dc(_bdt_5m, __size)
+                    _sdt_5m = divide_dc(_sdt_5m, __size)
                 _bdt_5m.set_time(_current_timestamp)
                 _sdt_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_15m(_bdt_5m, _sdt_5m, _market_c)
