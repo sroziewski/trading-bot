@@ -231,6 +231,22 @@ def compute_depth_percentages(_depth, _type):
             _65p_d = (_65p_d[0] + _amount, _65p_d[1] + _amount * _price)
         if _ratio < 0.7 / _divisor:
             _70p_d = (_70p_d[0] + _amount, _70p_d[1] + _amount * _price)
+        if _type == "asks":
+            if _ratio < 0.8 / _divisor:
+                _80p_d = (_80p_d[0] + _amount, _80p_d[1] + _amount * _price)
+            if _ratio < 0.9 / _divisor:
+                _90p_d = (_90p_d[0] + _amount, _90p_d[1] + _amount * _price)
+            if _ratio < 1.0 / _divisor:
+                _100p_d = (_100p_d[0] + _amount, _100p_d[1] + _amount * _price)
+            if _ratio < 1.2 / _divisor:
+                _120p_d = (_120p_d[0] + _amount, _120p_d[1] + _amount * _price)
+            if _ratio < 1.38 / _divisor:
+                _138p_d = (_138p_d[0] + _amount, _138p_d[1] + _amount * _price)
+            if _ratio < 1.6 / _divisor:
+                _160p_d = (_160p_d[0] + _amount, _160p_d[1] + _amount * _price)
+            if _ratio < 2.0 / _divisor:
+                _200p_d = (_200p_d[0] + _amount, _200p_d[1] + _amount * _price)
+
     if _type == "bids":
         _md = BuyDepth(_start_price, _1p_d, _2p_d, _3p_d, _4p_d, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d,
                        _40p_d, _45p_d, _50p_d,
@@ -238,20 +254,6 @@ def compute_depth_percentages(_depth, _type):
                        _65p_d,
                        _70p_d)
     elif _type == "asks":
-        if _ratio < 0.8 / _divisor:
-            _80p_d = (_80p_d[0] + _amount, _80p_d[1] + _amount * _price)
-        if _ratio < 0.9 / _divisor:
-            _90p_d = (_90p_d[0] + _amount, _90p_d[1] + _amount * _price)
-        if _ratio < 1.0 / _divisor:
-            _100p_d = (_100p_d[0] + _amount, _100p_d[1] + _amount * _price)
-        if _ratio < 1.2 / _divisor:
-            _120p_d = (_120p_d[0] + _amount, _120p_d[1] + _amount * _price)
-        if _ratio < 1.38 / _divisor:
-            _138p_d = (_138p_d[0] + _amount, _138p_d[1] + _amount * _price)
-        if _ratio < 1.6 / _divisor:
-            _160p_d = (_160p_d[0] + _amount, _160p_d[1] + _amount * _price)
-        if _ratio < 2.0 / _divisor:
-            _200p_d = (_200p_d[0] + _amount, _200p_d[1] + _amount * _price)
         _md = SellDepth(_start_price, _1p_d, _2p_d, _3p_d, _4p_d, _5p_d, _10p_d, _15p_d, _20p_d, _25p_d, _30p_d, _35p_d,
                         _40p_d, _45p_d, _50p_d,
                         _55p_d, _60p_d,
