@@ -470,7 +470,7 @@ def check_markets_scan():
         _market_collection_s = db_volume.get_collection(_market_name, codec_options=codec_options)
         _el = _market_collection_s.find_one(sort=[('_id', DESCENDING)])
         _now = datetime.datetime.now().timestamp()
-        if _el is None or _now - _el['start_time'] >= 30 * 60:
+        if _el is None or _now - _el['start_time'] >= 45 * 60:
             _market_name_up = _market_name.upper()
             if _market_name_up in trades:
                 del trades[_market_name_up]
