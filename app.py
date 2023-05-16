@@ -25,7 +25,7 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import get_binance_obj, logger_global, lib_initialize, round_price
+from library import get_binance_obj, logger_global, lib_initialize, round_price, round_price_s
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
@@ -264,7 +264,7 @@ def compute_depth_percentages(_depth, _type):
 
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
-        return BuyDepth(round(_dc.bid_price / _by, 10),
+        return BuyDepth(round_price_s(_dc.bid_price / _by),
                         (round_price(_dc.p1[0] / _by), round_price(_dc.p1[1] / _by)),
                         (round_price(_dc.p2[0] / _by), round_price(_dc.p2[1] / _by)),
                         (round_price(_dc.p3[0] / _by), round_price(_dc.p3[1] / _by)),
@@ -284,7 +284,7 @@ def divide_dc(_dc, _by):
                         (round_price(_dc.p65[0] / _by), round_price(_dc.p65[1] / _by)),
                         (round_price(_dc.p70[0] / _by), round_price(_dc.p70[1] / _by)))
     elif isinstance(_dc, SellDepth):
-        return SellDepth(round(_dc.ask_price / _by, 10),
+        return SellDepth(round_price_s(_dc.ask_price / _by),
                          (round_price(_dc.p1[0] / _by), round_price(_dc.p1[1] / _by)),
                          (round_price(_dc.p2[0] / _by), round_price(_dc.p2[1] / _by)),
                          (round_price(_dc.p3[0] / _by), round_price(_dc.p3[1] / _by)),
