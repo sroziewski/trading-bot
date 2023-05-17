@@ -504,7 +504,10 @@ def do_freeze():
                 _sd_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_1d(_bd_5m, _sd_5m)
             if _t0_hour != _t1_hour and len(depth_crawl_dict[_market_c].buy_depth_15m) > 0:
-                _bdt_5m = depths1m[_market_c]['bd'][0]
+                try:
+                    _bdt_5m = depths1m[_market_c]['bd'][0]
+                except IndexError as e:
+                    logger_global[0].error("{} {} {}".format(_market_c, depths1m[_market_c], e.__traceback__))
                 _current_timestamp = _bdt_5m.timestamp - _min * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
                 _sds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
