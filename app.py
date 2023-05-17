@@ -420,6 +420,8 @@ def do_freeze():
             _sd = compute_depth_percentages(_as, "asks")
             depths1m[_market_c]['bd'].append(_bd)
             depths1m[_market_c]['sd'].append(_sd)
+            if len(depths1m[_market_c]['sd']) or len(depths1m[_market_c]['bd']) == 0:
+                return
             #   15m section
             _sec = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-1])
             _min = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-2])
@@ -494,8 +496,8 @@ def do_freeze():
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _sdt_5m = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt_5m.timestamp - _t0_hour * 60 * 60 - _min * 60 - _sec
-                _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
-                _sds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
+                _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_1h))
+                _sds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_1h))
                 _bd_5m = reduce(add_dc, _bds_f_5m)
                 _sd_5m = reduce(add_dc, _sds_f_5m)
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
@@ -508,6 +510,7 @@ def do_freeze():
                     _bdt_5m = depths1m[_market_c]['bd'][0]
                 except IndexError as e:
                     logger_global[0].error("{} {} {}".format(_market_c, depths1m[_market_c], e.__traceback__))
+                    return
                 _current_timestamp = _bdt_5m.timestamp - _min * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
                 _sds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
