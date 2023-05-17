@@ -473,9 +473,9 @@ def do_freeze():
                 _sdt_5m = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt_5m.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
 
-                _bds_5m = reduce(add_dc, depths1m[_market_c]['bd'])
-                _sds_5m = reduce(add_dc, depths1m[_market_c]['sd'])
                 try:
+                    _bds_5m = reduce(add_dc, depths1m[_market_c]['bd'])
+                    _sds_5m = reduce(add_dc, depths1m[_market_c]['sd'])
                     _bdt_5m = divide_dc(_bds_5m, len(depths1m[_market_c]['bd']))
                     _sdt_5m = divide_dc(_sds_5m, len(depths1m[_market_c]['sd']))
                 except Exception as e:
