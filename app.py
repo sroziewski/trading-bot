@@ -421,7 +421,7 @@ def do_freeze():
             depths1m[_market_c]['bd'].append(_bd)
             depths1m[_market_c]['sd'].append(_sd)
             if len(depths1m[_market_c]['sd']) or len(depths1m[_market_c]['bd']) == 0:
-                logger_global[0].warning("{} {}".format(_market_c, epths1m[_market_c]))
+                logger_global[0].warning("{} {}".format(_market_c, depths1m[_market_c]))
             #   15m section
             _sec = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-1])
             _min = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-2])
