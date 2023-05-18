@@ -457,8 +457,11 @@ def do_freeze():
                     except ValueError:
                         __in_list = False
                     if __in_list and len(depths1m[_market_c]['bd'][_idx_5m:_idx_5m + 5]) == 5:
-                        _bd_5m_l = reduce(add_dc, depths1m[_market_c]['bd'][_idx_5m:_idx_5m + 5])
-                        _sd_5m_l = reduce(add_dc, depths1m[_market_c]['sd'][_idx_5m:_idx_5m + 5])
+                        try:
+                            _bd_5m_l = reduce(add_dc, depths1m[_market_c]['bd'][_idx_5m:_idx_5m + 5])
+                            _sd_5m_l = reduce(add_dc, depths1m[_market_c]['sd'][_idx_5m:_idx_5m + 5])
+                        except Exception:
+                            return
                         _bd_5m_l = divide_dc(_bd_5m_l, 5)
                         _sd_5m_l = divide_dc(_sd_5m_l, 5)
                         _bd_5m_l.set_time(_next_5m_tmstmp)
@@ -483,25 +486,35 @@ def do_freeze():
                 _sdt_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_15m(_bdt_5m, _sdt_5m, _market_c)
             #  day section
+            _t0_day = _t1_day = _t0_hour = _t1_hour = None
             if len(depths1m[_market_c]['bd']) > 0:
-                _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
-                _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
-                _t0_hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
-                _t1_hour = int(depths1m[_market_c]['bd'][-1].time_str.split(":")[0].split(" ")[-1])
-            if _t0_day != _t1_day:
-                _bdt_5m = depths1m[_market_c]['bd'][0]
-                _sdt_5m = depths1m[_market_c]['sd'][0]
+                try:
+                    _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
+                    _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
+                    _t0_hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
+                    _t1_hour = int(depths1m[_market_c]['bd'][-1].time_str.split(":")[0].split(" ")[-1])
+                except Exception:
+                    return
+            if _t1_day and _t0_day and _t0_day != _t1_day and _t0_day:
+                try:
+                    _bdt_5m = depths1m[_market_c]['bd'][0]
+                    _sdt_5m = depths1m[_market_c]['sd'][0]
+                except Exception:
+                    return
                 _current_timestamp = _bdt_5m.timestamp - _t0_hour * 60 * 60 - _min * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_1h))
                 _sds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_1h))
-                _bd_5m = reduce(add_dc, _bds_f_5m)
-                _sd_5m = reduce(add_dc, _sds_f_5m)
+                try:
+                    _bd_5m = reduce(add_dc, _bds_f_5m)
+                    _sd_5m = reduce(add_dc, _sds_f_5m)
+                except Exception:
+                    return
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
                 _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_1d(_bd_5m, _sd_5m)
-            if _t0_hour != _t1_hour and len(depth_crawl_dict[_market_c].buy_depth_15m) > 0:
+            if _t0_hour and _t1_hour and _t0_hour != _t1_hour and len(depth_crawl_dict[_market_c].buy_depth_15m) > 0:
                 try:
                     _bdt_5m = depths1m[_market_c]['bd'][0]
                 except IndexError as e:
@@ -510,14 +523,17 @@ def do_freeze():
                 _current_timestamp = _bdt_5m.timestamp - _min * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
                 _sds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
-                _bd_5m = reduce(add_dc, _bds_f_5m)
-                _sd_5m = reduce(add_dc, _sds_f_5m)
+                try:
+                    _bd_5m = reduce(add_dc, _bds_f_5m)
+                    _sd_5m = reduce(add_dc, _sds_f_5m)
+                except Exception:
+                    return
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
                 _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_1h(_bd_5m, _sd_5m)
-            if _t0_quarter != _t1_quarter:
+            if _t0_quarter and _t1_quarter and _t0_quarter != _t1_quarter:
                 depths1m[_market_c]['bd'].clear()
                 depths1m[_market_c]['sd'].clear()
                 depths1m[_market_c]['bd'].append(_bdl_1m)
