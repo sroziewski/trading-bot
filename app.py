@@ -497,10 +497,13 @@ def do_freeze():
                 depth_crawl_dict[_market_c].add_depths_15m(_bdt_5m, _sdt_5m, _market_c)
             #  day section
             if len(depths1m[_market_c]['bd']) > 0:
-                _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
-                _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
-                _t0_hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
-                _t1_hour = int(depths1m[_market_c]['bd'][-1].time_str.split(":")[0].split(" ")[-1])
+                try:
+                    _t0_day = int(depths1m[_market_c]['bd'][0].time_str.split(" ")[0])
+                    _t1_day = int(depths1m[_market_c]['bd'][-1].time_str.split(" ")[0])
+                    _t0_hour = int(depths1m[_market_c]['bd'][0].time_str.split(":")[0].split(" ")[-1])
+                    _t1_hour = int(depths1m[_market_c]['bd'][-1].time_str.split(":")[0].split(" ")[-1])
+                except Exception:
+                    return
             if _t0_day != _t1_day:
                 _bdt_5m = depths1m[_market_c]['bd'][0]
                 _sdt_5m = depths1m[_market_c]['sd'][0]
