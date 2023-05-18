@@ -79,7 +79,9 @@ def extract_depth_crawl_dict():
 
 
 def extract_market_depth(_market):
-    _response = requests.get("http://{}:{}/qu3ry/{}/{}".format(mongo_ip, flask_port, _market.lower(), flask_token))
+    _url = "http://{}:{}/qu3ry/{}/{}".format(mongo_ip, flask_port, _market.lower(), flask_token)
+    _response = session.get(_url)
+    print(_response)
     _response_dict = json.loads(json.loads(_response.text))
     _dc = DepthCrawl(_response_dict['market'], _response_dict['type'])
 
