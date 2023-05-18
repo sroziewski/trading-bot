@@ -11,6 +11,8 @@ from binance.client import Client as BinanceClient
 from binance.exceptions import BinanceAPIException
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
+from requests.adapters import HTTPAdapter
+from urllib3 import Retry
 
 from config import config
 from depth_crawl import divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
@@ -29,8 +31,19 @@ mongo_ip = config.get_parameter('mongo_ip')
 flask_port = config.get_parameter('flask_port')
 
 
+session = requests.Session()
+retry = Retry(connect=5, backoff_factor=0.5)
+adapter = HTTPAdapter(max_retries=retry)
+session.mount('http://', adapter)
+session.mount('https://', adapter)
+
+
 def extract_depth_crawl_dict():
-    _response = requests.get("http://{}:{}/qu3ry/{}".format(mongo_ip, flask_port, flask_token), verify=False)
+    
+    _url = "http://{}:{}/qu3ry/{}".format(mongo_ip, flask_port, flask_token)
+    _response = session.get(_url)
+    print(_response)
+    # _response = requests.get(_url, verify=False)
     _response_dict = json.loads(json.loads(_response.text))
 
     _depth_crawl_dict = {}
