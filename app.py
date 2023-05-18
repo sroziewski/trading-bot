@@ -505,13 +505,19 @@ def do_freeze():
                 except Exception:
                     return
             if _t0_day != _t1_day:
-                _bdt_5m = depths1m[_market_c]['bd'][0]
-                _sdt_5m = depths1m[_market_c]['sd'][0]
+                try:
+                    _bdt_5m = depths1m[_market_c]['bd'][0]
+                    _sdt_5m = depths1m[_market_c]['sd'][0]
+                except Exception:
+                    return
                 _current_timestamp = _bdt_5m.timestamp - _t0_hour * 60 * 60 - _min * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_1h))
                 _sds_f_5m = list(filter(lambda x: _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_1h))
-                _bd_5m = reduce(add_dc, _bds_f_5m)
-                _sd_5m = reduce(add_dc, _sds_f_5m)
+                try:
+                    _bd_5m = reduce(add_dc, _bds_f_5m)
+                    _sd_5m = reduce(add_dc, _sds_f_5m)
+                except Exception:
+                    return
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
                 _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
                 _bd_5m.set_time(_current_timestamp)
@@ -526,8 +532,11 @@ def do_freeze():
                 _current_timestamp = _bdt_5m.timestamp - _min * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
                 _sds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].sell_depth_15m))
-                _bd_5m = reduce(add_dc, _bds_f_5m)
-                _sd_5m = reduce(add_dc, _sds_f_5m)
+                try:
+                    _bd_5m = reduce(add_dc, _bds_f_5m)
+                    _sd_5m = reduce(add_dc, _sds_f_5m)
+                except Exception:
+                    return
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
                 _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
                 _bd_5m.set_time(_current_timestamp)
