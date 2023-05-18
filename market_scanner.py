@@ -30,7 +30,7 @@ flask_port = config.get_parameter('flask_port')
 
 
 def extract_depth_crawl_dict():
-    _response = requests.get("http://{}:{}/qu3ry/{}".format(mongo_ip, flask_port, flask_token))
+    _response = requests.get("http://{}:{}/qu3ry/{}".format(mongo_ip, flask_port, flask_token), verify=False)
     _response_dict = json.loads(json.loads(_response.text))
 
     _depth_crawl_dict = {}
