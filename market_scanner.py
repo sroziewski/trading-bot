@@ -32,8 +32,10 @@ flask_port = config.get_parameter('flask_port')
 
 
 session = requests.Session()
-retry = Retry(connect=5, backoff_factor=0.5)
-adapter = HTTPAdapter(max_retries=retry)
+retries = Retry(total=5,
+                backoff_factor=0.1,
+                status_forcelist=[ 500, 502, 503, 504])
+adapter = HTTPAdapter(max_retries=retries)
 session.mount('http://', adapter)
 session.mount('https://', adapter)
 
