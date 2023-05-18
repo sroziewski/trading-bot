@@ -420,7 +420,7 @@ def do_freeze():
             _sd = compute_depth_percentages(_as, "asks")
             depths1m[_market_c]['bd'].append(_bd)
             depths1m[_market_c]['sd'].append(_sd)
-            if len(depths1m[_market_c]['sd']) or len(depths1m[_market_c]['bd']) == 0:
+            if len(depths1m[_market_c]['sd']) == 0 or len(depths1m[_market_c]['bd']) == 0:
                 logger_global[0].warning("{} {}".format(_market_c, depths1m[_market_c]))
             #   15m section
             try:
