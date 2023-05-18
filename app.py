@@ -470,8 +470,11 @@ def do_freeze():
                     except ValueError:
                         __in_list = False
                     if __in_list and len(depths1m[_market_c]['bd'][_idx_5m:_idx_5m + 5]) == 5:
-                        _bd_5m_l = reduce(add_dc, depths1m[_market_c]['bd'][_idx_5m:_idx_5m + 5])
-                        _sd_5m_l = reduce(add_dc, depths1m[_market_c]['sd'][_idx_5m:_idx_5m + 5])
+                        try:
+                            _bd_5m_l = reduce(add_dc, depths1m[_market_c]['bd'][_idx_5m:_idx_5m + 5])
+                            _sd_5m_l = reduce(add_dc, depths1m[_market_c]['sd'][_idx_5m:_idx_5m + 5])
+                        except Exception:
+                            return
                         _bd_5m_l = divide_dc(_bd_5m_l, 5)
                         _sd_5m_l = divide_dc(_sd_5m_l, 5)
                         _bd_5m_l.set_time(_next_5m_tmstmp)
