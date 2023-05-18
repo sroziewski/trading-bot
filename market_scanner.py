@@ -399,7 +399,7 @@ def inject_market_depth_htf(_curr_klines, _dc, _ticker, _counter):
             "Trying {} DC data {} {} {} {} tmts {}".format(_counter, _dc.market, _ticker,
                                                            int(_curr_klines[0].start_time / 1000),
                                                            _curr_klines[0].time_str, _tmts_))
-        inject_market_depth_btf(_curr_klines, _dc, _ticker, _counter + 1)
+        inject_market_depth_htf(_curr_klines, _dc, _ticker, _counter + 1)
         return
 
 
