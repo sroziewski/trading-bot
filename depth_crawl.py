@@ -394,7 +394,11 @@ def freeze_order_book(_market):
 
 
 def unlock(_locker, _key):
-    del _locker[_key]
+    if _key in _locker:
+        try:
+            del _locker[_key]
+        except Exception:
+            pass
 
 
 def do_freeze():
@@ -428,8 +432,11 @@ def do_freeze():
                                      depths1m[_market_c]['bd']))
                 _sds_f_5m = list(filter(lambda x: _t0_5m == int(int(x.time_str.split(":")[-2])/5),
                                      depths1m[_market_c]['sd']))
-                _bd_5m = reduce(add_dc, _bds_f_5m)
-                _sd_5m = reduce(add_dc, _sds_f_5m)
+                try:
+                    _bd_5m = reduce(add_dc, _bds_f_5m)
+                    _sd_5m = reduce(add_dc, _sds_f_5m)
+                except Exception:
+                    return
                 _bd_5m = divide_dc(_bd_5m, len(_bds_f_5m))
                 _sd_5m = divide_dc(_sd_5m, len(_sds_f_5m))
                 _bd_5m.set_time(_current_timestamp)
