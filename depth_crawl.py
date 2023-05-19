@@ -495,7 +495,7 @@ def do_freeze():
                     _t1_hour = int(depths1m[_market_c]['bd'][-1].time_str.split(":")[0].split(" ")[-1])
                 except Exception:
                     return
-            if _t1_day and _t0_day and _t0_day != _t1_day and _t0_day:
+            if _t1_day is not None and _t0_day is not None and _t0_day != _t1_day and _t0_day:
                 try:
                     _bdt_5m = depths1m[_market_c]['bd'][0]
                     _sdt_5m = depths1m[_market_c]['sd'][0]
@@ -514,7 +514,7 @@ def do_freeze():
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_1d(_bd_5m, _sd_5m)
-            if _t0_hour and _t1_hour and _t0_hour != _t1_hour and len(depth_crawl_dict[_market_c].buy_depth_15m) > 0:
+            if _t0_hour is not None and _t1_hour is not None and _t0_hour != _t1_hour and len(depth_crawl_dict[_market_c].buy_depth_15m) > 0:
                 try:
                     _bdt_5m = depths1m[_market_c]['bd'][0]
                 except IndexError as e:
@@ -533,7 +533,7 @@ def do_freeze():
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_1h(_bd_5m, _sd_5m)
-            if _t0_quarter and _t1_quarter and _t0_quarter != _t1_quarter:
+            if _t0_quarter is not None and _t1_quarter is not None and _t0_quarter != _t1_quarter:
                 depths1m[_market_c]['bd'].clear()
                 depths1m[_market_c]['sd'].clear()
                 depths1m[_market_c]['bd'].append(_bdl_1m)
@@ -599,6 +599,7 @@ def _stuff():
         _dc = DepthCrawl(_market, usdt_markets_collection.name)
         depth_crawl_dict[_market] = _dc
         manage_depth_scan(_dc)
+        break
 
 
 if __name__ == "__main__":
