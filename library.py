@@ -4289,3 +4289,73 @@ def get_files(_path):
 
 def round_same_as(_to_round, _val):
     return round(_to_round, len(str(_val).split(".")[1]))
+
+
+def ticker2sec(_ticker):
+    if _ticker == "1m":
+        return 1 * 60
+    if _ticker == "5m":
+        return 5 * 60
+    if _ticker == "15m":
+        return 15 * 60
+    if _ticker == "30m":
+        return 30 * 60
+    if _ticker == "1h":
+        return 1 * 60 * 60
+    if _ticker == "2h":
+        return 2 * 60 * 60
+    if _ticker == "4h":
+        return 4 * 60 * 60
+    if _ticker == "6h":
+        return 6 * 60 * 60
+    if _ticker == "8h":
+        return 8 * 60 * 60
+    if _ticker == "12h":
+        return 12 * 60 * 60
+    if _ticker == "1d":
+        return 24 * 60 * 60
+    if _ticker == "2d":
+        return 48 * 60 * 60
+    if _ticker == "3d":
+        return 72 * 60 * 60
+    if _ticker == "4d":
+        return 96 * 60 * 60
+    if _ticker == "5d":
+        return 120 * 60 * 60
+    if _ticker == "1w":
+        return 168 * 60 * 60
+
+
+def ticker2num(_ticker):
+    if _ticker == "1m":
+        return 1.0/60
+    if _ticker == "5m":
+        return 1.0/12
+    if _ticker == "15m":
+        return 0.25
+    if _ticker == "30m":
+        return 0.5
+    if _ticker == "1h":
+        return 1
+    if _ticker == "2h":
+        return 2
+    if _ticker == "4h":
+        return 4
+    if _ticker == "6h":
+        return 6
+    if _ticker == "8h":
+        return 8
+    if _ticker == "12h":
+        return 12
+    if _ticker == "1d":
+        return 24
+    if _ticker == "2d":
+        return 48
+    if _ticker == "3d":
+        return 72
+    if _ticker == "4d":
+        return 96
+    if _ticker == "5d":
+        return 120
+    if _ticker == "1w":
+        return 168

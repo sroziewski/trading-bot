@@ -391,24 +391,30 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
     return SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
 
 
-filename = "Binance-Min-Max-Finder"
-logger = setup_logger(filename)
+def _stuff():
+    filename = "Binance-Min-Max-Finder"
+    logger = setup_logger(filename)
 
-db_markets_info = mongo_client.markets_info
-db_journal = mongo_client.journal
+    db_markets_info = mongo_client.markets_info
+    db_journal = mongo_client.journal
 
-decimal_codec = DecimalCodec()
-type_registry = TypeRegistry([decimal_codec])
-codec_options = CodecOptions(type_registry=type_registry)
+    decimal_codec = DecimalCodec()
+    type_registry = TypeRegistry([decimal_codec])
+    codec_options = CodecOptions(type_registry=type_registry)
 
-btc_markets_collection = db_markets_info.get_collection("btc", codec_options=codec_options)
-usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
-busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
+    btc_markets_collection = db_markets_info.get_collection("btc", codec_options=codec_options)
+    usdt_markets_collection = db_markets_info.get_collection("usdt", codec_options=codec_options)
+    busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
+
+    start = timer()
+    min_max_scanner(usdt_markets_collection, 6)  # 5, 6, 4
+    end = timer()
+    et = (end - start) / 60
+    logger.info("Total time: {} minutes".format(et))
+    logger.info("Avg time: {} minutes".format(np.mean(_mt)))
 
 
-start = timer()
-min_max_scanner(usdt_markets_collection, 6)   # 5, 6, 4
-end = timer()
-et = (end - start) / 60
-logger.info("Total time: {} minutes".format(et))
-logger.info("Avg time: {} minutes".format(np.mean(_mt)))
+if __name__ == "__main__":
+    _stuff()
+
+
