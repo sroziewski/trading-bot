@@ -18,7 +18,7 @@ from config import config
 from depth_crawl import divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, DecimalCodec, try_get_klines, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global
+    get_time_from_binance_tmstmp, logger_global, round_price
 from mongodb import mongo_client
 
 db = mongo_client.klines
@@ -139,15 +139,15 @@ def to_mongo(_kline):
     if _kline.bid_depth:
         return {
         'exchange': _kline.exchange,
-        'version': "2.6",
+        'version': "2.7",
         'ticker': _kline.ticker,
         'start_time': int(_kline.start_time/1000),
         'opening': _kline.opening,
         'closing': _kline.closing,
         'lowest': _kline.lowest,
         'highest': _kline.highest,
-        'volume': round(_kline.volume, 4),
-        'btc_volume': round(_kline.btc_volume, 4),
+        'quantity': round_price(_kline.volume),
+        'base_volume': round_price(_kline.btc_volume),
         'time_str': _kline.time_str,
         'market': _kline.market,
         'bid_price': _kline.bid_depth.bid_price,
@@ -203,15 +203,15 @@ def to_mongo(_kline):
     else:
         return {
             'exchange': _kline.exchange,
-            'version': "2.6",
+            'version': "2.7",
             'ticker': _kline.ticker,
             'start_time': int(_kline.start_time / 1000),
             'opening': _kline.opening,
             'closing': _kline.closing,
             'lowest': _kline.lowest,
             'highest': _kline.highest,
-            'volume': round(_kline.volume, 4),
-            'btc_volume': round(_kline.btc_volume, 4),
+            'quantity': round_price(_kline.volume),
+            'base_volume': round_price(_kline.btc_volume),
             'time_str': _kline.time_str,
             'market': _kline.market,
             'bid_price': None,
@@ -371,8 +371,8 @@ def add_dc_to_kline(_curr_kline, _indices, _dc, _multiple_, _ticker):
         logger_global[0].info("{} dc sell time: {} {}".format(_dc.market, _ticker, __ele_.time_str))
     __bd_r__ = reduce(add_dc, _depth_list_buy)
     __sd_r__ = reduce(add_dc, _depth_list_sell)
-    __bd_r__ = divide_dc(__bd_r__, _multiple_)
-    __sd_r__ = divide_dc(__sd_r__, _multiple_)
+    __bd_r__ = divide_dc(__bd_r__, len(_depth_list_buy))
+    __sd_r__ = divide_dc(__sd_r__, len(_depth_list_sell))
     __bd_r__.set_time(int(_curr_kline.start_time / 1000))
     __sd_r__.set_time(int(_curr_kline.start_time / 1000))
     _curr_kline.add_buy_depth(__bd_r__)

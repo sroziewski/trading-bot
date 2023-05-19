@@ -6,7 +6,7 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import binance_obj, get_time, logger_global, get_binance_obj, lib_initialize
+from library import binance_obj, get_time, logger_global, get_binance_obj, lib_initialize, round_price
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import setup_logger, DecimalCodec, get_time
@@ -253,52 +253,52 @@ def compute_depth_percentages(_depth, _type):
 
 def divide_dc(_dc, _by):
     if isinstance(_dc, BuyDepth):
-        return BuyDepth(round(_dc.bid_price / _by, 10),
-                        (round(_dc.p1[0] / _by, 4), round(_dc.p1[1] / _by, 4)),
-                        (round(_dc.p2[0] / _by, 4), round(_dc.p2[1] / _by, 4)),
-                        (round(_dc.p3[0] / _by, 4), round(_dc.p3[1] / _by, 4)),
-                        (round(_dc.p4[0] / _by, 4), round(_dc.p4[1] / _by, 4)),
-                        (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
-                        (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
-                        (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
-                        (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
-                        (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)),
-                        (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
-                        (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)),
-                        (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
-                        (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)),
-                        (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
-                        (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)),
-                        (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
-                        (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
-                        (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)))
+        return BuyDepth(round_price(_dc.bid_price / _by),
+                        (round_price(_dc.p1[0] / _by), round_price(_dc.p1[1] / _by)),
+                        (round_price(_dc.p2[0] / _by), round_price(_dc.p2[1] / _by)),
+                        (round_price(_dc.p3[0] / _by), round_price(_dc.p3[1] / _by)),
+                        (round_price(_dc.p4[0] / _by), round_price(_dc.p4[1] / _by)),
+                        (round_price(_dc.p5[0] / _by), round_price(_dc.p5[1] / _by)),
+                        (round_price(_dc.p10[0] / _by), round_price(_dc.p10[1] / _by)),
+                        (round_price(_dc.p15[0] / _by), round_price(_dc.p15[1] / _by)),
+                        (round_price(_dc.p20[0] / _by), round_price(_dc.p20[1] / _by)),
+                        (round_price(_dc.p25[0] / _by), round_price(_dc.p25[1] / _by)),
+                        (round_price(_dc.p30[0] / _by), round_price(_dc.p30[1] / _by)),
+                        (round_price(_dc.p35[0] / _by), round_price(_dc.p35[1] / _by)),
+                        (round_price(_dc.p40[0] / _by), round_price(_dc.p40[1] / _by)),
+                        (round_price(_dc.p45[0] / _by), round_price(_dc.p45[1] / _by)),
+                        (round_price(_dc.p50[0] / _by), round_price(_dc.p50[1] / _by)),
+                        (round_price(_dc.p55[0] / _by), round_price(_dc.p55[1] / _by)),
+                        (round_price(_dc.p60[0] / _by), round_price(_dc.p60[1] / _by)),
+                        (round_price(_dc.p65[0] / _by), round_price(_dc.p65[1] / _by)),
+                        (round_price(_dc.p70[0] / _by), round_price(_dc.p70[1] / _by)))
     elif isinstance(_dc, SellDepth):
-        return SellDepth(round(_dc.ask_price / _by, 10),
-                         (round(_dc.p1[0] / _by, 4), round(_dc.p1[1] / _by, 4)),
-                         (round(_dc.p2[0] / _by, 4), round(_dc.p2[1] / _by, 4)),
-                         (round(_dc.p3[0] / _by, 4), round(_dc.p3[1] / _by, 4)),
-                         (round(_dc.p4[0] / _by, 4), round(_dc.p4[1] / _by, 4)),
-                         (round(_dc.p5[0] / _by, 4), round(_dc.p5[1] / _by, 4)),
-                         (round(_dc.p10[0] / _by, 4), round(_dc.p10[1] / _by, 4)),
-                         (round(_dc.p15[0] / _by, 4), round(_dc.p15[1] / _by, 4)),
-                         (round(_dc.p20[0] / _by, 4), round(_dc.p20[1] / _by, 4)),
-                         (round(_dc.p25[0] / _by, 4), round(_dc.p25[1] / _by, 4)),
-                         (round(_dc.p30[0] / _by, 4), round(_dc.p30[1] / _by, 4)),
-                         (round(_dc.p35[0] / _by, 4), round(_dc.p35[1] / _by, 4)),
-                         (round(_dc.p40[0] / _by, 4), round(_dc.p40[1] / _by, 4)),
-                         (round(_dc.p45[0] / _by, 4), round(_dc.p45[1] / _by, 4)),
-                         (round(_dc.p50[0] / _by, 4), round(_dc.p50[1] / _by, 4)),
-                         (round(_dc.p55[0] / _by, 4), round(_dc.p55[1] / _by, 4)),
-                         (round(_dc.p60[0] / _by, 4), round(_dc.p60[1] / _by, 4)),
-                         (round(_dc.p65[0] / _by, 4), round(_dc.p65[1] / _by, 4)),
-                         (round(_dc.p70[0] / _by, 4), round(_dc.p70[1] / _by, 4)),
-                         (round(_dc.p80[0] / _by, 4), round(_dc.p80[1] / _by, 4)),
-                         (round(_dc.p90[0] / _by, 4), round(_dc.p90[1] / _by, 4)),
-                         (round(_dc.p100[0] / _by, 4), round(_dc.p100[1] / _by, 4)),
-                         (round(_dc.p120[0] / _by, 4), round(_dc.p120[1] / _by, 4)),
-                         (round(_dc.p138[0] / _by, 4), round(_dc.p138[1] / _by, 4)),
-                         (round(_dc.p160[0] / _by, 4), round(_dc.p160[1] / _by, 4)),
-                         (round(_dc.p200[0] / _by, 4), round(_dc.p200[1] / _by, 4))
+        return SellDepth(round_price(_dc.ask_price / _by),
+                         (round_price(_dc.p1[0] / _by), round_price(_dc.p1[1] / _by)),
+                         (round_price(_dc.p2[0] / _by), round_price(_dc.p2[1] / _by)),
+                         (round_price(_dc.p3[0] / _by), round_price(_dc.p3[1] / _by)),
+                         (round_price(_dc.p4[0] / _by), round_price(_dc.p4[1] / _by)),
+                         (round_price(_dc.p5[0] / _by), round_price(_dc.p5[1] / _by)),
+                         (round_price(_dc.p10[0] / _by), round_price(_dc.p10[1] / _by)),
+                         (round_price(_dc.p15[0] / _by), round_price(_dc.p15[1] / _by)),
+                         (round_price(_dc.p20[0] / _by), round_price(_dc.p20[1] / _by)),
+                         (round_price(_dc.p25[0] / _by), round_price(_dc.p25[1] / _by)),
+                         (round_price(_dc.p30[0] / _by), round_price(_dc.p30[1] / _by)),
+                         (round_price(_dc.p35[0] / _by), round_price(_dc.p35[1] / _by)),
+                         (round_price(_dc.p40[0] / _by), round_price(_dc.p40[1] / _by)),
+                         (round_price(_dc.p45[0] / _by), round_price(_dc.p45[1] / _by)),
+                         (round_price(_dc.p50[0] / _by), round_price(_dc.p50[1] / _by)),
+                         (round_price(_dc.p55[0] / _by), round_price(_dc.p55[1] / _by)),
+                         (round_price(_dc.p60[0] / _by), round_price(_dc.p60[1] / _by)),
+                         (round_price(_dc.p65[0] / _by), round_price(_dc.p65[1] / _by)),
+                         (round_price(_dc.p70[0] / _by), round_price(_dc.p70[1] / _by)),
+                         (round_price(_dc.p80[0] / _by), round_price(_dc.p80[1] / _by)),
+                         (round_price(_dc.p90[0] / _by), round_price(_dc.p90[1] / _by)),
+                         (round_price(_dc.p100[0] / _by), round_price(_dc.p100[1] / _by)),
+                         (round_price(_dc.p120[0] / _by), round_price(_dc.p120[1] / _by)),
+                         (round_price(_dc.p138[0] / _by), round_price(_dc.p138[1] / _by)),
+                         (round_price(_dc.p160[0] / _by), round_price(_dc.p160[1] / _by)),
+                         (round_price(_dc.p200[0] / _by), round_price(_dc.p200[1] / _by))
         )
 
 
