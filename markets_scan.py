@@ -7,8 +7,8 @@ import numpy as np
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from library import setup_logger, DecimalCodec, get_time, lib_initialize
-from market_scanner import manage_crawling, get_binance_schedule, ticker2sec
+from library import setup_logger, DecimalCodec, get_time, lib_initialize, ticker2sec
+from market_scanner import manage_crawling, get_binance_schedule
 from mongodb import mongo_client
 
 market_type = sys.argv[1]
