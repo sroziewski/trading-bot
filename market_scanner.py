@@ -18,7 +18,7 @@ from config import config
 from depth_crawl import divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, DecimalCodec, try_get_klines, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global, round_price, ticker2sec
+    get_time_from_binance_tmstmp, logger_global, round_price, ticker2sec, ticker2num
 from mongodb import mongo_client
 
 db = mongo_client.klines
