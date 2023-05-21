@@ -24,3 +24,10 @@ with ThreadPoolExecutor(max_workers=2) as executor:
         executor.submit(call_script, ordinal, arg)
         ordinal += 1
 print('All tasks has been finished')
+
+
+how to calculate support or resistance levels?
+1. Support is lower
+2. Resistance higher
+3. Many crosses of straight horizontal with candles bodies
+4. when the lines goes through the top of the local top/bottom candle, the resistance is getting stronger (locally in time, high prob of a pullback, or even a failed move)

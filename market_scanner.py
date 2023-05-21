@@ -358,17 +358,22 @@ def add_dc_to_kline(_curr_kline, _indices, _dc, _multiple_, _ticker):
     if _ticker == '5m':
         _depth_list_buy = _dc.buy_depth_5m[_idx__:_idx__ + _multiple_]
         _depth_list_sell = _dc.sell_depth_5m[_idx__:_idx__ + _multiple_]
-    elif _ticker in ['3d', '1w']:
+    if _ticker in ['3d', '1w']:
         _depth_list_buy = _dc.buy_depth_1d[_idx__:_idx__ + _multiple_]
         _depth_list_sell = _dc.sell_depth_1d[_idx__:_idx__ + _multiple_]
-    else:
+    if _ticker in ['15m', '30m', '1h']:
         _depth_list_buy = _dc.buy_depth_15m[_idx__:_idx__ + _multiple_]
         _depth_list_sell = _dc.sell_depth_15m[_idx__:_idx__ + _multiple_]
+    if _ticker in ['2h', '4h', '6h', '8h', '12h', '1d']:
+        _depth_list_buy = _dc.buy_depth_1h[_idx__:_idx__ + _multiple_]
+        _depth_list_sell = _dc.sell_depth_1h[_idx__:_idx__ + _multiple_]
 
     for __ele_ in _depth_list_buy:
         logger_global[0].info("{} dc buy time: {} {}".format(_dc.market, _ticker, __ele_.time_str))
     for __ele_ in _depth_list_sell:
         logger_global[0].info("{} dc sell time: {} {}".format(_dc.market, _ticker, __ele_.time_str))
+    if len(_depth_list_buy) == 0 or len(_depth_list_sell) == 0:
+        return
     __bd_r__ = reduce(add_dc, _depth_list_buy)
     __sd_r__ = reduce(add_dc, _depth_list_sell)
     __bd_r__ = divide_dc(__bd_r__, len(_depth_list_buy))
@@ -410,7 +415,7 @@ def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
     if _ticker == '5m':
         inject_market_depth_ltf(_curr_klines, _dc, _ticker, _counter)
         return
-    if _ticker in ['1h', '2h', '4h', '6h', '8h', '12h']:
+    if _ticker in ['1h', '2h', '4h', '6h', '8h', '12h', '1d']:
         inject_market_depth_htf(_curr_klines, _dc, _ticker, _counter)
         return
     _ticker_n = ticker2num(_ticker)

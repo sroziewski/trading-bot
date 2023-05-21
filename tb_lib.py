@@ -194,9 +194,19 @@ def get_strong_major_indices(_data, _p):
     return find_indices(_data, _p)  # True : a strong buy signal
 
 
-def _stuff():
+def get_klines(_path, _market, _ticker):
+    _fname = "{}_{}".format(_market, _ticker)
+    _klines = get_pickled(_path, _fname)
+    return _klines
 
-    avax_klines = get_pickled('E:\\bin\\data\\', "avax_usdt_4h")
+
+
+def _stuff():
+    path = "E:/data/binance/klines/usdt/"
+
+    avax_klines = get_klines(path, "avaxusdt", "4h")
+
+    avax_klines_tmp = get_pickled('E:\\bin\\data\\', "avax_usdt_4h")
     # avax_klines.reverse()
 
     # df = pd.read_csv('D:\\bin\\data\\BINANCE_AVAXUSDT_240.csv')
@@ -250,3 +260,8 @@ def _stuff():
 
 if __name__ == "__main__":
     _stuff()
+
+
+#   File "E:\dev\python\trading-bot\tb_lib.py", line 159, in compute_calculations
+#     _trend_strength.append(np.sum(_adjustment[_ii:1 + _ii]) / np.sum(_volume[_ii:1 + _ii]))
+# RuntimeWarning: invalid value encountered in true_divide
