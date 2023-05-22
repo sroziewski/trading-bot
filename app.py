@@ -1,13 +1,16 @@
 import json
+import logging
 
 from flask import Flask
 from flask import jsonify
 from flask_caching import Cache
-import logging
 
 from config import config
 
-logging.basicConfig(filename='flask.log', level=logging.DEBUG)
+logging.basicConfig(filename='flask.log',
+                level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
+
+logger = logging.getLogger("flask")
 
 flask_config = {
     "DEBUG": True,  # some Flask specific configs
@@ -28,10 +31,10 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import get_binance_obj, logger_global, lib_initialize, round_price
+from library import get_binance_obj, lib_initialize, round_price
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
-from library import setup_logger, DecimalCodec, get_time
+from library import DecimalCodec, get_time
 from mongodb import mongo_client
 
 lib_initialize()
@@ -71,7 +74,7 @@ class DepthCrawl(object):
 
     def add_depths_15m(self, _bd, _sd, _market):
         _size_15m = 6
-        # logger_global[0].info("add_depths_15m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
+        logger.info("add_depths_15m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
         if len(self.buy_depth_15m) > _size_15m:
             self.buy_depth_15m = self.buy_depth_15m[-_size_15m:]
         if len(self.sell_depth_15m) > _size_15m:
@@ -81,7 +84,7 @@ class DepthCrawl(object):
 
     def add_depths_5m(self, _bd, _sd, _market):
         _size_5m = 96
-        # logger_global[0].info("add_depths_5m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
+        logger.info("add_depths_5m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
         if len(self.buy_depth_5m) > _size_5m:
             self.buy_depth_5m = self.buy_depth_5m[-_size_5m:]
         if len(self.sell_depth_5m) > _size_5m:
@@ -378,7 +381,7 @@ def process_depth_socket_message(_msg):
         _depth_msg = DepthMsg(_msg)
         _depth_msg.round()
     except Exception:
-        logger_global[0].error(_msg)
+        logger.error(_msg)
         return
 
     while _depth_msg.market in depths_locker:
@@ -428,7 +431,7 @@ def do_freeze():
             depths1m[_market_c]['bd'].append(_bd)
             depths1m[_market_c]['sd'].append(_sd)
             if len(depths1m[_market_c]['sd']) == 0 or len(depths1m[_market_c]['bd']) == 0:
-                logger_global[0].warning("{} {}".format(_market_c, depths1m[_market_c]))
+                logger.warning("{} {}".format(_market_c, depths1m[_market_c]))
             #   15m section
             try:
                 _sec = int(depths1m[_market_c]['bd'][0].time_str.split(":")[-1])
@@ -501,7 +504,7 @@ def do_freeze():
                     _bdt_5m = divide_dc(_bds_5m, len(depths1m[_market_c]['bd']))
                     _sdt_5m = divide_dc(_sds_5m, len(depths1m[_market_c]['sd']))
                 except Exception as e:
-                    logger_global[0].error("{} {} {}".format(_market_c, depths1m[_market_c], e.__traceback__))
+                    logger.error("{} {} {}".format(_market_c, depths1m[_market_c], e.__traceback__))
 
                 _bdt_5m.set_time(_current_timestamp)
                 _sdt_5m.set_time(_current_timestamp)
@@ -540,7 +543,7 @@ def do_freeze():
                 try:
                     _bdt_5m = depths1m[_market_c]['bd'][0]
                 except IndexError as e:
-                    logger_global[0].error("{} {} {}".format(_market_c, depths1m[_market_c], e.__traceback__))
+                    logger.error("{} {} {}".format(_market_c, depths1m[_market_c], e.__traceback__))
                     return
                 _current_timestamp = _bdt_5m.timestamp - _min * 60 - _sec
                 _bds_f_5m = list(filter(lambda x: _t0_hour == int(x.time_str.split(":")[0].split(" ")[-1]) and _t0_day == int(x.time_str.split(" ")[0]), depth_crawl_dict[_market_c].buy_depth_15m))
@@ -614,11 +617,11 @@ def check_scanner():
             if _now - depth_crawl_dict[_market].buy_depth_15m[-1].timestamp > 16 * 60:
                 depth_crawl_dict[_market] = _dc
                 manage_depth_scan(_dc)
-                # logger_global[0].warning("Market {} restarted...".format(_market))
+                logger.warning("Market {} restarted...".format(_market))
         elif _market not in depth_crawl_dict:
             depth_crawl_dict[_market] = _dc
             manage_depth_scan(_dc)
-            # logger_global[0].warning("Market {} restarted...".format(_market))
+            logger.warning("Market {} restarted...".format(_market))
 
 
 def _stuff(_market_type):
@@ -648,6 +651,7 @@ def _stuff(_market_type):
 
 if __name__ == "app":
     lib_initialize()
+    logger.info("We have just started...")
     _stuff("usdt")
     _stuff("btc")
     _stuff("busd")

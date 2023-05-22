@@ -605,7 +605,6 @@ def _stuff():
         _dc = DepthCrawl(_market, usdt_markets_collection.name)
         depth_crawl_dict[_market] = _dc
         manage_depth_scan(_dc)
-        break
 
 
 if __name__ == "__main__":
