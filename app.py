@@ -495,9 +495,14 @@ def do_freeze():
                 _current_timestamp = _bdt_5m.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
 
                 if int(get_time(_current_timestamp).split(":")[-2]) % 15 > 0:
-                    print("BAD")
+                    logger.warning("BAD QUARTER")
+                    logger.warning("_t0_quarter: {} _t1_quarter: {} _bdt_5m.timestamp: {} _bdl_1m.timestamp: {}".format(_t0_quarter, _t1_quarter, _bdt_5m.timestamp, _bdl_1m.timestamp))
                     return
 
+                if int(get_time(_current_timestamp).split(":")[-1]) > 0:
+                    logger.warning("BAD SECOND")
+                    logger.warning("_t0_quarter: {} _t1_quarter: {} _bdt_5m.timestamp: {} _bdl_1m.timestamp: {}".format(_t0_quarter, _t1_quarter, _bdt_5m.timestamp, _bdl_1m.timestamp))
+                    _current_timestamp = _current_timestamp - int(get_time(_current_timestamp).split(":")[-1])
                 try:
                     _bds_5m = reduce(add_dc, depths1m[_market_c]['bd'])
                     _sds_5m = reduce(add_dc, depths1m[_market_c]['sd'])
@@ -567,7 +572,7 @@ def do_freeze():
 
 
 def _do_depth_scan(_dc: DepthCrawl):
-    # logger.info("Start scanning market {}".format(_vc.market))
+    logger.info("Start scanning market {}".format(_dc.market))
     depths[_dc.market] = {}
     depths[_dc.market]['asks'] = {}
     depths[_dc.market]['bids'] = {}
@@ -601,7 +606,7 @@ codec_options = CodecOptions(type_registry=type_registry)
 
 
 def manage_schedule():
-    _thread = threading.Thread(target=run_schedule, name='manage_depth_crawl')
+    _thread = threading.Thread(target=run_schedule, name='run_schedule')
     _thread.start()
 
 
