@@ -362,6 +362,7 @@ def manage_volume_scan(_vc):
     _crawler.start()
 
 
+
 def to_mongo(_vc: VolumeContainer):  # _volume_container
     return {
         'market': _vc.market,
