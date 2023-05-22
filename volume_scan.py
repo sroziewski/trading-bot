@@ -367,8 +367,8 @@ def to_mongo(_vc: VolumeContainer):  # _volume_container
     return {
         'market': _vc.market,
         'ticker': _vc.ticker,
-        'start_time': datetime.datetime.fromtimestamp(_vc.start_time, tz=datetime.timezone.utc).timestamp(),
-        'start_time_str': get_time(datetime.datetime.fromtimestamp(_vc.start_time, tz=datetime.timezone.utc).timestamp()),
+        'start_time': _vc.start_time,
+        'start_time_str': _vc.start_time_str,
         'total_base_volume': _vc.total_base_volume,
         'total_quantity': _vc.total_quantity,
         'avg_weighted_maker_price': round_price_s(_vc.avg_weighted_maker_price),
