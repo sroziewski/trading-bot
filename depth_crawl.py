@@ -467,7 +467,7 @@ def do_freeze():
                         _bd_5m_l.set_time(_next_5m_tmstmp)
                         _sd_5m_l.set_time(_next_5m_tmstmp)
                         depth_crawl_dict[_market_c].add_depths_5m(_bd_5m_l, _sd_5m_l, _market_c)
-            if _t0_quarter != _t1_quarter and len(depths1m[_market_c]['bd']) > 0 and len(depths1m[_market_c]['sd']) > 0:
+            if _t0_quarter is not None and _t1_quarter is not None and _t0_quarter != _t1_quarter and len(depths1m[_market_c]['bd']) > 0 and len(depths1m[_market_c]['sd']) > 0:
                 _bdl_1m = depths1m[_market_c]['bd'][-1]
                 _sdl_1m = depths1m[_market_c]['sd'][-1]
                 _bdt_5m = depths1m[_market_c]['bd'][0]
