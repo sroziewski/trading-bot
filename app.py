@@ -128,8 +128,8 @@ class MarketDepth(object):
         self.time_str = get_time(self.timestamp)
 
     def set_time(self, _t):
-        self.timestamp = datetime.datetime.fromtimestamp(_t, tz=datetime.timezone.utc).timestamp()
-        self.time_str = get_time(self.timestamp)
+        self.timestamp = _t
+        self.time_str = get_time(_t)
 
 
 class SellDepth(MarketDepth):
