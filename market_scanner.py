@@ -18,7 +18,7 @@ from config import config
 from depth_crawl import divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, DecimalCodec, try_get_klines, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global, round_price, ticker2sec, ticker2num
+    get_time_from_binance_tmstmp, logger_global, round_price, ticker2sec, ticker2num, get_time
 from mongodb import mongo_client
 
 db = mongo_client.klines
@@ -139,16 +139,16 @@ def to_mongo(_kline):
     if _kline.bid_depth:
         return {
         'exchange': _kline.exchange,
-        'version': "2.7",
+        'version': "2.8",
         'ticker': _kline.ticker,
-        'start_time': int(_kline.start_time/1000),
+        'start_time': datetime.datetime.fromtimestamp(int(_kline.start_time/1000), tz=datetime.timezone.utc).timestamp(),
         'opening': _kline.opening,
         'closing': _kline.closing,
         'lowest': _kline.lowest,
         'highest': _kline.highest,
         'quantity': round_price(_kline.volume),
         'base_volume': round_price(_kline.btc_volume),
-        'time_str': _kline.time_str,
+        'time_str': get_time(datetime.datetime.fromtimestamp(int(_kline.start_time/1000), tz=datetime.timezone.utc).timestamp()),
         'market': _kline.market,
         'bid_price': _kline.bid_depth.bid_price,
         'ask_price': _kline.ask_depth.ask_price,
@@ -203,16 +203,16 @@ def to_mongo(_kline):
     else:
         return {
             'exchange': _kline.exchange,
-            'version': "2.7",
+            'version': "2.8",
             'ticker': _kline.ticker,
-            'start_time': int(_kline.start_time / 1000),
+            'start_time': datetime.datetime.fromtimestamp(int(_kline.start_time/1000), tz=datetime.timezone.utc).timestamp(),
             'opening': _kline.opening,
             'closing': _kline.closing,
             'lowest': _kline.lowest,
             'highest': _kline.highest,
             'quantity': round_price(_kline.volume),
             'base_volume': round_price(_kline.btc_volume),
-            'time_str': _kline.time_str,
+            'time_str': get_time(datetime.datetime.fromtimestamp(int(_kline.start_time/1000), tz=datetime.timezone.utc).timestamp()),
             'market': _kline.market,
             'bid_price': None,
             'ask_price': None,
