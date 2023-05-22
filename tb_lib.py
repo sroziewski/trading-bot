@@ -156,7 +156,11 @@ def compute_calculations(_open, _close, _high, _low, _volume, _ohlc=True):   # t
     _lower_trend = []
     _ohlc4 = []
     for _ii in range(len(_open)):
-        _trend_strength.append(np.sum(_adjustment[_ii:1 + _ii]) / np.sum(_volume[_ii:1 + _ii]))
+        if np.sum(_volume[_ii:1 + _ii]) == 0:
+            _trend_strength.append((np.sum(_adjustment[_ii - 1:1 + _ii - 1]) / np.sum(_volume[_ii - 1:1 + _ii - 1]) + np.sum(
+                _adjustment[_ii + 1:1 + _ii + 1]) / np.sum(_volume[_ii + 1:1 + _ii + 1])) / 2)
+        else:
+            _trend_strength.append(np.sum(_adjustment[_ii:1 + _ii]) / np.sum(_volume[_ii:1 + _ii]))
         if _ohlc:
             _ohlc4.append((_open[_ii] + _close[_ii] + _high[_ii] + _low[_ii]) / 4)
         else:
