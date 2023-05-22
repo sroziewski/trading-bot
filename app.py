@@ -633,9 +633,9 @@ def _stuff(_market_type):
     # filename = "Binance-OrderBook-Scanner"
     # logger = setup_logger(filename)
     # logger.info("Starting Order Book Depth Crawl...")
-    schedule.every(1).minutes.do(do_freeze)
-    # schedule.every(12).minutes.do(check_scanner)
-    manage_schedule()
+    # schedule.every(1).minutes.do(do_freeze)
+    # # schedule.every(12).minutes.do(check_scanner)
+    # manage_schedule()
 
     usdt_markets_collection = db_markets_info.get_collection(_market_type, codec_options=codec_options)
 
@@ -657,6 +657,8 @@ def _stuff(_market_type):
 if __name__ == "app":
     lib_initialize()
     logger.info("We have just started...")
+    schedule.every(1).minutes.do(do_freeze)
+    manage_schedule()
     _stuff("usdt")
     _stuff("btc")
     _stuff("busd")
