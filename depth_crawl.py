@@ -404,6 +404,7 @@ def unlock(_locker, _key):
 def do_freeze():
     for _market_c in depths.keys():
         depths_locker[_market_c] = True
+        _quarter_filled = False
         if len(depths[_market_c]['asks']) > 0 and len(depths[_market_c]['bids']) > 0:
             _as, _bs = freeze_order_book(_market_c)
             _bd = compute_depth_percentages(_bs, "bids")
@@ -485,6 +486,7 @@ def do_freeze():
                 _bdt_5m.set_time(_current_timestamp)
                 _sdt_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_15m(_bdt_5m, _sdt_5m, _market_c)
+                _quarter_filled = True
             #  day section
             _t0_day = _t1_day = _t0_hour = _t1_hour = None
             if len(depths1m[_market_c]['bd']) > 0:
@@ -533,7 +535,7 @@ def do_freeze():
                 _bd_5m.set_time(_current_timestamp)
                 _sd_5m.set_time(_current_timestamp)
                 depth_crawl_dict[_market_c].add_depths_1h(_bd_5m, _sd_5m)
-            if _t0_quarter is not None and _t1_quarter is not None and _t0_quarter != _t1_quarter:
+            if _quarter_filled:
                 depths1m[_market_c]['bd'].clear()
                 depths1m[_market_c]['sd'].clear()
                 depths1m[_market_c]['bd'].append(_bdl_1m)
