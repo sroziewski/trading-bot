@@ -475,6 +475,10 @@ def do_freeze():
                 _sdt_5m = depths1m[_market_c]['sd'][0]
                 _current_timestamp = _bdt_5m.timestamp - (_min - _t0_quarter * 15) * 60 - _sec
 
+                if int(get_time(_current_timestamp).split(":")[-2]) % 15 > 0:
+                    print("BAD")
+                    return
+
                 try:
                     _bds_5m = reduce(add_dc, depths1m[_market_c]['bd'])
                     _sds_5m = reduce(add_dc, depths1m[_market_c]['sd'])
