@@ -8,7 +8,7 @@ from flask_caching import Cache
 from config import config
 
 logging.basicConfig(filename='flask.log',
-                level=logging.DEBUG, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
+                level=logging.INFO, format='%(asctime)s %(levelname)s %(name)s %(threadName)s : %(message)s')
 
 logger = logging.getLogger("flask")
 
