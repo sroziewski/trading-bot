@@ -3,8 +3,11 @@ import json
 from flask import Flask
 from flask import jsonify
 from flask_caching import Cache
+import logging
 
 from config import config
+
+logging.basicConfig(filename='flask.log', level=logging.DEBUG)
 
 flask_config = {
     "DEBUG": True,  # some Flask specific configs
@@ -68,7 +71,7 @@ class DepthCrawl(object):
 
     def add_depths_15m(self, _bd, _sd, _market):
         _size_15m = 6
-        logger_global[0].info("add_depths_15m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
+        # logger_global[0].info("add_depths_15m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
         if len(self.buy_depth_15m) > _size_15m:
             self.buy_depth_15m = self.buy_depth_15m[-_size_15m:]
         if len(self.sell_depth_15m) > _size_15m:
@@ -78,7 +81,7 @@ class DepthCrawl(object):
 
     def add_depths_5m(self, _bd, _sd, _market):
         _size_5m = 96
-        logger_global[0].info("add_depths_5m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
+        # logger_global[0].info("add_depths_5m: {} {} {}".format(_market, _bd.timestamp, _bd.time_str))
         if len(self.buy_depth_5m) > _size_5m:
             self.buy_depth_5m = self.buy_depth_5m[-_size_5m:]
         if len(self.sell_depth_5m) > _size_5m:
@@ -611,17 +614,17 @@ def check_scanner():
             if _now - depth_crawl_dict[_market].buy_depth_15m[-1].timestamp > 16 * 60:
                 depth_crawl_dict[_market] = _dc
                 manage_depth_scan(_dc)
-                logger_global[0].warning("Market {} restarted...".format(_market))
+                # logger_global[0].warning("Market {} restarted...".format(_market))
         elif _market not in depth_crawl_dict:
             depth_crawl_dict[_market] = _dc
             manage_depth_scan(_dc)
-            logger_global[0].warning("Market {} restarted...".format(_market))
+            # logger_global[0].warning("Market {} restarted...".format(_market))
 
 
 def _stuff(_market_type):
-    filename = "Binance-OrderBook-Scanner"
-    logger = setup_logger(filename)
-    logger.info("Starting Order Book Depth Crawl...")
+    # filename = "Binance-OrderBook-Scanner"
+    # logger = setup_logger(filename)
+    # logger.info("Starting Order Book Depth Crawl...")
     schedule.every(1).minutes.do(do_freeze)
     # schedule.every(12).minutes.do(check_scanner)
     manage_schedule()
