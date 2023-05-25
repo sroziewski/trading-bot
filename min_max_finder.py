@@ -106,6 +106,7 @@ class SetupEntry(object):
         self.time = int(_time)
         self.time_str = get_time(_time)
         self.signal_strength = None
+        self.sell_signal = {}  # (ticker, index)
 
     def set_signal_strength(self, _signal_strength):
         self.signal_strength = _signal_strength
@@ -639,6 +640,27 @@ def process_computing(_cse: ComputingSetupEntry):
         _cse.se = _se
 
 
+def filter_sell_setups(_setups):
+    _sell_signals = list(filter(lambda x: x.sell_signal, _setups))
+    _1w_sell = _3d_sell = _1d_sell = _12h_sell = None
+    for _s_0 in _sell_signals:
+        _s = _s_0.sell_signal
+        if '1w' in _s:
+            _1w_sell = _s['1w']
+        if '3d' in _s:
+            _3d_sell = _s['3d']
+        if '1d' in _s:
+            _1d_sell = _s['1d']
+        if '12h' in _s:
+            _12h_sell = _s['12h']
+    _f = list(filter(lambda x: x, [_1w_sell, _3d_sell, _1d_sell, _12h_sell]))
+    _out = []
+    for _setup in _setups:
+        if all(filter(lambda x: _setup.time > x, _f)):
+            _out = _setup
+    return _out
+
+
 _mt = []
 
 
@@ -654,12 +676,14 @@ def process_markets(_pe: ProcessingEntry):
             _cses = []
             _processors = []
             for _ticker in _tickers:
-                sleep(randrange(10))
-                _cse = ComputingSetupEntry(_market, _type, _ticker)
-                _cses.append(_cse)
-                _processors.append(manage_entry_computing(_cse))
+                if _ticker == '1d':
+                    sleep(randrange(10))
+                    _cse = ComputingSetupEntry(_market, _type, _ticker)
+                    _cses.append(_cse)
+                    _processors.append(manage_entry_computing(_cse))
             [x.join() for x in _processors]
             _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
+            filter_sell_setups(_setups)
             _setups_exist = define_signal_strength(_setups)  # filter out volume flow index < 0
             if _setups_exist:
                 _setup_collection = db_setup.get_collection(_pe.market_info_collection.name.lower(),
@@ -699,16 +723,24 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
     _buy_ind = get_major_indices(_major, 1)
     _sell_ind = get_major_indices(_major, -1)
     _buys = [*_strong_buy_ind, *_buy_ind]
+    _sell_signal = None
     if len(_buys) == 0:
         return False  # there is no entry setup, we skip
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
         _buys = list(filter(lambda x: x > _last_strong_sell_ind, _buys))
+        if _last_strong_sell_ind in _df_inc['time']:
+            _sell_signal = int(_df_inc['time'][_last_strong_sell_ind]/1000)
     if len(_buys) == 0:
         return False  # there is no entry setup, we skip
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
+        if _last_sell_ind in _df_inc['time']:
+            if _sell_signal and _last_sell_ind > _last_strong_sell_ind:
+                _sell_signal = int(_df_inc['time'][_last_sell_ind]/1000)
+            elif not _sell_signal:
+                _sell_signal = int(_df_inc['time'][_last_sell_ind]/1000)
     if len(_buys) == 0:
         return False  # there is no entry setup, we skip
     _buys.sort()
@@ -725,7 +757,10 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
     _t = get_time_buys(_buys, _df_inc)
     _buy_price = extract_order_price(_buys, _df_inc)
     _se = SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
-    return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
+    if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h']:
+        _se.sell_signal[_ticker] = _sell_signal
+    # return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
+    return _se
 
 
 def _stuff():
