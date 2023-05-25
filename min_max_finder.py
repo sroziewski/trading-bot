@@ -190,6 +190,7 @@ def get_delta_t(_ticker):
     if _ticker == '1w':
         return 7*24*60*60*1000
 
+
 def define_signal_strength(_setups):
     if len(_setups) == 0:
         return False
@@ -199,7 +200,7 @@ def define_signal_strength(_setups):
         _setups_dict[_setup.ticker] = _setup
 
     for _ii in range(len(_setups)):
-        _dt = get_delta_t(_setups[_ii].ticker)
+        _dt = 2 * get_delta_t(_setups[_ii].ticker)
         if _setups[_ii].ticker == '1d':
             _signal_strength = 24
             if '1w' in _setups_dict:
