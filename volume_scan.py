@@ -66,6 +66,22 @@ def is_empty_volume(_vc: VolumeContainer):
     return not _vc or _vc.maker_volume.base_volume == 0.0 or _vc.taker_volume.base_volume == 0.0
 
 
+def store_to_mongo(_counter, _volume_collection, _vc: VolumeContainer):
+    if _counter > 5:
+        try:
+            _volume_collection.insert_one(to_mongo(_vc))
+        except Exception as e:
+            logger.exception(e.__traceback__)
+            logger.error("WRITE ERROR --> {} {}".format(_vc.market, _vc.start_time_str))
+        return
+    try:
+        _volume_collection.insert_one(to_mongo(_vc))
+    except Exception as e:
+        logger.warning("store_to_mongo: {}".format(_counter))
+        sleep(5)
+        store_to_mongo(_counter + 1, _volume_collection, _vc)
+
+
 def post_process_volume_container(_vc: VolumeContainer):
     if is_not_initialized(_vc.market):
         return
@@ -81,7 +97,7 @@ def post_process_volume_container(_vc: VolumeContainer):
 
     _vc.ticker = '15m'
     _vc.round()
-    volume_collection.insert_one(to_mongo(_vc))
+    store_to_mongo(0, volume_collection, _vc)
     # logger.info("Volume market {}_{} has been written to volume {} collection -- base_volume: {}, quantity: {}".format(_vc.market.lower(),
     #                                                                                       _vc.ticker.lower(),
     #                                                                                       volume_collection.name.upper(),

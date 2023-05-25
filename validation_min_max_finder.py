@@ -31,7 +31,7 @@ def validate(_pe):
     _klines = list(map(lambda x: to_offline_kline(x), get_klines(path, _pe.market, _pe.ticker)))
     _klines.reverse()
     _length = len(_klines) - 400 - 1
-    for _i in range(0, _length):
+    for _i in range(1100, _length):
         _data = _klines[_i:400+_i]
         _se: SetupEntry = extract_buy_entry_setup(_data, _pe.market, _pe.ticker)
         if _i % 1000 == 0:

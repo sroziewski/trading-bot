@@ -62,14 +62,14 @@ class DecimalCodec(TypeCodec):
 
 
 class Kline(object):
-    def __init__(self, start_time, opening, closing, highest, lowest, volume, btc_volume, time_str, ticker=None):
+    def __init__(self, start_time, opening, closing, highest, lowest, volume, base_volume, time_str, ticker=None):
         self.start_time = start_time
         self.opening = opening
         self.closing = closing
         self.highest = highest
         self.lowest = lowest
         self.volume = volume
-        self.btc_volume = btc_volume
+        self.base_volume = base_volume
         self.time_str = time_str
         self.buy_btc_volume = 0
         self.buy_quantity = 0
@@ -1526,11 +1526,17 @@ def get_binance_interval_unit(_ticker, _no_such_market):
         }[_ticker]
     elif _no_such_market == "strategy":
         return {
+            BinanceClient.KLINE_INTERVAL_15MINUTE: "1 day ago",
+            BinanceClient.KLINE_INTERVAL_30MINUTE: "1 day ago",
+            BinanceClient.KLINE_INTERVAL_1HOUR: "2 days ago",
+            BinanceClient.KLINE_INTERVAL_2HOUR: "2 days ago",
             BinanceClient.KLINE_INTERVAL_4HOUR: "5 days ago",
             BinanceClient.KLINE_INTERVAL_6HOUR: "5 days ago",
             BinanceClient.KLINE_INTERVAL_8HOUR: "5 days ago",
             BinanceClient.KLINE_INTERVAL_12HOUR: "5 days ago",
-            BinanceClient.KLINE_INTERVAL_1DAY: "10 days ago"
+            BinanceClient.KLINE_INTERVAL_1DAY: "10 days ago",
+            BinanceClient.KLINE_INTERVAL_3DAY: "36 days ago",
+            BinanceClient.KLINE_INTERVAL_1WEEK: "36 days ago"
         }[_ticker]
     else:
         return {

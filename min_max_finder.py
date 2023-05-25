@@ -9,7 +9,7 @@ import pandas as pd
 from bson.codec_options import TypeRegistry, CodecOptions
 
 from library import setup_logger, DecimalCodec, get_pickled, get_time_from_binance_tmstmp, try_get_klines, \
-    get_binance_interval_unit, get_binance_klines, Kline
+    get_binance_interval_unit, get_binance_klines, Kline, lib_initialize
 from mongodb import mongo_client
 from tb_lib import compute_tr, smooth, get_crossup, get_crossdn, lele, get_strong_major_indices, get_major_indices, \
     compute_adjustment, compute_money_strength, compute_whale_money_flow, compute_trend_exhaustion
@@ -19,6 +19,9 @@ db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
+
+filename = "Binance-Min-Max-Finder"
+logger = setup_logger(filename)
 
 
 def create_from_online_df(_klines):
@@ -34,12 +37,19 @@ def create_from_online_df(_klines):
                       columns=['open', 'close', 'high', 'low', 'volume', 'time', 'time_str'])
 
 
+def extract_volume(_kline):
+    if 'volume' in _kline:
+        return _kline['volume']
+    if 'quantity' in _kline:
+        return _kline['quantity']
+
+
 def create_from_offline_df(_klines):
     _open = list(map(lambda x: x['kline']['opening'], _klines))
     _close = list(map(lambda x: x['kline']['closing'], _klines))
     _high = list(map(lambda x: x['kline']['highest'], _klines))
     _low = list(map(lambda x: x['kline']['lowest'], _klines))
-    _volume = list(map(lambda x: x['kline']['volume'], _klines))
+    _volume = list(map(lambda x: extract_volume(x['kline']), _klines))
     _time = list(map(lambda x: x['kline']['start_time'], _klines))
     _time_str = list(map(lambda x: x['kline']['time_str'], _klines))
 
@@ -141,6 +151,7 @@ def extract_klines(_market, _type, _ticker):
         if len(_klines_offline) > 399:
             break
 
+
     _klines_online.reverse()
 
     _ii = 0
@@ -156,6 +167,14 @@ def extract_klines(_market, _type, _ticker):
 
 
 def get_delta_t(_ticker):
+    if _ticker == '15m':
+        return 0.25*60*60*1000
+    if _ticker == '30m':
+        return 0.5*60*60*1000
+    if _ticker == '1h':
+        return 60*60*1000
+    if _ticker == '2h':
+        return 2*60*60*1000
     if _ticker == '4h':
         return 4*60*60*1000
     if _ticker == '6h':
@@ -166,7 +185,10 @@ def get_delta_t(_ticker):
         return 12*60*60*1000
     if _ticker == '1d':
         return 24*60*60*1000
-
+    if _ticker == '3d':
+        return 3*24*60*60*1000
+    if _ticker == '1w':
+        return 7*24*60*60*1000
 
 def define_signal_strength(_setups):
     if len(_setups) == 0:
@@ -180,6 +202,14 @@ def define_signal_strength(_setups):
         _dt = get_delta_t(_setups[_ii].ticker)
         if _setups[_ii].ticker == '1d':
             _signal_strength = 24
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 7*24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 3*24
             if '12h' in _setups_dict:
                 _s = _setups_dict['12h']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -196,9 +226,33 @@ def define_signal_strength(_setups):
                 _s = _setups_dict['4h']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 4
+            if '2h' in _setups_dict:
+                _s = _setups_dict['2h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 2
+            if '1h' in _setups_dict:
+                _s = _setups_dict['1h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 1
+            if '30m' in _setups_dict:
+                _s = _setups_dict['30m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.5
+            if '15m' in _setups_dict:
+                _s = _setups_dict['15m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.25
             _setups[_ii].signal_strength = _signal_strength
         if _setups[_ii].ticker == '12h':
             _signal_strength = 12
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 7*24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 3*24
             if '1d' in _setups_dict:
                 _s = _setups_dict['1d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -215,9 +269,33 @@ def define_signal_strength(_setups):
                 _s = _setups_dict['4h']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 4
+            if '2h' in _setups_dict:
+                _s = _setups_dict['2h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 2
+            if '1h' in _setups_dict:
+                _s = _setups_dict['1h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 1
+            if '30m' in _setups_dict:
+                _s = _setups_dict['30m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.5
+            if '15m' in _setups_dict:
+                _s = _setups_dict['15m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.25
             _setups[_ii].signal_strength = _signal_strength
         if _setups[_ii].ticker == '8h':
             _signal_strength = 8
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 7*24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 3*24
             if '1d' in _setups_dict:
                 _s = _setups_dict['1d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -234,9 +312,33 @@ def define_signal_strength(_setups):
                 _s = _setups_dict['4h']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 4
+            if '2h' in _setups_dict:
+                _s = _setups_dict['2h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 2
+            if '1h' in _setups_dict:
+                _s = _setups_dict['1h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 1
+            if '30m' in _setups_dict:
+                _s = _setups_dict['30m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.5
+            if '15m' in _setups_dict:
+                _s = _setups_dict['15m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.25
             _setups[_ii].signal_strength = _signal_strength
         if _setups[_ii].ticker == '6h':
             _signal_strength = 6
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 7*24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 3*24
             if '1d' in _setups_dict:
                 _s = _setups_dict['1d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -253,26 +355,234 @@ def define_signal_strength(_setups):
                 _s = _setups_dict['4h']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 4
+            if '2h' in _setups_dict:
+                _s = _setups_dict['2h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 2
+            if '1h' in _setups_dict:
+                _s = _setups_dict['1h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 1
+            if '30m' in _setups_dict:
+                _s = _setups_dict['30m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.5
+            if '15m' in _setups_dict:
+                _s = _setups_dict['15m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.25
             _setups[_ii].signal_strength = _signal_strength
         if _setups[_ii].ticker == '4h':
             _signal_strength = 4
-            if '4h' in _setups_dict:
-                _s = _setups_dict['4h']
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 4
-            if '12h' in _setups_dict:
-                _s = _setups_dict['12h']
+                    _signal_strength += 7*24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 12
-            if '6h' in _setups_dict:
-                _s = _setups_dict['6h']
-                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 6
+                    _signal_strength += 3*24
             if '1d' in _setups_dict:
                 _s = _setups_dict['1d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 24
-            _setups[_ii].signal_strength = _signal_strength
+            if '12h' in _setups_dict:
+                _s = _setups_dict['12h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 12
+            if '8h' in _setups_dict:
+                _s = _setups_dict['8h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 8
+            if '6h' in _setups_dict:
+                _s = _setups_dict['6h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 6
+            if '2h' in _setups_dict:
+                _s = _setups_dict['2h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 2
+            if '1h' in _setups_dict:
+                _s = _setups_dict['1h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 1
+            if '30m' in _setups_dict:
+                _s = _setups_dict['30m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.5
+            if '15m' in _setups_dict:
+                _s = _setups_dict['15m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.25
+        if _setups[_ii].ticker == '2h':
+            _signal_strength = 2
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 7 * 24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 3 * 24
+            if '1d' in _setups_dict:
+                _s = _setups_dict['1d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 24
+            if '12h' in _setups_dict:
+                _s = _setups_dict['12h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 12
+            if '8h' in _setups_dict:
+                _s = _setups_dict['8h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 8
+            if '6h' in _setups_dict:
+                _s = _setups_dict['6h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 6
+            if '4h' in _setups_dict:
+                _s = _setups_dict['4h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 4
+            if '1h' in _setups_dict:
+                _s = _setups_dict['1h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 1
+            if '30m' in _setups_dict:
+                _s = _setups_dict['30m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.5
+            if '15m' in _setups_dict:
+                _s = _setups_dict['15m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.25
+        if _setups[_ii].ticker == '1h':
+            _signal_strength = 1
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 7 * 24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 3 * 24
+            if '1d' in _setups_dict:
+                _s = _setups_dict['1d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 24
+            if '12h' in _setups_dict:
+                _s = _setups_dict['12h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 12
+            if '8h' in _setups_dict:
+                _s = _setups_dict['8h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 8
+            if '6h' in _setups_dict:
+                _s = _setups_dict['6h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 6
+            if '4h' in _setups_dict:
+                _s = _setups_dict['4h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 4
+            if '2h' in _setups_dict:
+                _s = _setups_dict['2h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 2
+            if '30m' in _setups_dict:
+                _s = _setups_dict['30m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.5
+            if '15m' in _setups_dict:
+                _s = _setups_dict['15m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.25
+        if _setups[_ii].ticker == '30m':
+            _signal_strength = 0.5
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 7 * 24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 3 * 24
+            if '1d' in _setups_dict:
+                _s = _setups_dict['1d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 24
+            if '12h' in _setups_dict:
+                _s = _setups_dict['12h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 12
+            if '8h' in _setups_dict:
+                _s = _setups_dict['8h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 8
+            if '6h' in _setups_dict:
+                _s = _setups_dict['6h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 6
+            if '4h' in _setups_dict:
+                _s = _setups_dict['4h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 4
+            if '2h' in _setups_dict:
+                _s = _setups_dict['2h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 2
+            if '1h' in _setups_dict:
+                _s = _setups_dict['1h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 1
+            if '15m' in _setups_dict:
+                _s = _setups_dict['15m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.25
+        if _setups[_ii].ticker == '15m':
+            _signal_strength = 0.25
+            if '1w' in _setups_dict:
+                _s = _setups_dict['1w']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 7 * 24
+            if '3d' in _setups_dict:
+                _s = _setups_dict['3d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 3 * 24
+            if '1d' in _setups_dict:
+                _s = _setups_dict['1d']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 24
+            if '12h' in _setups_dict:
+                _s = _setups_dict['12h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 12
+            if '8h' in _setups_dict:
+                _s = _setups_dict['8h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 8
+            if '6h' in _setups_dict:
+                _s = _setups_dict['6h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 6
+            if '4h' in _setups_dict:
+                _s = _setups_dict['4h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 4
+            if '2h' in _setups_dict:
+                _s = _setups_dict['2h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 2
+            if '1h' in _setups_dict:
+                _s = _setups_dict['1h']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 1
+            if '30m' in _setups_dict:
+                _s = _setups_dict['30m']
+                if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
+                    _signal_strength += 0.5
+        _setups[_ii].signal_strength = _signal_strength
 
 
 def manage_market_processing(_pe, _ii):
@@ -295,6 +605,7 @@ def min_max_scanner(_market_info_collection, _threads):
         _c = manage_market_processing(_pe, _ik)
         _crawlers.append(_c)
         _ik += 1
+        break
     for _c in _crawlers:
         _c.join()
 
@@ -305,11 +616,35 @@ class ProcessingEntry(object):
         self.market_info_list = _market_info_list
 
 
+class ComputingSetupEntry(object):
+    def __init__(self, _market, _type, _ticker):
+        self.market = _market
+        self.type = _type
+        self.ticker = _ticker
+        self.se = None
+
+
+def manage_entry_computing(_cse: ComputingSetupEntry):
+    _crawler = threading.Thread(target=process_computing, args=(_cse,),
+                                name='process_computing : {}{}_{}'.format(_cse.market, _cse.type, _cse.ticker))
+    _crawler.start()
+
+    return _crawler
+
+
+def process_computing(_cse: ComputingSetupEntry):
+    _klines = extract_klines(_cse.market, _cse.type, _cse.ticker)
+    _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.market, _cse.type).upper(), _cse.ticker)
+    _klines.clear()
+    if _se:
+        _cse.se = _se
+
+
 _mt = []
 
 
 def process_markets(_pe: ProcessingEntry):
-    _tickers = ['4h', '6h', '8h', '12h', '1d']
+    _tickers = ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
     for _market_info in _pe.market_info_list:
         _market = _market_info['name']
         if _market_info['active'] and _market != "paxg":
@@ -317,13 +652,15 @@ def process_markets(_pe: ProcessingEntry):
             logger.info(_market)
             _type = _pe.market_info_collection.name
             _setups = []
+            _cses = []
+            _processors = []
             for _ticker in _tickers:
                 sleep(randrange(10))
-                _klines = extract_klines(_market, _type, _ticker)
-                _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_market, _type).upper(), _ticker)
-                _klines.clear()
-                if _se:
-                    _setups.append(_se)
+                _cse = ComputingSetupEntry(_market, _type, _ticker)
+                _cses.append(_cse)
+                _processors.append(manage_entry_computing(_cse))
+            [x.join() for x in _processors]
+            _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
             _setups_exist = define_signal_strength(_setups)
             if _setups_exist:
                 _setup_collection = db_setup.get_collection(_pe.market_info_collection.name.lower(),
@@ -392,9 +729,7 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
 
 
 def _stuff():
-    filename = "Binance-Min-Max-Finder"
-    logger = setup_logger(filename)
-
+    lib_initialize()
     db_markets_info = mongo_client.markets_info
     db_journal = mongo_client.journal
 
@@ -407,7 +742,7 @@ def _stuff():
     busd_markets_collection = db_markets_info.get_collection("busd", codec_options=codec_options)
 
     start = timer()
-    min_max_scanner(usdt_markets_collection, 6)  # 5, 6, 4
+    min_max_scanner(usdt_markets_collection, 1)  # 5, 6, 4
     end = timer()
     et = (end - start) / 60
     logger.info("Total time: {} minutes".format(et))
