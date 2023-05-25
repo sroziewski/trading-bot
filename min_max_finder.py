@@ -9,7 +9,7 @@ import pandas as pd
 from bson.codec_options import TypeRegistry, CodecOptions
 
 from library import setup_logger, DecimalCodec, get_pickled, get_time_from_binance_tmstmp, try_get_klines, \
-    get_binance_interval_unit, get_binance_klines, Kline, lib_initialize
+    get_binance_interval_unit, get_binance_klines, Kline, lib_initialize, get_time, round_price, ticker2num
 from mongodb import mongo_client
 from tb_lib import compute_tr, smooth, get_crossup, get_crossdn, lele, get_strong_major_indices, get_major_indices, \
     compute_adjustment, compute_money_strength, compute_whale_money_flow, compute_trend_exhaustion
@@ -65,7 +65,7 @@ def to_offline_kline(_kline: Kline):
             'highest': _kline.highest,
             'lowest': _kline.lowest,
             'volume': _kline.volume,
-            'start_time': _kline.start_time,
+            'start_time': int(_kline.start_time/1000),
             'time_str': _kline.time_str,
         }
     }
@@ -100,11 +100,11 @@ def extract_order_price(_buys, _df_inc):
 class SetupEntry(object):
     def __init__(self, _market, _buy_price, _buys_count, _ticker, _time):
         self.market = _market
-        self.buy_price = _buy_price
+        self.buy_price = round_price(_buy_price)
         self.buys_count = _buys_count
         self.ticker = _ticker
-        self.time = _time
-        self.time_str = get_time_from_binance_tmstmp(_time)
+        self.time = int(_time)
+        self.time_str = get_time(_time)
         self.signal_strength = None
 
     def set_signal_strength(self, _signal_strength):
@@ -114,12 +114,12 @@ class SetupEntry(object):
 def to_mongo(_se: SetupEntry):
     return {
         'market': _se.market.upper(),
-        'buy_price': _se.buy_price,
+        'buy_price': round_price(_se.buy_price),
         'buys_count': _se.buys_count,
         'ticker': _se.ticker,
         'signal_strength': _se.signal_strength,
         'time': int(_se.time/1000),
-        'time_str': get_time_from_binance_tmstmp(_se.time),
+        'time_str': get_time(_se.time),
     }
 
 
@@ -168,27 +168,27 @@ def extract_klines(_market, _type, _ticker):
 
 def get_delta_t(_ticker):
     if _ticker == '15m':
-        return 0.25*60*60*1000
+        return 0.25*60*60
     if _ticker == '30m':
-        return 0.5*60*60*1000
+        return 0.5*60*60
     if _ticker == '1h':
-        return 60*60*1000
+        return 60*60
     if _ticker == '2h':
-        return 2*60*60*1000
+        return 2*60*60
     if _ticker == '4h':
-        return 4*60*60*1000
+        return 4*60*60
     if _ticker == '6h':
-        return 6*60*60*1000
+        return 6*60*60
     if _ticker == '8h':
-        return 8*60*60*1000
+        return 8*60*60
     if _ticker == '12h':
-        return 12*60*60*1000
+        return 12*60*60
     if _ticker == '1d':
-        return 24*60*60*1000
+        return 24*60*60
     if _ticker == '3d':
-        return 3*24*60*60*1000
+        return 3*24*60*60
     if _ticker == '1w':
-        return 7*24*60*60*1000
+        return 7*24*60*60
 
 
 def define_signal_strength(_setups):
@@ -200,6 +200,7 @@ def define_signal_strength(_setups):
         _setups_dict[_setup.ticker] = _setup
 
     for _ii in range(len(_setups)):
+        _signal_strength = 0
         _dt = 2 * get_delta_t(_setups[_ii].ticker)
         if _setups[_ii].ticker == '1d':
             _signal_strength = 24
@@ -243,7 +244,6 @@ def define_signal_strength(_setups):
                 _s = _setups_dict['15m']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 0.25
-            _setups[_ii].signal_strength = _signal_strength
         if _setups[_ii].ticker == '12h':
             _signal_strength = 12
             if '1w' in _setups_dict:
@@ -286,7 +286,6 @@ def define_signal_strength(_setups):
                 _s = _setups_dict['15m']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 0.25
-            _setups[_ii].signal_strength = _signal_strength
         if _setups[_ii].ticker == '8h':
             _signal_strength = 8
             if '1w' in _setups_dict:
@@ -329,7 +328,6 @@ def define_signal_strength(_setups):
                 _s = _setups_dict['15m']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 0.25
-            _setups[_ii].signal_strength = _signal_strength
         if _setups[_ii].ticker == '6h':
             _signal_strength = 6
             if '1w' in _setups_dict:
@@ -372,7 +370,6 @@ def define_signal_strength(_setups):
                 _s = _setups_dict['15m']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 0.25
-            _setups[_ii].signal_strength = _signal_strength
         if _setups[_ii].ticker == '4h':
             _signal_strength = 4
             if '1w' in _setups_dict:
@@ -584,6 +581,7 @@ def define_signal_strength(_setups):
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 0.5
         _setups[_ii].signal_strength = _signal_strength
+    return _setups
 
 
 def manage_market_processing(_pe, _ii):
@@ -662,7 +660,7 @@ def process_markets(_pe: ProcessingEntry):
                 _processors.append(manage_entry_computing(_cse))
             [x.join() for x in _processors]
             _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
-            _setups_exist = define_signal_strength(_setups)
+            _setups_exist = define_signal_strength(_setups)  # filter out volume flow index < 0
             if _setups_exist:
                 _setup_collection = db_setup.get_collection(_pe.market_info_collection.name.lower(),
                                                             codec_options=codec_options)
@@ -726,7 +724,8 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
         return False  # there is no entry setup, we skip
     _t = get_time_buys(_buys, _df_inc)
     _buy_price = extract_order_price(_buys, _df_inc)
-    return SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
+    _se = SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
+    return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
 
 
 def _stuff():
