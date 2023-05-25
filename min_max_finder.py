@@ -605,7 +605,7 @@ def min_max_scanner(_market_info_collection, _threads):
         _c = manage_market_processing(_pe, _ik)
         _crawlers.append(_c)
         _ik += 1
-        break
+        # break
     for _c in _crawlers:
         _c.join()
 
@@ -759,8 +759,8 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
     _se = SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
     if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h']:
         _se.sell_signal[_ticker] = _sell_signal
-    # return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
-    return _se
+    return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
+    # return _se
 
 
 def _stuff():
