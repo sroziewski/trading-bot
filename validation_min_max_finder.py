@@ -1,11 +1,50 @@
 import threading
 
-from library import get_pickled, round_price
+from bson import CodecOptions
+from bson.codec_options import TypeRegistry
+
+from library import get_pickled, round_price, DecimalCodec
 from library import ticker2num
 from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
+from mongodb import mongo_client
+
 
 path = "E:/data/binance/klines/usdt/"
+db_klines = mongo_client.klines
+db_setup = mongo_client.setup
+decimal_codec = DecimalCodec()
+type_registry = TypeRegistry([decimal_codec])
+codec_options = CodecOptions(type_registry=type_registry)
 
+
+def extract_klines(_market, _type, _ticker):
+    _klines_online = get_klines("{}{}".format(_market, _type).upper(), _ticker)
+    _kline_collection = db_klines.get_collection("{}_{}_{}".format(_market, _type, _ticker), codec_options=codec_options)
+    try:
+        _kline_cursor = _kline_collection.find().sort("_id", -1)
+    except Exception:
+        pass
+
+    _klines_offline = []
+
+    for _e in _kline_cursor:
+        _klines_offline.append(_e)
+        if len(_klines_offline) > 399:
+            break
+
+
+    _klines_online.reverse()
+
+    _ii = 0
+    _diff = []
+    for _k in _klines_online:
+        if _k.start_time == _klines_offline[_ii]['kline']['start_time']:
+            break
+        _diff.append(_k)
+
+    _diff = list(map(lambda x: to_offline_kline(x), _diff))
+
+    return [*_diff, *_klines_offline]
 
 class ProcessingEntry(object):
     def __init__(self, _market, _ticker):
