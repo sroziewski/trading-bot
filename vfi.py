@@ -3,8 +3,8 @@ from math import log
 import numpy as np
 import pandas as pd
 
-from library import get_pickled
-from min_max_finder import create_from_offline_df, to_offline_kline
+from library import get_pickled, lib_initialize
+from min_max_finder import create_from_offline_df, to_offline_kline, extract_klines
 
 length = 130
 coef = 0.2
@@ -73,12 +73,21 @@ def compute_vfi(_df_dec):
 
     return _compute_vfi(_vcp, _vave)
 
+lib_initialize()
+
 market = "1inchusdt"
 ticker = '1d'
 _klines = get_klines(path, market, ticker)
 _klines = list(map(lambda x: to_offline_kline(x), get_klines(path, market, ticker)))
 _klines.reverse()
+
+_klines = extract_klines("1inch", "usdt", "1d")
+
+
 _df_dec = create_from_offline_df(_klines)
+
+
+
 _vfi = compute_vfi(_df_dec)
 
 sdf = 1

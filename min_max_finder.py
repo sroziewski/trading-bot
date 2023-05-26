@@ -156,10 +156,9 @@ def extract_klines(_market, _type, _ticker):
 
     _klines_online.reverse()
 
-    _ii = 0
     _diff = []
     for _k in _klines_online:
-        if _k.start_time == _klines_offline[_ii]['kline']['start_time']:
+        if int(_k.start_time/1000) == _klines_offline[0]['kline']['start_time']:
             break
         _diff.append(_k)
 
@@ -816,7 +815,11 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
     _buy_price = extract_order_price(_buys, _df_inc)
     _se = SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
 
+    _buy_ind_vfi = len(_df_dec) - 1 - _buys[-1]
     _vfi = compute_vfi(_df_dec)
+
+    if not (_vfi[_buy_ind_vfi] < 1.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi+1:_buy_ind_vfi + 11]))):
+        return False
 
     if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h']:
         _se.sell_signal[_ticker] = _sell_signal
