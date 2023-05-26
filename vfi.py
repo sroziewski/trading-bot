@@ -68,7 +68,7 @@ def _compute_vfi(_vcp, _vave):
 
 
 def compute_vfi(_klines_dec):
-    _df_dec = create_from_offline_df(_klines)
+    _df_dec = create_from_offline_df(_klines_dec)
     _vinter = compute_vinter(_df_dec)
     _vcp, _vave = compute_vcp(_df_dec, _vinter)
 
