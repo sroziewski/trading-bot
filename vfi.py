@@ -67,20 +67,19 @@ def _compute_vfi(_vcp, _vave):
     return _sum
 
 
-def compute_vfi(_klines_dec):
-    _df_dec = create_from_offline_df(_klines_dec)
+def compute_vfi(_df_dec):
     _vinter = compute_vinter(_df_dec)
     _vcp, _vave = compute_vcp(_df_dec, _vinter)
 
     return _compute_vfi(_vcp, _vave)
 
-market = "adausdt"
-ticker = '4h'
+market = "1inchusdt"
+ticker = '1d'
 _klines = get_klines(path, market, ticker)
 _klines = list(map(lambda x: to_offline_kline(x), get_klines(path, market, ticker)))
 _klines.reverse()
-
-_vfi = compute_vfi(_klines)
+_df_dec = create_from_offline_df(_klines)
+_vfi = compute_vfi(_df_dec)
 
 sdf = 1
 
