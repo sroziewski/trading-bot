@@ -606,7 +606,7 @@ def min_max_scanner(_market_info_collection, _threads):
         _c = manage_market_processing(_pe, _ik)
         _crawlers.append(_c)
         _ik += 1
-        # break
+        break
     for _c in _crawlers:
         _c.join()
 
@@ -641,7 +641,7 @@ def process_computing(_cse: ComputingSetupEntry):
         _cse.se = _se
 
 
-def filter_sell_setups(_setups):
+def filter_by_sell_setups(_setups):
     _sell_signals = list(filter(lambda x: x.sell_signal, _setups))
     _1w_sell = _3d_sell = _1d_sell = _12h_sell = None
     for _s_0 in _sell_signals:
@@ -711,8 +711,7 @@ def _compute_vfi(_vcp, _vave):
     return _sum
 
 
-def compute_vfi(_klines_dec):
-    _df_dec = create_from_offline_df(_klines_dec)
+def compute_vfi(_df_dec):
     _vinter = compute_vinter(_df_dec)
     _vcp, _vave = compute_vcp(_df_dec, _vinter)
 
@@ -742,7 +741,7 @@ def process_markets(_pe: ProcessingEntry):
                     _processors.append(manage_entry_computing(_cse))
             [x.join() for x in _processors]
             _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
-            filter_sell_setups(_setups)
+            _setups_f = filter_by_sell_setups(_setups)
             _setups_exist = define_signal_strength(_setups)  # filter out volume flow index < 0
             if _setups_exist:
                 _setup_collection = db_setup.get_collection(_pe.market_info_collection.name.lower(),
@@ -816,10 +815,13 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
     _t = get_time_buys(_buys, _df_inc)
     _buy_price = extract_order_price(_buys, _df_inc)
     _se = SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
+
+    _vfi = compute_vfi(_df_dec)
+
     if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h']:
         _se.sell_signal[_ticker] = _sell_signal
-    return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
-    # return _se
+    # return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
+    return _se
 
 
 def _stuff():
