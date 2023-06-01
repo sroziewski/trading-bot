@@ -48,12 +48,8 @@ def do_scan_market(_market_info_collection):
 
     logger.info("Markets to be added {} {}".format(len(_market_info_split), _market_info_split))
 
-    _ccc = 0
     for _market_s in _market_info_split:  # inf loop needed here
         process_market_info_entity(_market_s, _journal_collection)
-        break
-        logger.info("ADDED {} - {}".format(_ccc, _market_s['name']))
-        _ccc += 1
 
 
 def scanner(_market_info_collection):
