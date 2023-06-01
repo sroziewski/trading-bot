@@ -18,7 +18,7 @@ from config import config
 from depth_crawl import divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
 from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
     get_kucoin_interval_unit, DecimalCodec, try_get_klines, get_last_db_record, \
-    get_time_from_binance_tmstmp, logger_global, round_price, ticker2sec, ticker2num
+    get_time_from_binance_tmstmp, logger_global, round_price, ticker2sec, ticker2num, get_time
 from mongodb import mongo_client
 
 db = mongo_client.klines
@@ -147,7 +147,7 @@ def to_mongo(_kline):
         'lowest': _kline.lowest,
         'highest': _kline.highest,
         'quantity': round_price(_kline.volume),
-        'base_volume': round_price(_kline.btc_volume),
+        'base_volume': round_price(_kline.base_volume),
         'time_str': _kline.time_str,
         'market': _kline.market,
         'bid_price': _kline.bid_depth.bid_price,
@@ -211,7 +211,7 @@ def to_mongo(_kline):
             'lowest': _kline.lowest,
             'highest': _kline.highest,
             'quantity': round_price(_kline.volume),
-            'base_volume': round_price(_kline.btc_volume),
+            'base_volume': round_price(_kline.base_volume),
             'time_str': _kline.time_str,
             'market': _kline.market,
             'bid_price': None,
@@ -442,6 +442,16 @@ def inject_market_depth(_curr_klines, _dc, _ticker, _counter):
         return
 
 
+def update_journal(_schedule, _last_seen, _counter):
+    try:
+        _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {
+            '$set': {'running': False, 'last_seen': _last_seen, 'last_seen_str': get_time(_last_seen)}})
+    except Exception as e:
+        logger_global[0].error("{} {} COUNTER {}".format(_schedule.market, _schedule.ticker, _counter))
+        logger_global[0].error(e.__traceback__)
+        sleep((_counter + 1) * 60)
+        update_journal(_schedule, _last_seen, _counter + 1)
+
 def _do_schedule(_schedule):
     market = _schedule.market
     ticker = _schedule.ticker
@@ -496,8 +506,8 @@ def _do_schedule(_schedule):
             list(map(lambda x: x.add_exchange(_schedule.exchange), current_klines))
             persist_klines(current_klines, collection)
             logger_global[0].info("Stored to collection : {} : {} : {}".format(_schedule.exchange, collection_name, list(map(lambda x: x.time_str, current_klines))))
-        _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'running': False}})
-        _schedule.journal.update_one({'market': _schedule.asset, 'ticker': _schedule.ticker}, {'$set': {'last_seen': round(datetime.datetime.now().timestamp())}})
+        _last_seen = round(datetime.datetime.now().timestamp())
+        update_journal(_schedule, _last_seen, 0)
         _schedule.no_such_market = False
         if ticker == '5m':
             _random_sleep = 20
