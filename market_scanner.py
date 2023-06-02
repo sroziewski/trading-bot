@@ -241,7 +241,7 @@ def filter_current_klines(_klines, _collection_name, _collection):
         "{} : last kline : {} ".format(_collection_name, _last_record['kline']['time_str'] if _last_record else "None"))
     _out = None
     if _last_record:
-        _out = list(filter(lambda x: int(x.start_time) > int(_last_record['timestamp']), _klines))
+        _out = list(filter(lambda x: int(x.start_time) / 1000 > int(_last_record['timestamp']), _klines))
     else:
         _out = _klines
         logger_global[0].info("{} : first kline : {} ".format(_collection_name, _out[0].time_str if _out else "None"))
@@ -451,6 +451,7 @@ def update_journal(_schedule, _last_seen, _counter):
         logger_global[0].error(e.__traceback__)
         sleep((_counter + 1) * 60)
         update_journal(_schedule, _last_seen, _counter + 1)
+
 
 def _do_schedule(_schedule):
     market = _schedule.market
