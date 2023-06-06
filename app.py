@@ -31,7 +31,7 @@ from time import sleep
 import schedule
 from binance.websockets import BinanceSocketManager
 
-from library import get_binance_obj, lib_initialize, round_price
+from library import get_binance_obj, lib_initialize, round_price, save_to_file, get_pickled
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from library import DecimalCodec, get_time
@@ -664,6 +664,7 @@ if __name__ == "app":
     _stuff("busd")
 
 flask_token = config.get_parameter('flask_token')
+key_dir = config.get_parameter('key_dir')
 
 
 @app.route("/qu3ry/{}".format(flask_token))
@@ -676,3 +677,19 @@ def markets():
 @cache.cached(timeout=30)
 def market(market):
     return jsonify(json.dumps(depth_crawl_dict[market], default=lambda o: o.__dict__, sort_keys=True))
+
+
+@app.route("/qu3ry/store/{}".format(flask_token))
+@cache.cached(timeout=30)
+def store():
+    save_to_file(key_dir, "depth_crawl_dict", depth_crawl_dict)
+    return jsonify("OK")
+
+
+@app.route("/qu3ry/restore/{}".format(flask_token))
+@cache.cached(timeout=30)
+def restore():
+    global depth_crawl_dict
+    depth_crawl_dict = get_pickled(key_dir, "depth_crawl_dict")
+    logger.info(depth_crawl_dict)
+    return jsonify("OK")
