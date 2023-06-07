@@ -84,7 +84,7 @@ _tickers = ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d']
 
 for _ticker in _tickers:
     # if _ticker == '4h':
-    _pe = ProcessingEntry("avaxusdt", _ticker)
+    _pe = ProcessingEntry("adausdt", _ticker)
     manage_validation_processing(_pe)
     # extract_buy_entry_setup()
 

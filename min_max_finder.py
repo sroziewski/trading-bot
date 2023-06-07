@@ -818,7 +818,7 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
     _buy_ind_vfi = len(_df_dec) - 1 - _buys[-1]
     _vfi = compute_vfi(_df_dec)
 
-    if not (_vfi[_buy_ind_vfi] < 1.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi+1:_buy_ind_vfi + 11]))):
+    if not (_vfi[_buy_ind_vfi] < 3.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi+1:_buy_ind_vfi + 11]))):
         return False
 
     if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h']:
