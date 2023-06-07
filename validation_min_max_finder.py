@@ -9,7 +9,7 @@ from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
 from mongodb import mongo_client
 
 
-path = "E:/data/binance/klines/usdt/"
+path = "/home/0agent1/bin/data/klines/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
