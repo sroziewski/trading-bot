@@ -77,7 +77,7 @@ def validate(_pe):
             print("{} {}".format(_pe.ticker, _i))
         if _se:
             if abs(_data[0]['kline']['start_time']-_se.time) < 2*ticker2num(_se.ticker)*60*60*1000:
-                print("{} {} {} {} {}".format(_pe.ticker, _i, _se.time_str, _data[0]['kline']['time_str'], round_price(_se.buy_price)))
+                print("{} {} {} {} {} signal_strength: {} buys_count {}".format(_pe.ticker, _i, _se.time_str, _data[0]['kline']['time_str'], round_price(_se.buy_price), _se.signal_strength, _se.buys_count))
 
 
 _tickers = ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d']
