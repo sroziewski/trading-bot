@@ -1,5 +1,6 @@
 import threading
 import traceback
+from itertools import islice
 from math import log
 from random import randrange
 from time import sleep
@@ -23,6 +24,8 @@ codec_options = CodecOptions(type_registry=type_registry)
 
 filename = "Binance-Min-Max-Finder"
 logger = setup_logger(filename)
+
+threads_n = 4
 
 
 def create_from_online_df(_klines):
@@ -717,12 +720,17 @@ def compute_vfi(_df_dec):
     return _compute_vfi(_vcp, _vave)
 
 
+def chunk(arr_range, arr_size):
+    arr_range = iter(arr_range)
+    return iter(lambda: tuple(islice(arr_range, arr_size)), ())
+
 
 _mt = []
 
 
 def process_markets(_pe: ProcessingEntry):
     _tickers = ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']
+    _ticker_parts = chunk(_tickers, threads_n)
     for _market_info in _pe.market_info_list:
         _market = _market_info['name']
         if _market_info['active'] and _market != "paxg":
@@ -731,14 +739,14 @@ def process_markets(_pe: ProcessingEntry):
             _type = _pe.market_info_collection.name
             _setups = []
             _cses = []
-            _processors = []
-            for _ticker in _tickers:
-                if _ticker == '1d':
+            for _part in _ticker_parts:
+                _processors = []
+                for _ticker in _part:
                     sleep(randrange(10))
                     _cse = ComputingSetupEntry(_market, _type, _ticker)
                     _cses.append(_cse)
                     _processors.append(manage_entry_computing(_cse))
-            [x.join() for x in _processors]
+                [x.join() for x in _processors]
             _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
             _setups_f = filter_by_sell_setups(_setups)
             _setups_exist = define_signal_strength(_setups)  # filter out volume flow index < 0

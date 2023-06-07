@@ -9,7 +9,7 @@ from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
 from mongodb import mongo_client
 
 
-path = "/home/0agent1/bin/data/klines/"
+path = "E:/bin/data/klines/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
@@ -70,7 +70,7 @@ def validate(_pe):
     _klines = list(map(lambda x: to_offline_kline(x), get_klines(path, _pe.market, _pe.ticker)))
     _klines.reverse()
     _length = len(_klines) - 400 - 1
-    for _i in range(1100, _length):
+    for _i in range(1210, _length):
         _data = _klines[_i:400+_i]
         _se: SetupEntry = extract_buy_entry_setup(_data, _pe.market, _pe.ticker)
         if _i % 1000 == 0:
@@ -83,8 +83,8 @@ def validate(_pe):
 _tickers = ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d']
 
 for _ticker in _tickers:
-    # if _ticker == '4h':
-    _pe = ProcessingEntry("adausdt", _ticker)
-    manage_validation_processing(_pe)
+    if _ticker == '2h':
+        _pe = ProcessingEntry("adausdt", _ticker)
+        manage_validation_processing(_pe)
     # extract_buy_entry_setup()
 
