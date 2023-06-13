@@ -235,7 +235,7 @@ def clear_chart_dir():
 
 schedule.every().day.at("07:59").do(clear_chart_dir)
 schedule.every().day.at("08:00").do(manager)
-schedule.every().day.at("20:30").do(manager)
+schedule.every().day.at("22:13").do(manager)
 #
 while True:
     # Checks whether a scheduled task
