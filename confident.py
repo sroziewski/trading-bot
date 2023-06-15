@@ -12,6 +12,7 @@ from urllib.error import HTTPError
 import schedule
 from PIL import Image
 
+from config import config
 from library import setup_logger
 
 # prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
@@ -229,7 +230,8 @@ def manager():
 
 
 def clear_chart_dir():
-    _p = subprocess.Popen("cd {} && rm -f *.png && rm -f small/*.png && rm -f tmp/*.png && rm -f map/*.txt".format(path), stdout=subprocess.PIPE, shell=True)
+    working_dir = config.get_parameter('working_dir')
+    _p = subprocess.Popen("python {}/rename.py && cd {} && rm -f *.png && rm -f small/*.png && rm -f tmp/*.png && rm -f map/*.txt".format(working_dir, path), stdout=subprocess.PIPE, shell=True)
     _p.communicate()
 
 
