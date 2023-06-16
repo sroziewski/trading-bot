@@ -30,6 +30,7 @@ flask_token = config.get_parameter('flask_token')
 mongo_ip = config.get_parameter('mongo_ip')
 flask_port = config.get_parameter('flask_port')
 
+update_journal_dict = {}
 
 session = requests.Session()
 retries = Retry(total=5,
@@ -516,7 +517,12 @@ def _do_schedule(_schedule):
             persist_klines(current_klines, collection)
             logger_global[0].info("Stored to collection : {} : {} : {}".format(_schedule.exchange, collection_name, list(map(lambda x: x.time_str, current_klines))))
         _last_seen = round(datetime.datetime.now().timestamp())
+        global update_journal_dict
+        while _schedule.asset in update_journal_dict:
+            sleep(1)
+        update_journal_dict[_schedule.asset] = True
         update_journal(_schedule, _last_seen, 0)
+        del update_journal_dict[_schedule.asset]
         _schedule.no_such_market = False
         if ticker == '5m':
             _random_sleep = 20
