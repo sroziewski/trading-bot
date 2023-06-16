@@ -506,8 +506,6 @@ def _do_schedule(_schedule):
         if len(current_klines) > 0:
             try:
                 _market_depth = extract_market_depth(market)
-                logger_global[0].info("_market_depth extracting...")
-                logger_global[0].info(_market_depth)
             except ConnectionRefusedError as err:
                 logger_global[0].error("Flask connection refused error : {}-{} {}".format(collection_name, ticker, err.__traceback__))
 
