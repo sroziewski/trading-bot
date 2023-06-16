@@ -479,7 +479,6 @@ def _do_schedule(_schedule):
             try:
                 klines = try_get_klines(_schedule.exchange, market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
                 klines = klines[:-1]  # we skip the last kline on purpose since it has not been closed
-                logger_global[0].info(list(map(lambda x: x.time_str, klines)))
             except BinanceAPIException as bae:
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, bae.__traceback__))
                 logger_global[0].info("sleeping ...")
@@ -502,7 +501,6 @@ def _do_schedule(_schedule):
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         current_klines = filter_current_klines(klines, collection_name, collection)
         logger_global[0].info("current_klines size: {}".format(len(current_klines)))
-        logger_global[0].info(list(map(lambda x: x.time_str, current_klines)))
         sleep(5)
         if len(current_klines) > 0:
             try:
