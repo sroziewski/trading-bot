@@ -50,6 +50,7 @@ def do_scan_market(_market_info_collection):
 
     for _market_s in _market_info_split:  # inf loop needed here
         process_market_info_entity(_market_s, _journal_collection)
+        break
 
 
 def scanner(_market_info_collection):
@@ -124,6 +125,7 @@ def process_market_info_entity(_market_entity, _journal_collection):
                     # run a thread here
                     manage_crawling(
                         get_binance_schedule(_market_name, _market_type, _ticker, _journal_collection))
+                break
 
 
 while True:

@@ -474,6 +474,7 @@ def _do_schedule(_schedule):
             try:
                 klines = try_get_klines(_schedule.exchange, market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
                 klines = klines[:-1]  # we skip the last kline on purpose since it has not been closed
+                logger_global[0].info(klines)
             except BinanceAPIException as bae:
                 logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, bae.__traceback__))
                 logger_global[0].info("sleeping ...")
@@ -499,6 +500,8 @@ def _do_schedule(_schedule):
         if len(current_klines) > 0:
             try:
                 _market_depth = extract_market_depth(market)
+                logger_global[0].info("_market_depth extracting...")
+                logger_global[0].info(_market_depth)
             except ConnectionRefusedError as err:
                 logger_global[0].error("Flask connection refused error : {}-{} {}".format(collection_name, ticker, err.__traceback__))
 
