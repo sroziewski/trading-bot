@@ -243,8 +243,9 @@ def filter_current_klines(_klines, _collection_name, _collection):
     if _last_record:
         _out = []
         for _kline in _klines:
-            _de = 1000 if int(_kline.start_time) % 1e5 == 0 else 1
-            if int(_kline.start_time) / _de > int(_last_record['timestamp']):
+            _de1 = 1000 if int(_kline.start_time) % 1e5 == 0 else 1
+            _de2 = 1000 if int(_last_record['timestamp']) % 1e5 == 0 else 1
+            if int(_kline.start_time) / _de1 > int(_last_record['timestamp']) / _de2:
                 _out.append(_kline)
     else:
         _out = _klines
