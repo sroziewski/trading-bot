@@ -241,7 +241,11 @@ def filter_current_klines(_klines, _collection_name, _collection):
         "{} : last kline : {} ".format(_collection_name, _last_record['kline']['time_str'] if _last_record else "None"))
     _out = None
     if _last_record:
-        _out = list(filter(lambda x: int(x.start_time) / 1000 > int(_last_record['timestamp']), _klines))
+        _out = []
+        for _kline in _klines:
+            _de = 1000 if int(_kline.start_time) % 1e5 == 0 else 1
+            if int(_kline.start_time) / _de > int(_last_record['timestamp']):
+                _out.append(_kline)
     else:
         _out = _klines
         logger_global[0].info("{} : first kline : {} ".format(_collection_name, _out[0].time_str if _out else "None"))
