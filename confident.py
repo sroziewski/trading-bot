@@ -235,7 +235,7 @@ def clear_chart_dir():
     _p.communicate()
 
 
-schedule.every().day.at("07:58").do(clear_chart_dir)
+schedule.every().day.at("09:19").do(clear_chart_dir)
 schedule.every().day.at("08:00").do(manager)
 schedule.every().day.at("20:30").do(manager)
 #

@@ -501,7 +501,7 @@ def _do_schedule(_schedule):
                 sleep(randrange(30))
                 klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
         current_klines = filter_current_klines(klines, collection_name, collection)
-        logger_global[0].info("current_klines size: {}".format(len(current_klines)))
+        logger_global[0].info("current_klines: {} size: {}".format(market, len(current_klines)))
         sleep(5)
         if len(current_klines) > 0:
             try:
