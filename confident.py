@@ -18,9 +18,9 @@ from library import setup_logger
 # prefix_url = "https://www.tradeconfident.io/content/images/size/w1600/"
 prefix_url = "https://www.tradeconfident.io/content/images/"
 path = "/var/www/html/pics/"
+# path = "E:/dev_null/trade/files/"
 map_path = path + "map/"
 small_path = path + "small/"
-# path = "E:/dev_null/trade/files/"
 counter = 0
 
 logger = setup_logger("Trade-Confident")
@@ -56,7 +56,7 @@ def read_text(_file_fullname, _filename):
     left = 5
     top = 5
     right = 514
-    bottom = 40
+    bottom = 48
     img_crop = im.crop((left, top, right, bottom))
     _tmp_file = path + "tmp/" + _filename
     img_crop.save(_tmp_file)
@@ -101,7 +101,7 @@ def save_pic(_arg: Argument):
                 resize_pic(_img_filename, _img_filename_small)
                 _txt = read_text(_img_filename, _filename_suffix)
                 _coin = extract_coin(_txt[0])
-                if _coin== "others":
+                if _coin == "others":
                     logger.info("file: {} -- others: {}".format(_filename_suffix, _txt[0]))
                 _arg.coin_map[_coin].append(_filename_suffix)
                 _counter += 1
@@ -113,26 +113,26 @@ def save_pic(_arg: Argument):
 def extract_coin(_txt: str):
     _txt = _txt.lower().decode('utf-8').split("/")[0]
 
-    _atom = ['cosmos', 'cocsmo']
+    _atom = ['cosmos', 'cocsmo', 'coemos', 'cocmoese']
     _dot = ['polkadot', 'idot']
-    _avax = ['avalanche']
+    _avax = ['avalanche', 'aveleme', 'avelemae', 'avellemee']
     _eos = ['eos', 'eqs', 'fos', 'fqs']
     _doge = ['doge', 'doaecoin', 'doagecoin']
     _link = ['link']
     _ltc = ['jtecoin', 'litecoin', 'itecoin']
-    _mana = ['decentraland', 'pecentraland']
+    _mana = ['decentraland', 'pecentraland', 'dBreeertelead']
     _matic = ['poalvaon', 'polygon', 'polvaon', 'palvaon']
     _sand = ['sand']
     _shiba = ['hiba', 'shib']
-    _sol = ['solana', 'gplana']
-    _uni = ['uni', 'ynjswap', 'jniewan', 'iniewan', 'jniswan']
+    _sol = ['solana', 'gplana', 'cnolana', 'colana', 'qnalana']
+    _uni = ['uni', 'ynjswap', 'jniewan', 'iniewan', 'jniswan', 'inicwan', '1nicwan']
     _btc = ['bitcoin', 'ritcoin']
-    _vet = ['echain', '\\/echain']
+    _vet = ['echain', '\\/echain', 'ochain']
     _xrp = ['xrp', 'wyrp', 'xyrp', 'rp']
-    _eth = ['eth', 'fthe']
+    _eth = ['eth', 'fthe', 'ciheretim', 'eiheretim']
     _ada = ['cardano']
     _algo = ['algo', 'alaorand']
-    _ape = ['ape', 'apne']
+    _ape = ['ape', 'apne', 'anecoin', 'avecoin']
 
     if any(item in _txt for item in _atom):
         return "atom"
@@ -212,15 +212,18 @@ def manager():
 
     coin_map = copy.deepcopy(coin_map_0)
 
-    scanner(Argument(range(0, 20), coin_map))
-    scanner(Argument(range(20, 40), coin_map))
-    scanner(Argument(range(40, 60), coin_map))
+    scanners = []
 
-    scanner(Argument(range(0, 20), coin_map, "yesterday"))
-    scanner(Argument(range(20, 40), coin_map, "yesterday"))
-    scanner(Argument(range(40, 60), coin_map, "yesterday"))
+    scanners.append(scanner(Argument(range(0, 20), coin_map)))
+    scanners.append(scanner(Argument(range(20, 40), coin_map)))
+    scanners.append(scanner(Argument(range(40, 60), coin_map)))
 
-    sleep(60 * 10)
+    scanners.append(scanner(Argument(range(0, 20), coin_map, "yesterday")))
+    scanners.append(scanner(Argument(range(20, 40), coin_map, "yesterday")))
+    scanners.append(scanner(Argument(range(40, 60), coin_map, "yesterday")))
+
+    [x.join() for x in scanners]
+
     logger.info("Writing map...")
     write_map(coin_map)
 
