@@ -3239,7 +3239,7 @@ def try_get_klines(_exchange, _market, _ticker, _time_interval):
                 _klines = get_binance_klines(_market, _ticker, _time_interval)
             if not _klines:
                 logger_global[0].warning(f"Trying for market : {_market} {_ticker} ... {_ii}")
-                time.sleep(randrange(180))
+                time.sleep(60+randrange(180))
         except RuntimeError as re:
             logger_global[0].warning(re)
             logger_global[0].warning(f"Sleeping for 15 min : {_market} {_ticker} ... {_ii}")
