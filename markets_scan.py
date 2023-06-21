@@ -129,7 +129,11 @@ def process_market_info_entity(_market_entity, _journal_collection):
 while True:
     hr = 15 * 60
     if market_type == "btc":
-        scanner(btc_markets_collection)
+        try:
+            scanner(btc_markets_collection)
+        except RuntimeError as e:
+            logger.error("Number of threads: {}".format(threading.active_count()))
+            logger.error(e.__traceback__)
     elif market_type == "usdt":
         scanner(usdt_markets_collection)
     elif market_type == "busd":

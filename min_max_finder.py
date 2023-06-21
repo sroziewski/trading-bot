@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 from bson.codec_options import TypeRegistry, CodecOptions
 
-from library import setup_logger, DecimalCodec, get_pickled, get_time_from_binance_tmstmp, try_get_klines, \
-    get_binance_interval_unit, get_binance_klines, Kline, lib_initialize, get_time, round_price, ticker2num
+from library import setup_logger, DecimalCodec, try_get_klines, \
+    get_binance_interval_unit, get_binance_klines, Kline, lib_initialize, get_time, round_price, get_pickled, ticker2num
 from mongodb import mongo_client
 from tb_lib import compute_tr, smooth, get_crossup, get_crossdn, lele, get_strong_major_indices, get_major_indices, \
     compute_adjustment, compute_money_strength, compute_whale_money_flow, compute_trend_exhaustion
@@ -128,22 +128,32 @@ def to_mongo(_se: SetupEntry):
     }
 
 
-def get_klines(_market, _ticker):
-    try:
-        _klines = try_get_klines("binance", _market, _ticker,
-                                get_binance_interval_unit(_ticker, "strategy"))
-    except Exception as err:
-        traceback.print_tb(err.__traceback__)
-        logger.exception("{} {} {}".format(_market, _ticker, err.__traceback__))
-        sleep(randrange(30))
-        _klines = get_binance_klines(_market, _ticker, get_binance_interval_unit(_ticker, "strategy"))
+# def get_klines(_market, _ticker):
+#     try:
+#         _klines = try_get_klines("binance", _market, _ticker,
+#                                 get_binance_interval_unit(_ticker, "strategy"))
+#     except Exception as err:
+#         traceback.print_tb(err.__traceback__)
+#         logger.exception("{} {} {}".format(_market, _ticker, err.__traceback__))
+#         sleep(randrange(30))
+#         _klines = get_binance_klines(_market, _ticker, get_binance_interval_unit(_ticker, "strategy"))
+#
+#     return _klines
 
+
+def get_klines(_path, _market, _ticker):
+    _fname = "{}_{}".format(_market, _ticker)
+    _klines = get_pickled(_path, _fname)
     return _klines
 
 
-def extract_klines(_market, _type, _ticker):
-    _klines_online = get_klines("{}{}".format(_market, _type).upper(), _ticker)
-    _kline_collection = db_klines.get_collection("{}_{}_{}".format(_market, _type, _ticker), codec_options=codec_options)
+def extract_klines(_cse):
+    # _klines_online = get_klines("{}{}".format(_market, _type).upper(), _market, _ticker)
+    _klines_online = get_klines("E:/bin/data/klines/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800:][:-(_cse.index+1)]))
+    print("{} {}".format(_cse.ticker, _r[-1]))
+    return _r
+    _kline_collection = db_klines.get_collection("{}_{}_{}".format(_cse.market, _cse.type, _cse.ticker), codec_options=codec_options)
     try:
         _kline_cursor = _kline_collection.find().sort("_id", -1)
     except Exception:
@@ -636,11 +646,11 @@ def manage_entry_computing(_cse: ComputingSetupEntry):
 
 
 def process_computing(_cse: ComputingSetupEntry):
-    _klines = extract_klines(_cse.market, _cse.type, _cse.ticker)
-    _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.market, _cse.type).upper(), _cse.ticker)
-    _klines.clear()
-    if _se:
-        _cse.se = _se
+    _klines = extract_klines(_cse)
+    # _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.market, _cse.type).upper(), _cse.ticker)
+    # _klines.clear()
+    # if _se:
+    #     _cse.se = _se
 
 
 def filter_by_sell_setups(_setups):
@@ -688,14 +698,19 @@ def compute_vcp(_df_dec, _vinter):
     _vmax = _vave * _vcoef
     _vc = []
     for _ii in range(len(_vmax)):
-        _vc.append(_df_dec['volume'][_ii] if _df_dec['volume'][_ii] < _vmax[_ii] else _vmax[_ii])
+        try:
+            if str(_vmax[_ii]) != 'nan':
+                _vc.append(_df_dec['volume'][_ii] if _df_dec['volume'][_ii] < _vmax[_ii] else _vmax[_ii])
+        except RuntimeWarning:
+            asds = 1
+            pass
     _typical = (_df_dec['close'] + _df_dec['high'] + _df_dec['low']) / 3
     _typical_1 = _typical.drop(axis=0, index=0).reset_index(drop=True)
     _mf = _typical - _typical_1
 
     # vcp = iff( mf > cutoff, vc, iff ( mf < -cutoff, -vc, 0 ) )
     _vcp = []
-    for _ii in range(len(_cutoff)):
+    for _ii in range(len(_vc)):
         if _mf[_ii] > _cutoff[_ii]:
             _vcp.append(_vc[_ii])
         elif _mf[_ii] < -_cutoff[_ii]:
@@ -831,14 +846,13 @@ def extract_buy_entry_setup(_klines, _market, _ticker):
 
     if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h']:
         _se.sell_signal[_ticker] = _sell_signal
-    # return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
-    return _se
+    return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
+    # return _se
 
 
 def _stuff():
     lib_initialize()
     db_markets_info = mongo_client.markets_info
-    db_journal = mongo_client.journal
 
     decimal_codec = DecimalCodec()
     type_registry = TypeRegistry([decimal_codec])

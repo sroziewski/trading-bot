@@ -1,55 +1,83 @@
 import threading
+from random import randrange
 
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from library import get_pickled, round_price, DecimalCodec
+from library import get_pickled, round_price, DecimalCodec, lib_initialize
 from library import ticker2num
-from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
+from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline, ComputingSetupEntry, chunk, \
+    manage_entry_computing, filter_by_sell_setups, define_signal_strength
 from mongodb import mongo_client
 
+from timeit import default_timer as timer
+from time import sleep
 
-path = "E:/bin/data/klines/"
+path = "E:/bin/data/klines/start/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
+threads_n = 4
 
 
-def extract_klines(_market, _type, _ticker):
-    _klines_online = get_klines("{}{}".format(_market, _type).upper(), _ticker)
-    _kline_collection = db_klines.get_collection("{}_{}_{}".format(_market, _type, _ticker), codec_options=codec_options)
-    try:
-        _kline_cursor = _kline_collection.find().sort("_id", -1)
-    except Exception:
-        pass
+# def extract_klines(_market, _type, _ticker):
+#     _klines_online = get_klines("{}{}".format(_market, _type).upper(), _ticker)
+#     _kline_collection = db_klines.get_collection("{}_{}_{}".format(_market, _type, _ticker),
+#                                                  codec_options=codec_options)
+#     try:
+#         _kline_cursor = _kline_collection.find().sort("_id", -1)
+#     except Exception:
+#         pass
+#
+#     _klines_offline = []
+#
+#     for _e in _kline_cursor:
+#         _klines_offline.append(_e)
+#         if len(_klines_offline) > 399:
+#             break
+#
+#     _klines_online.reverse()
+#
+#     _ii = 0
+#     _diff = []
+#     for _k in _klines_online:
+#         if _k.start_time == _klines_offline[_ii]['kline']['start_time']:
+#             break
+#         _diff.append(_k)
+#
+#     _diff = list(map(lambda x: to_offline_kline(x), _diff))
+#
+#     return [*_diff, *_klines_offline]
 
-    _klines_offline = []
 
-    for _e in _kline_cursor:
-        _klines_offline.append(_e)
-        if len(_klines_offline) > 399:
-            break
+def extract_klines(_cse):
+    # _klines_online = get_klines("{}{}".format(_market, _type).upper(), _market, _ticker)
+    _klines_online = get_klines("E:/bin/data/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800:][0:len(_klines_online[-800:])-_cse.index]))
+    print("{} {}".format(_cse.ticker, _r[-1]))
+    return _r
+    _kline_collection = db_klines.get_collection("{}_{}_{}".format(_cse.market, _cse.type, _cse.ticker), codec_options=codec_options)
 
-
-    _klines_online.reverse()
-
-    _ii = 0
-    _diff = []
-    for _k in _klines_online:
-        if _k.start_time == _klines_offline[_ii]['kline']['start_time']:
-            break
-        _diff.append(_k)
-
-    _diff = list(map(lambda x: to_offline_kline(x), _diff))
-
-    return [*_diff, *_klines_offline]
 
 class ProcessingEntry(object):
     def __init__(self, _market, _ticker):
         self.market = _market
         self.ticker = _ticker
+
+
+class ComputingSetupEntry(object):
+    def __init__(self, _market, _type, _ticker, i):
+        self.market = _market
+        self.type = _type
+        self.ticker = _ticker
+        self.se = None
+        self.klines = None
+        self.index = i
+
+    def set_klines(self, klines):
+        self.klines = klines
 
 
 def manage_validation_processing(_pe):
@@ -66,25 +94,166 @@ def get_klines(_path, _market, _ticker):
     return _klines
 
 
+def process_computing(_cse: ComputingSetupEntry):
+    _klines = extract_klines(_cse)
+    # _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.market, _cse.type).upper(), _cse.ticker)
+    # _klines.clear()
+    # if _se:
+    #     _cse.se = _se
+
+
+# def process_computing(_cse: ComputingSetupEntry):
+#     _klines = extract_klines(_cse.market, _cse.type, _cse.ticker)
+#     _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.market, _cse.type).upper(), _cse.ticker)
+#     _klines.clear()
+#     if _se:
+#         _cse.se = _se
+
+
 def validate(_pe):
     _klines = list(map(lambda x: to_offline_kline(x), get_klines(path, _pe.market, _pe.ticker)))
     _klines.reverse()
     _length = len(_klines) - 400 - 1
     for _i in range(1210, _length):
-        _data = _klines[_i:400+_i]
+        _data = _klines[_i:400 + _i]
         _se: SetupEntry = extract_buy_entry_setup(_data, _pe.market, _pe.ticker)
         if _i % 1000 == 0:
             print("{} {}".format(_pe.ticker, _i))
         if _se:
-            if abs(_data[0]['kline']['start_time']-_se.time) < 2*ticker2num(_se.ticker)*60*60*1000:
-                print("{} {} {} {} {} signal_strength: {} buys_count {}".format(_pe.ticker, _i, _se.time_str, _data[0]['kline']['time_str'], round_price(_se.buy_price), _se.signal_strength, _se.buys_count))
+            if abs(_data[0]['kline']['start_time'] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 * 1000:
+                print("{} {} {} {} {} signal_strength: {} buys_count {}".format(_pe.ticker, _i, _se.time_str,
+                                                                                _data[0]['kline']['time_str'],
+                                                                                round_price(_se.buy_price),
+                                                                                _se.signal_strength, _se.buys_count))
 
 
-_tickers = ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d']
+lib_initialize()
 
-for _ticker in _tickers:
-    if _ticker == '2h':
-        _pe = ProcessingEntry("adausdt", _ticker)
-        manage_validation_processing(_pe)
-    # extract_buy_entry_setup()
+
+# _tickers = ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d']
+# _ticker_parts = list(chunk(_tickers, threads_n))
+_market = "ada"
+# _start = timer()
+_type = "usdt"
+#
+# for i in range(1, 1000):
+#     print("iteration: {}".format(i))
+#     _setups_exist = None
+#     _setups = []
+#     _cses = []
+#     for _part in _ticker_parts:
+#         _processors = []
+#         for _ticker in _part:
+#             print(_ticker)
+#             sleep(randrange(10))
+#             _cse = ComputingSetupEntry(_market, _type, _ticker, i)
+#             _cses.append(_cse)
+#             _processors.append(manage_entry_computing(_cse))
+#         [x.join() for x in _processors]
+#     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
+#     _setups_f = filter_by_sell_setups(_setups)
+#     _setups_exist = define_signal_strength(_setups)  # filter out volume flow index < 0
+#     if _setups_exist:
+#         r = list(filter(lambda x: x.signal_strength > 8, _setups_exist))
+#         if len(r) > 0:
+#             ikf = 123
+
+
+def append(_processors, _el):
+    if len(list(filter(lambda x: x.is_alive(), _processors))) >= threads_n:
+        [x.join() for x in _processors]
+    _processors.append(_el)
+
+#  new Approach
+
+i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = 0
+
+for i in range(15*4*24*7*10):  # 10 weeks
+    _cses = []
+    _processors = []
+    if i % 672 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '1w', i1w)
+        _cses.append(_cse)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i1w += 1
+
+    if i % 288 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '3d', i3d)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i3d += 1
+
+    if i % 96 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '1d', i1d)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i1d += 1
+
+    if i % 48 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '12h', i12h)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i12h += 1
+
+    if i % 32 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '8h', i8h)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i8h += 1
+
+    if i % 24 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '6h', i6h)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i6h += 1
+
+    if i % 16 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '4h', i4h)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i4h += 1
+
+    if i % 8 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '2h', i2h)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i2h += 1
+
+    if i % 4 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '1h', i1h)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i1h += 1
+
+    if i % 2 == 0:
+        _cse = ComputingSetupEntry(_market, _type, '30m', i30m)
+        # append(_processors, manage_entry_computing(_cse))
+        process_computing(_cse)
+        i30m += 1
+
+    _cse = ComputingSetupEntry(_market, _type, '15m', i)
+    # append(_processors, manage_entry_computing(_cse))
+    process_computing(_cse)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

@@ -23,7 +23,7 @@ threads = {}
 def _do_retrieve(_retrieve: Retrieve):
     klines = try_get_klines("binance", _retrieve.market.upper(), _retrieve.ticker, "3000 days ago")
     _filename = "{}_{}".format(_retrieve.market, _retrieve.ticker)
-    save_to_file("D:/bin/data/klines/", _filename, klines)
+    save_to_file("E:/bin/data/klines/", _filename, klines)
     _name = "{}{}".format(_retrieve.market, _retrieve.ticker)
     logger.info(_name)
     del threads[_name]
@@ -53,7 +53,8 @@ _market_info_list = [e for e in _market_info_cursor]
 for _market_s in _market_info_list:
     for _ticker in _market_s['tickers']:
         # _ticker = '5m'
-        _market = "{}{}".format(_market_s['name'], "usdt")
-        manage_retrieve_scan(Retrieve(_market, _ticker))
-        while len(threads.values()) > 2:
-            sleep(1)
+        if _ticker == '8h':
+            _market = "{}{}".format(_market_s['name'], "usdt")
+            manage_retrieve_scan(Retrieve(_market, _ticker))
+            while len(threads.values()) > 2:
+                sleep(1)
