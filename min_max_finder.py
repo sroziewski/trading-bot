@@ -650,7 +650,7 @@ def process_computing(_cse: ComputingSetupEntry):
     _klines = extract_klines(_cse)
     _klines.reverse()
     print("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
-    _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.ticker, _cse.market, _cse.type).upper())
+    _se: SetupEntry = extract_buy_entry_setup(_klines, _cse)
     _klines.clear()
     if _se:
         _cse.se = _se
@@ -789,7 +789,9 @@ def process_markets(_pe: ProcessingEntry):
             logger.info("Market {} time: {} s".format(_market, _et))
 
 
-def extract_buy_entry_setup(_klines, _market, _ticker):
+def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
+    _market = "{}{}".format(_cse.market, _cse.type).upper()
+    _ticker = _cse.ticker
     _klines_cp = _klines.copy()
     _klines_cp.reverse()
     _df_dec = create_from_offline_df(_klines)

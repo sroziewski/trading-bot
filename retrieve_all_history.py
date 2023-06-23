@@ -37,7 +37,6 @@ def manage_retrieve_scan(_r: Retrieve):
 
 
 db_markets_info = mongo_client.markets_info
-db_journal = mongo_client.journal
 
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
@@ -51,7 +50,7 @@ _market_info_list = [e for e in _market_info_cursor]
 
 
 for _market_s in _market_info_list:
-    for _ticker in _market_s['tickers']:
+    for _ticker in _market_s['tickers']:  # we did till hft
         if _ticker in ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']:
             _market = "{}{}".format(_market_s['name'], "usdt")
             manage_retrieve_scan(Retrieve(_market, _ticker))
