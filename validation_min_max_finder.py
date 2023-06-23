@@ -1,5 +1,6 @@
 import threading
 from random import randrange
+from typing import List
 
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
@@ -96,7 +97,7 @@ def get_klines(_path, _market, _ticker):
 
 def process_computing(_cse: ComputingSetupEntry):
     _klines = extract_klines(_cse)
-    # _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.market, _cse.type).upper(), _cse.ticker)
+    _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.market, _cse.type).upper(), _cse.ticker)
     # _klines.clear()
     # if _se:
     #     _cse.se = _se
@@ -164,9 +165,26 @@ def append(_processors, _el):
         [x.join() for x in _processors]
     _processors.append(_el)
 
+
+def store_setups(_setups: List[SetupEntry], _setups_dict, _i):
+    for _setup in _setups:
+        _setups_dict[_setup.ticker] = _setup
+        print("i: {} {} {} {} {} {} {}".format(_i, _setup.market, _setup.ticker, _setup.time_str, _setup.signal_strength, _setup.buys_count, _setup.buy_price))
+
+
+def extract_sell_setups(_setups_dict):
+    _out = []
+    for _ticker, _setup in _setups_dict.items():
+        if _ticker in ['12h', '1d', '3d', '1w']:
+            _out.append(_setup)
+    return _out
+
+
 #  new Approach
 
 i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = 0
+
+setups_dict = {}
 
 for i in range(15*4*24*7*10):  # 10 weeks
     _cses = []
@@ -174,68 +192,85 @@ for i in range(15*4*24*7*10):  # 10 weeks
     if i % 672 == 0:
         _cse = ComputingSetupEntry(_market, _type, '1w', i1w)
         _cses.append(_cse)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i1w += 1
 
     if i % 288 == 0:
         _cse = ComputingSetupEntry(_market, _type, '3d', i3d)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i3d += 1
 
     if i % 96 == 0:
         _cse = ComputingSetupEntry(_market, _type, '1d', i1d)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i1d += 1
 
     if i % 48 == 0:
         _cse = ComputingSetupEntry(_market, _type, '12h', i12h)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i12h += 1
 
     if i % 32 == 0:
         _cse = ComputingSetupEntry(_market, _type, '8h', i8h)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i8h += 1
 
     if i % 24 == 0:
         _cse = ComputingSetupEntry(_market, _type, '6h', i6h)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i6h += 1
 
     if i % 16 == 0:
         _cse = ComputingSetupEntry(_market, _type, '4h', i4h)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i4h += 1
 
     if i % 8 == 0:
         _cse = ComputingSetupEntry(_market, _type, '2h', i2h)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i2h += 1
 
     if i % 4 == 0:
         _cse = ComputingSetupEntry(_market, _type, '1h', i1h)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i1h += 1
 
     if i % 2 == 0:
         _cse = ComputingSetupEntry(_market, _type, '30m', i30m)
-        # append(_processors, manage_entry_computing(_cse))
-        process_computing(_cse)
+        _cses.append(_cse)
+        append(_processors, manage_entry_computing(_cse))
+        # process_computing(_cse)
         i30m += 1
 
     _cse = ComputingSetupEntry(_market, _type, '15m', i)
-    # append(_processors, manage_entry_computing(_cse))
-    process_computing(_cse)
+    _cses.append(_cse)
+    append(_processors, manage_entry_computing(_cse))
+    # process_computing(_cse)
 
+    [x.join() for x in _processors]
+    _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
+    if _setups:
+        _sell_setups = extract_sell_setups(setups_dict)
+        _setups = filter_by_sell_setups([*_setups, *_sell_setups])
+        _setups = define_signal_strength([*_setups, *_sell_setups])
+        store_setups(_setups, setups_dict, i)
 
 
 

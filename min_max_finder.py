@@ -149,9 +149,10 @@ def get_klines(_path, _market, _ticker):
 
 def extract_klines(_cse):
     # _klines_online = get_klines("{}{}".format(_market, _type).upper(), _market, _ticker)
-    _klines_online = get_klines("E:/bin/data/klines/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
-    _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800:][:-(_cse.index+1)]))
-    print("{} {}".format(_cse.ticker, _r[-1]))
+    _klines_online = get_klines("E:/bin/data/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    if _cse.index == 0:
+        return list(map(lambda x: to_offline_kline(x), _klines_online[-800:]))
+    _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800-_cse.index:][:-_cse.index]))
     return _r
     _kline_collection = db_klines.get_collection("{}_{}_{}".format(_cse.market, _cse.type, _cse.ticker), codec_options=codec_options)
     try:
@@ -647,10 +648,12 @@ def manage_entry_computing(_cse: ComputingSetupEntry):
 
 def process_computing(_cse: ComputingSetupEntry):
     _klines = extract_klines(_cse)
-    # _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.market, _cse.type).upper(), _cse.ticker)
-    # _klines.clear()
-    # if _se:
-    #     _cse.se = _se
+    _klines.reverse()
+    print("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
+    _se: SetupEntry = extract_buy_entry_setup(_klines, "{}{}".format(_cse.ticker, _cse.market, _cse.type).upper())
+    _klines.clear()
+    if _se:
+        _cse.se = _se
 
 
 def filter_by_sell_setups(_setups):
@@ -667,10 +670,14 @@ def filter_by_sell_setups(_setups):
         if '12h' in _s:
             _12h_sell = _s['12h']
     _f = list(filter(lambda x: x, [_1w_sell, _3d_sell, _1d_sell, _12h_sell]))
+
+    if len(_f) == 0:
+        return _setups
+
     _out = []
     for _setup in _setups:
         if all(filter(lambda x: _setup.time > x, _f)):
-            _out = _setup
+            _out.append(_setup)
     return _out
 
 

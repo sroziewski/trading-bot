@@ -1,9 +1,8 @@
-import threading
 from time import sleep
 
 from library import get_pickled, save_to_file
 
-path = "E:/bin/data/klines/"
+path = "/home/0agent1/store/klines/"
 
 
 def get_klines(_path, _market, _ticker):
@@ -27,8 +26,14 @@ for _t in _tickers:
     data[_t] = get_klines(path, "adausdt", _t)
 
 for _t in _tickers:
-    indices = [index for (index, item) in enumerate(data[_t]) if item.start_time == 1687132800000]
-    save_to_file("E:/bin/data/klines/start/", "adausdt_{}".format(_t), data[_t][0:indices[0]])
+    if _t not in ['3d']:
+        indices = [index for (index, item) in enumerate(data[_t]) if item.start_time == 1687132800000]
+        _dt = 0
+    else:
+        indices = [index for (index, item) in enumerate(data[_t]) if item.start_time == 1686960000000]
+        _dt = 1
+    save_to_file(path+"/start/", "adausdt_{}".format(_t), data[_t][0:indices[0]+_dt])
+    print("{} {}".format(_t, get_pickled(path+"start/", "adausdt_{}".format(_t))[-1].time_str))
 
 
 i = 1
