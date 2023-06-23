@@ -7,7 +7,6 @@ from library import get_pickled, save_to_file, DecimalCodec
 from mongodb import mongo_client
 
 path = "/home/0agent1/store/klines/"
-path = "E:/bin/data/klines/"
 
 db_markets_info = mongo_client.markets_info
 
