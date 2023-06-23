@@ -7,7 +7,7 @@ from library import get_pickled, save_to_file, DecimalCodec
 from mongodb import mongo_client
 
 path = "/home/0agent1/store/klines/"
-
+path = "E:/bin/data/klines/"
 
 db_markets_info = mongo_client.markets_info
 
@@ -40,7 +40,7 @@ for _market_s in _market_info_list:
                 indices = [index for (index, item) in enumerate(data[_ticker]) if item.start_time == 1687132800000]
                 _dt = 0
             else:
-                indices = [index for (index, item) in enumerate(data[_ticker]) if item.start_time == 1686960000000]
+                indices = [len(data[_ticker])-1-2]
                 _dt = 1
             save_to_file(path + "/start/", "{}_{}".format(_market, _ticker), data[_ticker][0:indices[0] + _dt])
             print("{} {} {}".format(_market, _ticker, get_pickled(path + "start/", "{}_{}".format(_market, _ticker))[-1].time_str))

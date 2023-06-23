@@ -23,7 +23,8 @@ threads = {}
 def _do_retrieve(_retrieve: Retrieve):
     klines = try_get_klines("binance", _retrieve.market.upper(), _retrieve.ticker, "3000 days ago")
     _filename = "{}_{}".format(_retrieve.market, _retrieve.ticker)
-    save_to_file("/home/0agent1/store/klines/", _filename, klines)
+    _path = "E:/bin/data/klines/"
+    save_to_file(_path, _filename, klines)
     _name = "{}{}".format(_retrieve.market, _retrieve.ticker)
     logger.info(_name)
     del threads[_name]
