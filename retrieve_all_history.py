@@ -55,5 +55,5 @@ for _market_s in _market_info_list:
         if _ticker in ['1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']:
             _market = "{}{}".format(_market_s['name'], "usdt")
             manage_retrieve_scan(Retrieve(_market, _ticker))
-            while len(threads.values()) > 2:
+            while len(threads.values()) > 6:
                 sleep(1)
