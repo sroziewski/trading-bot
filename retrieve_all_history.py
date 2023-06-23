@@ -52,8 +52,8 @@ _market_info_list = [e for e in _market_info_cursor]
 
 for _market_s in _market_info_list:
     for _ticker in _market_s['tickers']:
-        # _ticker = '5m'
-        _market = "{}{}".format(_market_s['name'], "usdt")
-        manage_retrieve_scan(Retrieve(_market, _ticker))
-        while len(threads.values()) > 2:
-            sleep(1)
+        if _ticker in ['1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d', '1w']:
+            _market = "{}{}".format(_market_s['name'], "usdt")
+            manage_retrieve_scan(Retrieve(_market, _ticker))
+            while len(threads.values()) > 2:
+                sleep(1)
