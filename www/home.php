@@ -25,7 +25,7 @@ if($_SESSION['user_name']!="simon"){
         <h2><?php echo($version); ?></h2>
 
     <?php
-    if(!isset($_GET['name'])){
+    if(!empty($_GET['name'])){
         echo('<table>
         <tr><td><a href="?name=btc">BTC</a></td>
             <td><a href="?name=eth">ETH</a></td>
