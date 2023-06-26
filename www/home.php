@@ -2,9 +2,11 @@
 
 $version = file_exists("pics/date.txt") ? file_get_contents("pics/date.txt") : "Empty";
 
+echo($_SESSION['user_name']);
+
 if($_SESSION['user_name']!="simon"){
-    header("Location: index.php");
-    exit();
+//     header("Location: index.php");
+//     exit();
 }
 
 ?>
