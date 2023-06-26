@@ -73,12 +73,12 @@ if($_SESSION['user_name']!="simon"){
             $today = array();
             $yesterday = array();
             foreach (new SplFileObject("pics/map/".$_GET['name'].".txt") as $fname) {
-//                 if($fname && str_contains($fname, "today"){
-                    echo($fname);
-//                 }
-//                 if(str_contains($fname, "yesterday"){
-//                     array_push($yesterday, $fname);
-//                 }
+                if(strpos($today, $fname) !== false){
+                    array_push($today, $fname);
+                }
+                if(strpos($yesterday, $fname) !== false){
+                    array_push($yesterday, $fname);
+                }
             }
             print_r($today);
             print_r($yesterday);
