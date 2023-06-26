@@ -73,22 +73,17 @@ if($_SESSION['user_name']!="simon"){
             $today = array();
             $yesterday = array();
             foreach (new SplFileObject("pics/map/".$_GET['name'].".txt") as $fname) {
-            try {
-  if(is_string($fname) && strpos($today, $fname) !== false){
+                if(is_string($fname) && strpos($fname, "today") !== false){
                     array_push($today, $fname);
                 }
-} catch (Exception $e) {
-    echo $fname.'Caught exception: ',  $e->getMessage(), "\n";
-}
-
-                if(is_string($fname) && strpos($yesterday, $fname) !== false){
+                if(is_string($fname) && strpos($fname, "yesterday") !== false){
                     array_push($yesterday, $fname);
                 }
             }
-            print_r($today);
-            print_r($yesterday);
-//             print_table($today, "Today");
-//             print_table($yesterday, "Yesterday");
+//             print_r($today);
+//             print_r($yesterday);
+            print_table($today, "Today");
+            print_table($yesterday, "Yesterday");
 
         }
 ?>
