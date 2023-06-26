@@ -73,7 +73,7 @@ if($_SESSION['user_name']!="simon"){
             $today = array();
             $yesterday = array();
             foreach (new SplFileObject("pics/map/".$_GET['name'].".txt") as $fname) {
-                if(str_contains($fname, "today"){
+                if($fname && str_contains($fname, "today"){
                     echo($fname);
                 }
 //                 if(str_contains($fname, "yesterday"){
