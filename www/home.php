@@ -1,5 +1,5 @@
 <?php
-
+session_start();
 $version = file_exists("pics/date.txt") ? file_get_contents("pics/date.txt") : "Empty";
 
 echo($_SESSION['user_name']);
