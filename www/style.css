@@ -74,6 +74,10 @@ label {
 
 }
 
+a {
+        background: rgb(215 145 145);
+}
+
 button {
 
     float: right;
@@ -95,6 +99,7 @@ button {
 button:hover{
 
     opacity: .10;
+    cursor: pointer;
 
 }
 
