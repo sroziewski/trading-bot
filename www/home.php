@@ -15,7 +15,7 @@ if($_SESSION['user_name']!="simon"){
 
 <head>
 
-    <title>LOGIN</title>
+    <title>Home</title>
 
     <link rel="stylesheet" type="text/css" href="style.css">
 
@@ -58,6 +58,7 @@ if($_SESSION['user_name']!="simon"){
         }
         else{
             echo('<center>');
+            echo("pics/map/"+$_GET['name']+".txt");
             foreach (new SplFileObject("pics/map/"+$_GET['name']+".txt") as $fname) {
                 echo('<img src="pics/small/'+$fname+'"/>');
                 echo('pics/small/'+$fname+'</br>');
