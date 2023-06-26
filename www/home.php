@@ -32,7 +32,7 @@ if($_SESSION['user_name']!="simon"){
             echo('<center>'.$val.'</br><table>');
             $i = 0;
             foreach($arr as $row){
-                echo('<tr><td class="nobackground"><span>'.++$i.'</span>.&nbsp;<a href="pics/'.$row.'"><img src="pics/small/'.$row.'"/></a></td></tr>');
+                echo('<tr><td class="nobackground"><div>'.++$i.'</div>.&nbsp;<a href="pics/'.$row.'"><img src="pics/small/'.$row.'"/></a></td></tr>');
             }
             echo('</table></center>');
     }
