@@ -24,7 +24,7 @@ if($_SESSION['user_name']!="simon"){
 <body>
         <h2><?php echo($version); ?></h2>
 
-AAA
+        print_r($_GET);
 
 </body>
 
