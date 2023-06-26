@@ -34,15 +34,11 @@ if (isset($_POST['uname']) && isset($_POST['password'])) {
 
     }else{
 
-            if ($row['user_name'] === $uname && $row['password'] === $pass) {
+            if ("Simon" === $uname && "a68d43acea73feb7065e2cee36916e5e" === md5($pass) {
 
                 echo "Logged in!";
 
-                $_SESSION['user_name'] = $row['user_name'];
-
-                $_SESSION['name'] = $row['name'];
-
-                $_SESSION['id'] = $row['id'];
+                $_SESSION['user_name'] = $uname;
 
                 header("Location: home.php");
 
