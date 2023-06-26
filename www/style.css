@@ -39,6 +39,10 @@ td.nobackground a {
     padding: 0 0;
 }
 
+td.nobackground span {
+    font-size: medium;
+}
+
 @media screen and (min-width: 375px) {
     form {width:375px;}
 }
