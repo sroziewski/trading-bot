@@ -39,8 +39,8 @@ td.nobackground a {
     padding: 0 0;
 }
 
-td.nobackground span {
-    font-size: medium;
+span.day {
+    font-size: 1.2em;
 }
 
 @media screen and (min-width: 375px) {
