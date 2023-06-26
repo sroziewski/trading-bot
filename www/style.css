@@ -34,7 +34,7 @@ form {
 
 }
 
-.nobackground {
+td.nobackground a {
     background: none;
 }
 
