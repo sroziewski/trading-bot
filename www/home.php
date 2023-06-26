@@ -62,8 +62,8 @@ if($_SESSION['user_name']!="simon"){
             echo('<center>');
             echo("pics/map/".$_GET['name'].".txt");
             foreach (new SplFileObject("pics/map/".$_GET['name'].".txt") as $fname) {
-                echo('<img src="pics/small/'.$fname+'"/>');
-                echo('pics/small/'.$fname+'</br>');
+                echo('<img src="pics/small/'.$fname.'"/>');
+                echo('pics/small/'.$fname.'</br>');
             }
             echo('</center>');
         }
