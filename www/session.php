@@ -56,12 +56,6 @@ if (isset($_POST['uname']) && isset($_POST['password'])) {
 
             }
 
-        }else{
-
-            header("Location: index.php");
-
-            exit();
-
         }
 
     }
