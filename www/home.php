@@ -27,6 +27,16 @@ if($_SESSION['user_name']!="simon"){
 <body>
         <h2><?php echo($version); ?></h2>
     <?php
+
+    function print_table($arr, $val){
+            echo('<center>'.$val.'</br><table>');
+            $i = 0;
+            foreach($arr as $row){
+                echo('<tr><td class="nobackground">'.++$i.'<a href="pics/'.$row.'"><img src="pics/small/'.$row.'"/></a></td></tr>');
+            }
+            echo('</table></center>');
+    }
+
     if(!isset($_GET['name'])){
         echo('<table>
         <tr><td><a href="?name=btc">BTC</a></td>
@@ -59,11 +69,21 @@ if($_SESSION['user_name']!="simon"){
         </table>');
         }
         else{
-            echo('<center><table>');
+
+            $today = array();
+            $yesterday = array();
             foreach (new SplFileObject("pics/map/".$_GET['name'].".txt") as $fname) {
-                    echo('<tr><td class="nobackground"><a href="pics/'.$fname.'"><img src="pics/small/'.$fname.'"/></a></td></tr>');
+                if(str_contains($fname, "today"){
+                    array_push($today, $fname);
+                }
+                if(str_contains($fname, "yesterday"){
+                    array_push($yesterday, $fname);
+                }
+                print_table($today, "Today");
+                print_table($yesterday, "Yesterday");
             }
-            echo('</table></center>');
+
+
         }
 ?>
 </body>
