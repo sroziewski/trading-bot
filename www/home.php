@@ -80,6 +80,8 @@ if($_SESSION['user_name']!="simon"){
                     array_push($yesterday, $fname);
                 }
             }
+            print_r($today);
+            print_r($yesterday);
 //             print_table($today, "Today");
 //             print_table($yesterday, "Yesterday");
 
