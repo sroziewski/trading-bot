@@ -24,7 +24,9 @@ if($_SESSION['user_name']!="simon"){
 <body>
         <h2><?php echo($version); ?></h2>
 
-        <table>
+    <?php
+    if(!isset($_GET['name'])){
+        echo('<table>
         <tr><td><a href="?name=btc">BTC</a></td>
             <td><a href="?name=eth">ETH</a></td>
             <td><a href="?name=ada">ADA</a></td>
@@ -52,8 +54,9 @@ if($_SESSION['user_name']!="simon"){
         </tr>
         <tr><td colspan="4"><a href="?name=others">OTHERS</a></td>
         </tr>
-        </table>
-
+        </table>');
+        }
+?>
 
 </body>
 
