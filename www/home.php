@@ -59,11 +59,11 @@ if($_SESSION['user_name']!="simon"){
         </table>');
         }
         else{
-            echo('<center>');
+            echo('<div class="main"><center>');
             foreach (new SplFileObject("pics/map/".$_GET['name'].".txt") as $fname) {
                 echo('<img src="pics/small/'.$fname.'"/></br>');
             }
-            echo('</center>');
+            echo('</center></div>');
         }
 ?>
 </body>
