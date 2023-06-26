@@ -2,11 +2,9 @@
 session_start();
 $version = file_exists("pics/date.txt") ? file_get_contents("pics/date.txt") : "Empty";
 
-echo($_SESSION['user_name']);
-
 if($_SESSION['user_name']!="simon"){
-//     header("Location: index.php");
-//     exit();
+    header("Location: index.php");
+    exit();
 }
 
 ?>
@@ -26,12 +24,14 @@ if($_SESSION['user_name']!="simon"){
 <body>
         <h2><?php echo($version); ?></h2>
 
-     <form action="login.php" method="post">
+        <table>
+        <tr><td><a href="?name=btc"></a></td>
+            <td><a href="?name=eth"></a></td>
+            <td><a href="?name=ada"></a></td>
+            <td><a href="?name=ape"></a></td>
+        </tr>
+        </table>
 
-
-
-
-     </form>
 
 </body>
 

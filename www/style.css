@@ -36,6 +36,10 @@ form {
 
 }
 
+@media screen and (min-width: 1366px) {
+    form {width:375px;}
+}
+
 h2 {
 
     text-align: center;
