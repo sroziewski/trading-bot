@@ -1,4 +1,7 @@
 <?php
+ini_set('display_errors', '1');
+ini_set('display_startup_errors', '1');
+error_reporting(E_ALL);
 session_start();
 $version = file_exists("pics/date.txt") ? file_get_contents("pics/date.txt") : "Empty";
 
