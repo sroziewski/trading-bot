@@ -59,6 +59,7 @@ if($_SESSION['user_name']!="simon"){
         </table>');
         }
         else{
+            echo("<h2>".$_GET['name']."</h2>");
             echo('<center><table>');
             foreach (new SplFileObject("pics/map/".$_GET['name'].".txt") as $fname) {
                     echo('<tr><td class="nobackground"><a href="pics/'.$fname.'"><img src="pics/small/'.$fname.'"/></a></td></tr>');
