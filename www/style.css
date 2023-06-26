@@ -34,6 +34,10 @@ form {
 
 }
 
+.nobackground {
+    background: none;
+}
+
 @media screen and (min-width: 375px) {
     form {width:375px;}
 }
