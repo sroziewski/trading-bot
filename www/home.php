@@ -79,10 +79,9 @@ if($_SESSION['user_name']!="simon"){
                 if(str_contains($fname, "yesterday"){
                     array_push($yesterday, $fname);
                 }
-                print_table($today, "Today");
-                print_table($yesterday, "Yesterday");
             }
-
+            print_table($today, "Today");
+            print_table($yesterday, "Yesterday");
 
         }
 ?>
