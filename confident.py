@@ -60,7 +60,7 @@ def read_text(_file_fullname, _filename):
     img_crop = im.crop((left, top, right, bottom))
     _tmp_file = path + "tmp/" + _filename
     img_crop.save(_tmp_file)
-    tesseract_cmd = "tesseract {} stdout --oem 1 -l eng".format(_filename)
+    tesseract_cmd = "tesseract {} stdout --oem 1 -l eng".format(_tmp_file)
     while locked:
         sleep(1)
     locked = True
@@ -240,7 +240,7 @@ def clear_chart_dir():
 
 schedule.every().day.at("07:58").do(clear_chart_dir)
 schedule.every().day.at("08:00").do(manager)
-schedule.every().day.at("19:00").do(manager)
+schedule.every().day.at("19:07").do(manager)
 #
 while True:
     # Checks whether a scheduled task
