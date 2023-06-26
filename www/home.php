@@ -25,7 +25,7 @@ if($_SESSION['user_name']!="simon"){
         <h2><?php echo($version); ?></h2>
 <?php
         print_r($_GET);
-        echo("pics/map/"+$_GET['name']+".txt");
+        echo("pics/map/txt");
 ?>
 </body>
 
