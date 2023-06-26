@@ -74,10 +74,6 @@ label {
 
 }
 
-a {
-        background: rgb(215 145 145);
-}
-
 button {
 
     float: right;
@@ -131,11 +127,11 @@ a {
 
     float: right;
 
-    background: rgb(183, 225, 233);
+    background: rgb(215 145 145);
 
     padding: 10px 15px;
 
-    color: #fff;
+    color: black;
 
     border-radius: 10px;
 
@@ -144,7 +140,7 @@ a {
     border: none;
 
     text-decoration: none;
-
+    font-size: 2.2em;
 }
 
 a:hover{
