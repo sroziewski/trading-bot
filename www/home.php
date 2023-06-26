@@ -25,10 +25,10 @@ if($_SESSION['user_name']!="simon"){
         <h2><?php echo($version); ?></h2>
 
         <table>
-        <tr><td><a href="?name=btc"></a></td>
-            <td><a href="?name=eth"></a></td>
-            <td><a href="?name=ada"></a></td>
-            <td><a href="?name=ape"></a></td>
+        <tr><td><a href="?name=btc">BTC</a></td>
+            <td><a href="?name=eth">ETH</a></td>
+            <td><a href="?name=ada">ADA</a></td>
+            <td><a href="?name=ape">APE</a></td>
         </tr>
         </table>
 
