@@ -102,7 +102,7 @@ def extract_order_price(_buys, _df_inc):
 
 
 class SetupEntry(object):
-    def __init__(self, _market, _buy_price, _buys_count, _ticker, _time):
+    def __init__(self, _market, _buy_price=None, _buys_count=None, _ticker=None, _time=None):
         self.market = _market
         self.buy_price = round_price(_buy_price)
         self.buys_count = _buys_count
@@ -658,7 +658,7 @@ def process_computing(_cse: ComputingSetupEntry):
 
 def filter_by_sell_setups(_setups):
     _sell_signals = list(filter(lambda x: x.sell_signal, _setups))
-    _1w_sell = _3d_sell = _1d_sell = _12h_sell = None
+    _1w_sell = _3d_sell = _1d_sell = _12h_sell = _8h_sell = _6h_sell = None
     for _s_0 in _sell_signals:
         _s = _s_0.sell_signal
         if '1w' in _s:
@@ -669,7 +669,11 @@ def filter_by_sell_setups(_setups):
             _1d_sell = _s['1d']
         if '12h' in _s:
             _12h_sell = _s['12h']
-    _f = list(filter(lambda x: x, [_1w_sell, _3d_sell, _1d_sell, _12h_sell]))
+        if '8h' in _s:
+            _8h_sell = _s['8h']
+        if '6h' in _s:
+            _6h_sell = _s['6h']
+    _f = list(filter(lambda x: x, [_1w_sell, _3d_sell, _1d_sell, _12h_sell, _8h_sell, _6h_sell]))
 
     if len(_f) == 0:
         return _setups
@@ -792,6 +796,8 @@ def process_markets(_pe: ProcessingEntry):
 def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _market = "{}{}".format(_cse.market, _cse.type).upper()
     _ticker = _cse.ticker
+    if _ticker == '12h':
+        a = 1
     _klines_cp = _klines.copy()
     _klines_cp.reverse()
     _df_dec = create_from_offline_df(_klines)
@@ -831,7 +837,13 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
             elif not _sell_signal:
                 _sell_signal = int(_df_inc['time'][_last_sell_ind]/1000)
     if len(_buys) == 0:
-        return False  # there is no entry setup, we skip
+        # there is no entry setup, we skip
+        if str(_sell_signal) != "None":
+            _se = SetupEntry(_market, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+            _se.sell_signal[_ticker] = _sell_signal
+            return _se
+        else:
+            return False
     _buys.sort()
     _adjustment = compute_adjustment(_df_dec['open'], _df_dec['close'], _df_dec['high'], _df_dec['low'],
                                      _df_dec['volume'])
@@ -842,7 +854,12 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys)
     _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys)
     if len(_buys) == 0:
-        return False  # there is no entry setup, we skip
+        if str(_sell_signal) != "None":
+            _se = SetupEntry(_market, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+            _se.sell_signal[_ticker] = _sell_signal
+            return _se
+        else:
+            return False
     _t = get_time_buys(_buys, _df_inc)
     _buy_price = extract_order_price(_buys, _df_inc)
     _se = SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
@@ -851,9 +868,14 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _vfi = compute_vfi(_df_dec)
 
     if not (_vfi[_buy_ind_vfi] < 3.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi+1:_buy_ind_vfi + 11]))):
-        return False
+        if str(_sell_signal) != "None":
+            _se = SetupEntry(_market, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+            _se.sell_signal[_ticker] = _sell_signal
+            return _se
+        else:
+            return False
 
-    if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h']:
+    if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h', '8h', '6h']:
         _se.sell_signal[_ticker] = _sell_signal
     return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
     # return _se

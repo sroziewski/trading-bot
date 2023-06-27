@@ -175,18 +175,30 @@ def store_setups(_setups: List[SetupEntry], _setups_dict, _i):
 def extract_sell_setups(_setups_dict):
     _out = []
     for _ticker, _setup in _setups_dict.items():
-        if _ticker in ['12h', '1d', '3d', '1w']:
+        if _ticker in ['8h', '12h', '1d', '3d', '1w']:
             _out.append(_setup)
     return _out
 
 
 #  new Approach
 
+# i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = 0
 i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = 0
+
+i30m = 552
+i1h = 276
+i2h = 138
+i4h = 69
+i6h = 46
+i8h = 34
+i12h = 23
+i1d = 11
+i3d = 3
+i1w = 1
 
 setups_dict = {}
 
-for i in range(15*4*24*7*10):  # 10 weeks
+for i in range(1150, 15*4*24*7*10):  # 10 weeks
     _cses = []
     _processors = []
     if i % 672 == 0:
