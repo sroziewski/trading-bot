@@ -819,27 +819,27 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _sell_ind = get_major_indices(_major, -1)
     _buys = [*_strong_buy_ind, *_buy_ind]
     _sell_signal = None
-    if len(_buys) == 0:
-        return False  # there is no entry setup, we skip
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
         _buys = list(filter(lambda x: x > _last_strong_sell_ind, _buys))
         if _last_strong_sell_ind in _df_inc['time']:
-            _sell_signal = int(_df_inc['time'][_last_strong_sell_ind]/1000)
-    if len(_buys) == 0:
-        return False  # there is no entry setup, we skip
+            _sell_signal = int(_df_inc['time'][_last_strong_sell_ind])
+        elif _last_strong_sell_ind > _df_inc['time'].count()-1:
+            _sell_signal = int(_df_inc['time'][_df_inc['time'].count()-1])
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
         if _last_sell_ind in _df_inc['time']:
             if _sell_signal and _last_sell_ind > _last_strong_sell_ind:
-                _sell_signal = int(_df_inc['time'][_last_sell_ind]/1000)
+                _sell_signal = int(_df_inc['time'][_last_sell_ind])
             elif not _sell_signal:
-                _sell_signal = int(_df_inc['time'][_last_sell_ind]/1000)
+                _sell_signal = int(_df_inc['time'][_last_sell_ind])
+        elif _last_sell_ind > _df_inc['time'].count()-1:
+            _sell_signal = int(_df_inc['time'][_df_inc['time'].count()-1])
     if len(_buys) == 0:
         # there is no entry setup, we skip
-        if str(_sell_signal) != "None":
-            _se = SetupEntry(_market, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+        if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
+            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
             return _se
         else:
@@ -854,8 +854,8 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys)
     _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys)
     if len(_buys) == 0:
-        if str(_sell_signal) != "None":
-            _se = SetupEntry(_market, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+        if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
+            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
             return _se
         else:
@@ -868,8 +868,8 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _vfi = compute_vfi(_df_dec)
 
     if not (_vfi[_buy_ind_vfi] < 3.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi+1:_buy_ind_vfi + 11]))):
-        if str(_sell_signal) != "None":
-            _se = SetupEntry(_market, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+        if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
+            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
             return _se
         else:
