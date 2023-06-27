@@ -120,7 +120,7 @@ def extract_coin(_txt: str):
     _doge = ['doge', 'doaecoin', 'doagecoin']
     _link = ['link']
     _ltc = ['jtecoin', 'litecoin', 'itecoin']
-    _mana = ['decentraland', 'pecentraland', 'dBreeertelead']
+    _mana = ['decentraland', 'pecentraland', 'dbreeertelead', 'deceniraland']
     _matic = ['poalvaon', 'polygon', 'polvaon', 'palvaon']
     _sand = ['sand']
     _shiba = ['hiba', 'shib']
