@@ -29,7 +29,9 @@ if($_SESSION['user_name']!="simon"){
     <?php
 
     function print_table($arr, $val){
-            echo('<center><span class="day">'.$val.'</span></br><table>');
+            if(count($arr)>0){
+                echo('<center><span class="day">'.$val.'</span></br><table>');
+            }
             $i = 0;
             foreach($arr as $row){
                 echo('<tr><td class="nobackground">'.++$i.'.&nbsp;<a href="pics/'.$row.'"><img src="pics/small/'.$row.'"/></a></td></tr>');
