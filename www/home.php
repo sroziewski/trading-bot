@@ -57,7 +57,7 @@ if($_SESSION['user_name']!="simon"){
         <tr><td><a href="?name=algo">ALGO</a></td>
             <td><a href="?name=atom">ATOM</a></td>
             <td><a href="?name=matic">MATIC</a></td>
-            <td><a href="?name=LTC">ltc</a></td>
+            <td><a href="?name=ltc">LTC</a></td>
         </tr>
         <tr><td><a href="?name=eos">EOS</a></td>
             <td><a href="?name=uni">UNI</a></td>
