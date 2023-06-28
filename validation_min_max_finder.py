@@ -8,7 +8,7 @@ from bson.codec_options import TypeRegistry
 from library import get_pickled, round_price, DecimalCodec, lib_initialize
 from library import ticker2num
 from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline, ComputingSetupEntry, chunk, \
-    manage_entry_computing, filter_by_sell_setups, define_signal_strength
+    manage_entry_computing, filter_by_sell_setups, define_signal_strength, sell_signal_tickers
 from mongodb import mongo_client
 
 from timeit import default_timer as timer
@@ -175,7 +175,7 @@ def store_setups(_setups: List[SetupEntry], _setups_dict, _i):
 def extract_sell_setups(_setups_dict):
     _out = []
     for _ticker, _setup in _setups_dict.items():
-        if _ticker in ['8h', '12h', '1d', '3d', '1w']:
+        if _ticker in sell_signal_tickers:
             _out.append(_setup)
     return _out
 

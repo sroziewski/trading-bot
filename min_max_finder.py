@@ -26,6 +26,7 @@ filename = "Binance-Min-Max-Finder"
 logger = setup_logger(filename)
 
 threads_n = 4
+sell_signal_tickers = ['1w', '3d', '1d', '12h', '8h', '6h', '4h']
 
 
 def create_from_online_df(_klines):
@@ -658,7 +659,7 @@ def process_computing(_cse: ComputingSetupEntry):
 
 def filter_by_sell_setups(_setups):
     _sell_signals = list(filter(lambda x: x.sell_signal, _setups))
-    _1w_sell = _3d_sell = _1d_sell = _12h_sell = _8h_sell = _6h_sell = None
+    _1w_sell = _3d_sell = _1d_sell = _12h_sell = _8h_sell = _6h_sell = _4h_sell = None
     for _s_0 in _sell_signals:
         _s = _s_0.sell_signal
         if '1w' in _s:
@@ -673,7 +674,9 @@ def filter_by_sell_setups(_setups):
             _8h_sell = _s['8h']
         if '6h' in _s:
             _6h_sell = _s['6h']
-    _f = list(filter(lambda x: x, [_1w_sell, _3d_sell, _1d_sell, _12h_sell, _8h_sell, _6h_sell]))
+        if '4h' in _s:
+            _4h_sell = _s['4h']
+    _f = list(filter(lambda x: x, [_1w_sell, _3d_sell, _1d_sell, _12h_sell, _8h_sell, _6h_sell, _4h_sell]))
 
     if len(_f) == 0:
         return _setups
@@ -793,10 +796,14 @@ def process_markets(_pe: ProcessingEntry):
             logger.info("Market {} time: {} s".format(_market, _et))
 
 
+def validate_sell_signal(_se: SetupEntry):
+    return _se if _se.ticker in sell_signal_tickers else False
+
+
 def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _market = "{}{}".format(_cse.market, _cse.type).upper()
     _ticker = _cse.ticker
-    if _ticker == '12h':
+    if _ticker == '2h':
         a = 1
     _klines_cp = _klines.copy()
     _klines_cp.reverse()
@@ -826,6 +833,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
             _sell_signal = int(_df_inc['time'][_last_strong_sell_ind])
         elif _last_strong_sell_ind > _df_inc['time'].count()-1:
             _sell_signal = int(_df_inc['time'][_df_inc['time'].count()-1])
+            _sell_signal += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker)*60*60
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
@@ -836,12 +844,13 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
                 _sell_signal = int(_df_inc['time'][_last_sell_ind])
         elif _last_sell_ind > _df_inc['time'].count()-1:
             _sell_signal = int(_df_inc['time'][_df_inc['time'].count()-1])
+            _sell_signal += (_last_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
     if len(_buys) == 0:
         # there is no entry setup, we skip
         if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
             _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
-            return _se
+            return validate_sell_signal(_se)
         else:
             return False
     _buys.sort()
@@ -857,7 +866,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
             _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
-            return _se
+            return validate_sell_signal(_se)
         else:
             return False
     _t = get_time_buys(_buys, _df_inc)
@@ -871,11 +880,11 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
             _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
-            return _se
+            return validate_sell_signal(_se)
         else:
             return False
 
-    if str(_sell_signal) != "None" and _ticker in ['1w', '3d', '1d', '12h', '8h', '6h']:
+    if str(_sell_signal) != "None" and _ticker in sell_signal_tickers:
         _se.sell_signal[_ticker] = _sell_signal
     return _se if abs(_df_dec['time'][0] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 else False
     # return _se
