@@ -54,7 +54,7 @@ threads_n = 4
 
 def extract_klines(_cse):
     # _klines_online = get_klines("{}{}".format(_market, _type).upper(), _market, _ticker)
-    _klines_online = get_klines("E:/bin/data/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    _klines_online = get_klines(path, "{}{}".format(_cse.market, _cse.type), _cse.ticker)
     _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800:][0:len(_klines_online[-800:])-_cse.index]))
     print("{} {}".format(_cse.ticker, _r[-1]))
     return _r
