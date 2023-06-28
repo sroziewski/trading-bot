@@ -209,7 +209,7 @@ def get_delta_t(_ticker):
 
 def define_signal_strength(_setups):
     if len(_setups) == 0:
-        return False
+        return []
     _setups.reverse()
     _setups_dict = {}
     for _setup in _setups:
@@ -682,8 +682,9 @@ def filter_by_sell_setups(_setups):
         return _setups
 
     _out = []
-    for _setup in _setups:
-        if all(filter(lambda x: _setup.time > x, _f)):
+    for _setup in filter(lambda x: x.buy_price > 0, _setups):
+        _filtered = list(filter(lambda x: _setup.time > x, _f))
+        if len(_filtered) > 0 and all(_filtered):
             _out.append(_setup)
     return _out
 
@@ -803,8 +804,6 @@ def validate_sell_signal(_se: SetupEntry):
 def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _market = "{}{}".format(_cse.market, _cse.type).upper()
     _ticker = _cse.ticker
-    if _ticker == '2h':
-        a = 1
     _klines_cp = _klines.copy()
     _klines_cp.reverse()
     _df_dec = create_from_offline_df(_klines)
