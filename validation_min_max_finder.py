@@ -1,5 +1,6 @@
+import sys
 import threading
-from random import randrange
+from timeit import default_timer as timer
 from typing import List
 
 from bson import CodecOptions
@@ -7,14 +8,12 @@ from bson.codec_options import TypeRegistry
 
 from library import get_pickled, round_price, DecimalCodec, lib_initialize
 from library import ticker2num
-from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline, ComputingSetupEntry, chunk, \
-    manage_entry_computing, filter_by_sell_setups, define_signal_strength, sell_signal_tickers
+from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline, manage_entry_computing, \
+    filter_by_sell_setups, define_signal_strength, sell_signal_tickers
 from mongodb import mongo_client
 
-from timeit import default_timer as timer
-from time import sleep
-
-path = "E:/bin/data/klines/start/"
+# path = "E:/bin/data/klines/start/"
+path = "/home/0agent1/store/klines/start/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
@@ -130,34 +129,10 @@ def validate(_pe):
 
 lib_initialize()
 
+market = sys.argv[1]
 
-# _tickers = ['15m', '30m', '1h', '2h', '4h', '6h', '8h', '12h', '1d', '3d']
-# _ticker_parts = list(chunk(_tickers, threads_n))
-_market = "ada"
-# _start = timer()
+_market = market
 _type = "usdt"
-#
-# for i in range(1, 1000):
-#     print("iteration: {}".format(i))
-#     _setups_exist = None
-#     _setups = []
-#     _cses = []
-#     for _part in _ticker_parts:
-#         _processors = []
-#         for _ticker in _part:
-#             print(_ticker)
-#             sleep(randrange(10))
-#             _cse = ComputingSetupEntry(_market, _type, _ticker, i)
-#             _cses.append(_cse)
-#             _processors.append(manage_entry_computing(_cse))
-#         [x.join() for x in _processors]
-#     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
-#     _setups_f = filter_by_sell_setups(_setups)
-#     _setups_exist = define_signal_strength(_setups)  # filter out volume flow index < 0
-#     if _setups_exist:
-#         r = list(filter(lambda x: x.signal_strength > 8, _setups_exist))
-#         if len(r) > 0:
-#             ikf = 123
 
 
 def append(_processors, _el):
@@ -195,6 +170,8 @@ i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = 0
 # i1d = 11
 # i3d = 3
 # i1w = 1
+
+_start = timer()
 
 setups_dict = {}
 
@@ -249,6 +226,7 @@ for i in range(15*4*24*7*10):  # 10 weeks
         append(_processors, manage_entry_computing(_cse))
         # process_computing(_cse)
         i4h += 1
+        print("Computation time reported every 2h: {}".format(round(timer()-_start)))
 
     if i % 8 == 0:
         _cse = ComputingSetupEntry(_market, _type, '2h', i2h)
