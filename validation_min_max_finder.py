@@ -141,9 +141,16 @@ def append(_processors, _el):
     _processors.append(_el)
 
 
+showed_setups = {}
+
+
 def show_setups(_setups: List[SetupEntry], _i):
+    global showed_setups
     for _setup in _setups:
-        print("i: {} {} {} {} {} {} {}".format(_i, _setup.market, _setup.ticker, _setup.time_str, _setup.signal_strength, _setup.buys_count, _setup.buy_price))
+        _val = "{}-{}".format(_setup.time, _setup.ticker)
+        if not _val in showed_setups:
+            print("i: {} {} {} {} {} {} {}".format(_i, _setup.market, _setup.ticker, _setup.time_str, _setup.signal_strength, _setup.buys_count, _setup.buy_price))
+            showed_setups[_val] = 1
 
 
 def extract_sell_setups(_setups_dict):
