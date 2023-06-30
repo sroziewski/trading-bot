@@ -1,5 +1,4 @@
 import threading
-import traceback
 from itertools import islice
 from math import log
 from random import randrange
@@ -10,8 +9,7 @@ import numpy as np
 import pandas as pd
 from bson.codec_options import TypeRegistry, CodecOptions
 
-from library import setup_logger, DecimalCodec, try_get_klines, \
-    get_binance_interval_unit, get_binance_klines, Kline, lib_initialize, get_time, round_price, get_pickled, ticker2num
+from library import setup_logger, DecimalCodec, Kline, lib_initialize, get_time, round_price, get_pickled, ticker2num
 from mongodb import mongo_client
 from tb_lib import compute_tr, smooth, get_crossup, get_crossdn, lele, get_strong_major_indices, get_major_indices, \
     compute_adjustment, compute_money_strength, compute_whale_money_flow, compute_trend_exhaustion
@@ -658,7 +656,7 @@ def process_computing(_cse: ComputingSetupEntry):
         _cse.se = _se
 
 
-def filter_by_sell_setups(_setups):
+def filter_by_sell_setups(_setups, __setups_dict):
     _sell_signals = list(filter(lambda x: x.sell_signal, _setups))
     _1w_sell = _3d_sell = _1d_sell = _12h_sell = _8h_sell = _6h_sell = _4h_sell = None
     for _s_0 in _sell_signals:
@@ -678,6 +676,10 @@ def filter_by_sell_setups(_setups):
         if '4h' in _s:
             _4h_sell = _s['4h']
     _f = list(filter(lambda x: x, [_1w_sell, _3d_sell, _1d_sell, _12h_sell, _8h_sell, _6h_sell, _4h_sell]))
+
+    # later we remove those 2 lines
+    for _sell_signal in _sell_signals:
+        __setups_dict[_sell_signal.ticker] = _sell_signal
 
     if len(_f) == 0:
         return _setups

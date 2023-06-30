@@ -141,9 +141,8 @@ def append(_processors, _el):
     _processors.append(_el)
 
 
-def store_setups(_setups: List[SetupEntry], _setups_dict, _i):
+def show_setups(_setups: List[SetupEntry], _i):
     for _setup in _setups:
-        _setups_dict[_setup.ticker] = _setup
         print("i: {} {} {} {} {} {} {}".format(_i, _setup.market, _setup.ticker, _setup.time_str, _setup.signal_strength, _setup.buys_count, _setup.buy_price))
 
 
@@ -159,23 +158,23 @@ def extract_sell_setups(_setups_dict):
 
 i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = 0
 
-# i = 920
-# i30m = 460
-# i1h = 230
-# i2h = 115
-# i4h = 57
-# i6h = 38
-# i8h = 28
-# i12h = 19
-# i1d = 9
-# i3d = 3
-# i1w = 1
+i15m = 1103
+i30m = 551
+i1h = 276
+i2h = 138
+i4h = 69
+i6h = 46
+i8h = 34
+i12h = 23
+i1d = 12
+i3d = 4
+i1w = 1
 
 _start = timer()
 
 setups_dict = {}
 
-for i in range(0, 15*4*24*7*10):  # 10 weeks
+for i in range(1103, 15*4*24*7*10):  # 10 weeks
     _cses = []
     _processors = []
     if i % 672 == 0:
@@ -258,9 +257,9 @@ for i in range(0, 15*4*24*7*10):  # 10 weeks
     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
     if _setups:
         _sell_setups = extract_sell_setups(setups_dict)
-        _setups = filter_by_sell_setups([*_setups, *_sell_setups])
-        _setups = define_signal_strength([*_setups, *_sell_setups])
-        store_setups(_setups, setups_dict, i)
+        _setups = filter_by_sell_setups([*_setups, *_sell_setups], setups_dict)
+        _setups = define_signal_strength([*_setups, *list(filter(lambda x: x.buy_price > 0, _sell_setups))])
+        show_setups(_setups, i)
 
 
 
