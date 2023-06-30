@@ -159,15 +159,15 @@ def extract_sell_setups(_setups_dict):
 
 i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = 0
 
-# i = 1150
-# i30m = 552
-# i1h = 276
-# i2h = 138
-# i4h = 69
-# i6h = 46
-# i8h = 34
-# i12h = 23
-# i1d = 11
+# i = 920
+# i30m = 460
+# i1h = 230
+# i2h = 115
+# i4h = 57
+# i6h = 38
+# i8h = 28
+# i12h = 19
+# i1d = 9
 # i3d = 3
 # i1w = 1
 
@@ -175,7 +175,7 @@ _start = timer()
 
 setups_dict = {}
 
-for i in range(15*4*24*7*10):  # 10 weeks
+for i in range(0, 15*4*24*7*10):  # 10 weeks
     _cses = []
     _processors = []
     if i % 672 == 0:
@@ -226,7 +226,7 @@ for i in range(15*4*24*7*10):  # 10 weeks
         append(_processors, manage_entry_computing(_cse))
         # process_computing(_cse)
         i4h += 1
-        print("Computation time reported every 2h: {}".format(round(timer()-_start)))
+        print("Computation time reported every 4h candle: {} min".format(round((timer()-_start)/60)))
 
     if i % 8 == 0:
         _cse = ComputingSetupEntry(_market, _type, '2h', i2h)

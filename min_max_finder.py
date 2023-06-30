@@ -151,6 +151,7 @@ def get_klines(_path, _market, _ticker):
 def extract_klines(_cse):
     # _klines_online = get_klines("{}{}".format(_market, _type).upper(), _market, _ticker)
     _klines_online = get_klines("/home/0agent1/store/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    # _klines_online = get_klines("E:/bin/data/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
     if _cse.index == 0:
         return list(map(lambda x: to_offline_kline(x), _klines_online[-800:]))
     _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800-_cse.index:][:-_cse.index]))
@@ -683,8 +684,8 @@ def filter_by_sell_setups(_setups):
 
     _out = []
     for _setup in filter(lambda x: x.buy_price > 0, _setups):
-        _filtered = list(filter(lambda x: _setup.time > x, _f))
-        if len(_filtered) > 0 and all(_filtered):
+        _filtered = list(filter(lambda x: _setup.time >= x, _f))
+        if len(_filtered) == len(_f):
             _out.append(_setup)
     return _out
 
