@@ -156,25 +156,25 @@ def extract_sell_setups(_setups_dict):
 
 #  new Approach
 
-i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = 0
+i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = i15m = 0
 
-i15m = 1103
-i30m = 551
-i1h = 276
-i2h = 138
-i4h = 69
-i6h = 46
-i8h = 34
-i12h = 23
-i1d = 12
-i3d = 4
-i1w = 1
+# i15m = 1103
+# i30m = 551
+# i1h = 276
+# i2h = 138
+# i4h = 69
+# i6h = 46
+# i8h = 34
+# i12h = 23
+# i1d = 12
+# i3d = 4
+# i1w = 1
 
 _start = timer()
 
 setups_dict = {}
 
-for i in range(1103, 15*4*24*7*10):  # 10 weeks
+for i in range(i15m, 15*4*24*7*10):  # 10 weeks
     _cses = []
     _processors = []
     if i % 672 == 0:
