@@ -110,6 +110,7 @@ class SetupEntry(object):
         self.time_str = get_time(_time)
         self.signal_strength = None
         self.sell_signal = {}  # (ticker, index)
+        self.filtered = None
 
     def set_signal_strength(self, _signal_strength):
         self.signal_strength = _signal_strength
@@ -596,7 +597,7 @@ def define_signal_strength(_setups):
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
                     _signal_strength += 0.5
         _setups[_ii].signal_strength = _signal_strength
-    return _setups
+    return list(filter(lambda x: x.filtered, _setups))
 
 
 def manage_market_processing(_pe, _ii):
@@ -688,6 +689,7 @@ def filter_by_sell_setups(_setups, __setups_dict):
     for _setup in filter(lambda x: x.buy_price > 0, _setups):
         _filtered = list(filter(lambda x: _setup.time >= x, _f))
         if len(_filtered) == len(_f):
+            _setup.filtered = True
             _out.append(_setup)
     return _out
 
