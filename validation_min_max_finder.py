@@ -206,6 +206,7 @@ for i in range(i15m, 15*4*24*7*10):  # 10 weeks
         append(_processors, manage_entry_computing(_cse))
         # process_computing(_cse)
         i1d += 1
+        print("Computation time reported every 1d candle: {} min".format(round((timer() - _start) / 60)))
 
     if i % 48 == 0:
         _cse = ComputingSetupEntry(_market, _type, '12h', i12h)
@@ -234,7 +235,6 @@ for i in range(i15m, 15*4*24*7*10):  # 10 weeks
         append(_processors, manage_entry_computing(_cse))
         # process_computing(_cse)
         i4h += 1
-        print("Computation time reported every 4h candle: {} min".format(round((timer()-_start)/60)))
 
     if i % 8 == 0:
         _cse = ComputingSetupEntry(_market, _type, '2h', i2h)
