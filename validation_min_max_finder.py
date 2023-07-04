@@ -13,7 +13,8 @@ from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
 from mongodb import mongo_client
 
 # path = "E:/bin/data/klines/start/"
-path = "/home/0agent1/store/klines/start/"
+# path = "/home/0agent1/store/klines/start/"
+path = "/home/sroziewski/store/start/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
@@ -165,18 +166,18 @@ def extract_sell_setups(_setups_dict):
 
 i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = i15m = 0
 
-i15m = 10270
-i30m = 5159
-i1h = 2579
-i2h = 1289
-i4h = 644
-i6h = 430
-i8h = 322
-i12h = 215
-i12h = 215
-i1d = 107
-i3d = 35
-i1w = 15
+# i15m = 10270
+# i30m = 5159
+# i1h = 2579
+# i2h = 1289
+# i4h = 644
+# i6h = 430
+# i8h = 322
+# i12h = 215
+# i12h = 215
+# i1d = 107
+# i3d = 35
+# i1w = 15
 
 _start = timer()
 
