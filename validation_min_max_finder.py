@@ -165,17 +165,17 @@ def extract_sell_setups(_setups_dict):
 
 i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = i15m = 0
 
-# i15m = 1103
-# i30m = 551
-# i1h = 276
-# i2h = 138
-# i4h = 69
-# i6h = 46
-# i8h = 34
-# i12h = 23
-# i1d = 12
-# i3d = 4
-# i1w = 1
+i15m = 9598
+i30m = 4799
+i1h = 2399
+i2h = 1199
+i4h = 599
+i6h = 399
+i8h = 299
+i12h = 199
+i1d = 99
+i3d = 33
+i1w = 14
 
 _start = timer()
 
