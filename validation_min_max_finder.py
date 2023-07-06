@@ -264,11 +264,12 @@ for i in range(i15m, 15*4*24*7*10):  # 10 weeks
 
     [x.join() for x in _processors]
     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
-    if _setups:
-        _sell_setups = extract_sell_setups(setups_dict)
-        _setups = filter_by_sell_setups([*_setups, *_sell_setups], setups_dict)
-        _setups = define_signal_strength([*_setups, *list(filter(lambda x: x.buy_price > 0, _sell_setups))])
-        show_setups(_setups, i)
+    show_setups(_setups, i)
+    # if _setups:
+    #     _sell_setups = extract_sell_setups(setups_dict)
+    #     _setups = filter_by_sell_setups([*_setups, *_sell_setups], setups_dict)
+    #     _setups = define_signal_strength([*_setups, *list(filter(lambda x: x.buy_price > 0, _sell_setups))])
+    #     show_setups(_setups, i)
 
 
 
