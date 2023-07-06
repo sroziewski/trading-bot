@@ -149,8 +149,8 @@ def get_klines(_path, _market, _ticker):
 
 def extract_klines(_cse):
     # _klines_online = get_klines("{}{}".format(_market, _type).upper(), _market, _ticker)
-    _klines_online = get_klines("/home/0agent1/store/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
-    # _klines_online = get_klines("/home/sroziewski/store/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    # _klines_online = get_klines("/home/0agent1/store/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    _klines_online = get_klines("/home/sroziewski/store/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
     # _klines_online = get_klines("E:/bin/data/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
     if _cse.index == 0:
         return list(map(lambda x: to_offline_kline(x), _klines_online[-800:]))

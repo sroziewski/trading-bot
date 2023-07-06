@@ -13,8 +13,8 @@ from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
 from mongodb import mongo_client
 
 # path = "E:/bin/data/klines/start/"
-path = "/home/0agent1/store/klines/start/"
-# path = "/home/sroziewski/store/start/"
+# path = "/home/0agent1/store/klines/start/"
+path = "/home/sroziewski/store/start/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
