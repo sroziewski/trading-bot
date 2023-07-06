@@ -860,7 +860,10 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         elif _last_sell_ind > _df_inc['time'].count() - 1:
             _sell_signal = int(_df_inc['time'][_df_inc['time'].count() - 1])
             _sell_signal += (_last_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
-    _sell_signal = max(_sell_signal_strong, _sell_signal)
+    if _sell_signal_strong and _sell_signal:
+        _sell_signal = max(_sell_signal_strong, _sell_signal)
+    else:
+        _sell_signal = _sell_signal if _sell_signal else _sell_signal_strong
     if len(_buys) == 0:
         # there is no entry setup, we skip
         if str(_sell_signal) != "None" and _sell_signal + 21 * ticker2num(_ticker) * 60 * 60 >= _df_inc['time'].index[
