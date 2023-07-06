@@ -6,7 +6,7 @@ from bson.codec_options import TypeRegistry
 from library import get_pickled, save_to_file, DecimalCodec
 from mongodb import mongo_client
 
-path = "/home/0agent1/store/klines/"
+path = "/home/sroziewski/store/"
 
 db_markets_info = mongo_client.markets_info
 
