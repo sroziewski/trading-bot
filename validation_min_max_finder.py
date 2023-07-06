@@ -187,6 +187,19 @@ _start = timer()
 
 setups_dict = {}
 
+# for i8h in range(0, 15*4*24*7*10):  # 10 weeks
+#     _cses = []
+#     _processors = []
+#     _cse = ComputingSetupEntry(_market, _type, '8h', i8h)
+#     _cses.append(_cse)
+#     append(_processors, manage_entry_computing(_cse))
+#     # process_computing(_cse)
+#     i8h += 1
+#     [x.join() for x in _processors]
+#     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
+#     show_setups(_setups, i8h)
+
+
 for i in range(i15m, 15*4*24*7*10):  # 10 weeks
     _cses = []
     _processors = []
@@ -269,6 +282,7 @@ for i in range(i15m, 15*4*24*7*10):  # 10 weeks
     [x.join() for x in _processors]
     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
     show_setups(_setups, i)
+
     # if _setups:
     #     _sell_setups = extract_sell_setups(setups_dict)
     #     _setups = filter_by_sell_setups([*_setups, *_sell_setups], setups_dict)

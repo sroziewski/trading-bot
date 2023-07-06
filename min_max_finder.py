@@ -657,6 +657,8 @@ def manage_entry_computing(_cse: ComputingSetupEntry):
 
 def process_computing(_cse: ComputingSetupEntry):
     _klines = extract_klines(_cse)
+    _klines = _klines[:-180]
+    ads = 1
     _klines.reverse()
     # print("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
     _se: SetupEntry = extract_buy_entry_setup(_klines, _cse)
@@ -837,15 +839,16 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buy_ind = get_major_indices(_major, 1)
     _sell_ind = get_major_indices(_major, -1)
     _buys = [*_strong_buy_ind, *_buy_ind]
+    _sell_signal_strong = None
     _sell_signal = None
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
         _buys = list(filter(lambda x: x > _last_strong_sell_ind, _buys))
         if _last_strong_sell_ind in _df_inc['time']:
-            _sell_signal = int(_df_inc['time'][_last_strong_sell_ind])
+            _sell_signal_strong = int(_df_inc['time'][_last_strong_sell_ind])
         elif _last_strong_sell_ind > _df_inc['time'].count() - 1:
-            _sell_signal = int(_df_inc['time'][_df_inc['time'].count() - 1])
-            _sell_signal += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
+            _sell_signal_strong = int(_df_inc['time'][_df_inc['time'].count() - 1])
+            _sell_signal_strong += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
@@ -857,6 +860,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         elif _last_sell_ind > _df_inc['time'].count() - 1:
             _sell_signal = int(_df_inc['time'][_df_inc['time'].count() - 1])
             _sell_signal += (_last_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
+    _sell_signal = max(_sell_signal_strong, _sell_signal)
     if len(_buys) == 0:
         # there is no entry setup, we skip
         if str(_sell_signal) != "None" and _sell_signal + 21 * ticker2num(_ticker) * 60 * 60 >= _df_inc['time'].index[
