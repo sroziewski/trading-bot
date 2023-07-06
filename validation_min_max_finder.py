@@ -6,7 +6,7 @@ from typing import List
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from library import get_pickled, round_price, DecimalCodec, lib_initialize, get_time
+from library import get_pickled, round_price, DecimalCodec, lib_initialize, get_time, logger_global
 from library import ticker2num
 from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline, manage_entry_computing, \
     filter_by_sell_setups, define_signal_strength, sell_signal_tickers, start_logger
@@ -85,7 +85,7 @@ def manage_validation_processing(_pe):
     _crawler = threading.Thread(target=validate, args=(_pe,),
                                 name='validate : {}')
     _crawler.start()
-    print("Thread for {}".format(_pe.ticker))
+    logger_global[0].info("Thread for {}".format(_pe.ticker))
     return _crawler
 
 
@@ -119,10 +119,10 @@ def validate(_pe):
         _data = _klines[_i:400 + _i]
         _se: SetupEntry = extract_buy_entry_setup(_data, _pe.market, _pe.ticker)
         if _i % 1000 == 0:
-            print("{} {}".format(_pe.ticker, _i))
+            logger_global[0].info("{} {}".format(_pe.ticker, _i))
         if _se:
             if abs(_data[0]['kline']['start_time'] - _se.time) < 2 * ticker2num(_se.ticker) * 60 * 60 * 1000:
-                print("{} {} {} {} {} signal_strength: {} buys_count {}".format(_pe.ticker, _i, _se.time_str,
+                logger_global[0].info("{} {} {} {} {} signal_strength: {} buys_count {}".format(_pe.ticker, _i, _se.time_str,
                                                                                 _data[0]['kline']['time_str'],
                                                                                 round_price(_se.buy_price),
                                                                                 _se.signal_strength, _se.buys_count))
@@ -154,7 +154,7 @@ def show_setups(_setups: List[SetupEntry], _i):
         _val = "{}-{}".format(_setup.time, _setup.ticker)
         if not _val in showed_setups:
             _from = _setup.time - 21 * ticker2num(_setup.ticker) * 60 * 60
-            print("i: {} {} {} from ({} {}) to ({} {}) {} {}".format(_i, _setup.market, _setup.ticker, _from, get_time(_from), _setup.time, _setup.time_str, _setup.buys_count, _setup.buy_price))
+            logger_global[0].info("i: {} {} {} from ({} {}) to ({} {}) {} {}".format(_i, _setup.market, _setup.ticker, _from, get_time(_from), _setup.time, _setup.time_str, _setup.buys_count, _setup.buy_price))
             showed_setups[_val] = 1
 
 
@@ -210,7 +210,7 @@ for i in range(i15m, 15*4*24*7*10):  # 10 weeks
         append(_processors, manage_entry_computing(_cse))
         # process_computing(_cse)
         i1d += 1
-        print("Computation time reported every 1d candle: {} min".format(round((timer() - _start) / 60)))
+        logger_global[0].info("Computation time reported every 1d candle: {} min".format(round((timer() - _start) / 60)))
 
     if i % 48 == 0:
         _cse = ComputingSetupEntry(_market, _type, '12h', i12h)
