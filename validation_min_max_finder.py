@@ -6,7 +6,7 @@ from typing import List
 from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 
-from library import get_pickled, round_price, DecimalCodec, lib_initialize
+from library import get_pickled, round_price, DecimalCodec, lib_initialize, get_time
 from library import ticker2num
 from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline, manage_entry_computing, \
     filter_by_sell_setups, define_signal_strength, sell_signal_tickers
@@ -57,7 +57,7 @@ def extract_klines(_cse):
     # _klines_online = get_klines("{}{}".format(_market, _type).upper(), _market, _ticker)
     _klines_online = get_klines(path, "{}{}".format(_cse.market, _cse.type), _cse.ticker)
     _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800:][0:len(_klines_online[-800:])-_cse.index]))
-    print("{} {}".format(_cse.ticker, _r[-1]))
+    # print("{} {}".format(_cse.ticker, _r[-1]))
     return _r
     _kline_collection = db_klines.get_collection("{}_{}_{}".format(_cse.market, _cse.type, _cse.ticker), codec_options=codec_options)
 
@@ -150,7 +150,8 @@ def show_setups(_setups: List[SetupEntry], _i):
     for _setup in _setups:
         _val = "{}-{}".format(_setup.time, _setup.ticker)
         if not _val in showed_setups:
-            print("i: {} {} {} {} {} {} {}".format(_i, _setup.market, _setup.ticker, _setup.time_str, _setup.signal_strength, _setup.buys_count, _setup.buy_price))
+            _from = _setup.time - 21 * ticker2num(_setup.ticker) * 60 * 60
+            print("i: {} {} {} from ({} {}) to ({} {}) {} {}".format(_i, _setup.market, _setup.ticker, _from, get_time(_from), _setup.time, _setup.time_str, _setup.buys_count, _setup.buy_price))
             showed_setups[_val] = 1
 
 

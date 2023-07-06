@@ -651,7 +651,7 @@ def manage_entry_computing(_cse: ComputingSetupEntry):
 def process_computing(_cse: ComputingSetupEntry):
     _klines = extract_klines(_cse)
     _klines.reverse()
-    print("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
+    # print("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
     _se: SetupEntry = extract_buy_entry_setup(_klines, _cse)
     _klines.clear()
     if _se:
