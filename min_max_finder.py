@@ -20,11 +20,16 @@ decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
 
-filename = "Binance-Min-Max-Finder"
-logger = setup_logger(filename)
-
 threads_n = 4
 sell_signal_tickers = ['1w', '3d', '1d', '12h', '8h', '6h', '4h']
+
+logger = None
+
+
+def start_logger(_market):
+    global logger
+    filename = "min_max_finder_{}".format(_market)
+    logger = setup_logger(filename)
 
 
 def create_from_online_df(_klines):
@@ -37,7 +42,7 @@ def create_from_online_df(_klines):
     _time_str = list(map(lambda x: x.time_str, _klines))
 
     return pd.DataFrame(list(zip(_open, _close, _high, _low, _volume, _time, _time_str)),
-                      columns=['open', 'close', 'high', 'low', 'volume', 'time', 'time_str'])
+                        columns=['open', 'close', 'high', 'low', 'volume', 'time', 'time_str'])
 
 
 def extract_volume(_kline):
@@ -57,7 +62,7 @@ def create_from_offline_df(_klines):
     _time_str = list(map(lambda x: x['kline']['time_str'], _klines))
 
     return pd.DataFrame(list(zip(_open, _close, _high, _low, _volume, _time, _time_str)),
-                      columns=['open', 'close', 'high', 'low', 'volume', 'time', 'time_str'])
+                        columns=['open', 'close', 'high', 'low', 'volume', 'time', 'time_str'])
 
 
 def to_offline_kline(_kline: Kline):
@@ -68,7 +73,7 @@ def to_offline_kline(_kline: Kline):
             'highest': _kline.highest,
             'lowest': _kline.lowest,
             'volume': _kline.volume,
-            'start_time': int(_kline.start_time/1000),
+            'start_time': int(_kline.start_time / 1000),
             'time_str': _kline.time_str,
         }
     }
@@ -78,7 +83,8 @@ def filter_buys_trend_exhaustion(_trend_exhaustion, _buys):
     _r = []
     for _buy in _buys:
         _ind = len(_trend_exhaustion) - _buy
-        if _trend_exhaustion[_ind] < 20.0 or any(filter(lambda x: x < 5.0, _trend_exhaustion[_ind:_ind + 20])):  # 20 bars before
+        if _trend_exhaustion[_ind] < 20.0 or any(
+                filter(lambda x: x < 5.0, _trend_exhaustion[_ind:_ind + 20])):  # 20 bars before
             _r.append(_buy)
     return _r
 
@@ -97,7 +103,8 @@ def get_time_buys(_buys, _df_inc):
 
 
 def extract_order_price(_buys, _df_inc):
-    return (_df_inc['open'][_buys[-1]]+_df_inc['close'][_buys[-1]]+_df_inc['high'][_buys[-1]]+_df_inc['low'][_buys[-1]])/4 if len(_buys) > 0 else False
+    return (_df_inc['open'][_buys[-1]] + _df_inc['close'][_buys[-1]] + _df_inc['high'][_buys[-1]] + _df_inc['low'][
+        _buys[-1]]) / 4 if len(_buys) > 0 else False
 
 
 class SetupEntry(object):
@@ -123,7 +130,7 @@ def to_mongo(_se: SetupEntry):
         'buys_count': _se.buys_count,
         'ticker': _se.ticker,
         'signal_strength': _se.signal_strength,
-        'time': int(_se.time/1000),
+        'time': int(_se.time / 1000),
         'time_str': get_time(_se.time),
     }
 
@@ -154,9 +161,10 @@ def extract_klines(_cse):
     # _klines_online = get_klines("E:/bin/data/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
     if _cse.index == 0:
         return list(map(lambda x: to_offline_kline(x), _klines_online[-800:]))
-    _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800-_cse.index:][:-_cse.index]))
+    _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800 - _cse.index:][:-_cse.index]))
     return _r
-    _kline_collection = db_klines.get_collection("{}_{}_{}".format(_cse.market, _cse.type, _cse.ticker), codec_options=codec_options)
+    _kline_collection = db_klines.get_collection("{}_{}_{}".format(_cse.market, _cse.type, _cse.ticker),
+                                                 codec_options=codec_options)
     try:
         _kline_cursor = _kline_collection.find().sort("_id", -1)
     except Exception:
@@ -169,12 +177,11 @@ def extract_klines(_cse):
         if len(_klines_offline) > 399:
             break
 
-
     _klines_online.reverse()
 
     _diff = []
     for _k in _klines_online:
-        if int(_k.start_time/1000) == _klines_offline[0]['kline']['start_time']:
+        if int(_k.start_time / 1000) == _klines_offline[0]['kline']['start_time']:
             break
         _diff.append(_k)
 
@@ -185,27 +192,27 @@ def extract_klines(_cse):
 
 def get_delta_t(_ticker):
     if _ticker == '15m':
-        return 0.25*60*60
+        return 0.25 * 60 * 60
     if _ticker == '30m':
-        return 0.5*60*60
+        return 0.5 * 60 * 60
     if _ticker == '1h':
-        return 60*60
+        return 60 * 60
     if _ticker == '2h':
-        return 2*60*60
+        return 2 * 60 * 60
     if _ticker == '4h':
-        return 4*60*60
+        return 4 * 60 * 60
     if _ticker == '6h':
-        return 6*60*60
+        return 6 * 60 * 60
     if _ticker == '8h':
-        return 8*60*60
+        return 8 * 60 * 60
     if _ticker == '12h':
-        return 12*60*60
+        return 12 * 60 * 60
     if _ticker == '1d':
-        return 24*60*60
+        return 24 * 60 * 60
     if _ticker == '3d':
-        return 3*24*60*60
+        return 3 * 24 * 60 * 60
     if _ticker == '1w':
-        return 7*24*60*60
+        return 7 * 24 * 60 * 60
 
 
 def define_signal_strength(_setups):
@@ -224,11 +231,11 @@ def define_signal_strength(_setups):
             if '1w' in _setups_dict:
                 _s = _setups_dict['1w']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 7*24
+                    _signal_strength += 7 * 24
             if '3d' in _setups_dict:
                 _s = _setups_dict['3d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 3*24
+                    _signal_strength += 3 * 24
             if '12h' in _setups_dict:
                 _s = _setups_dict['12h']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -266,11 +273,11 @@ def define_signal_strength(_setups):
             if '1w' in _setups_dict:
                 _s = _setups_dict['1w']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 7*24
+                    _signal_strength += 7 * 24
             if '3d' in _setups_dict:
                 _s = _setups_dict['3d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 3*24
+                    _signal_strength += 3 * 24
             if '1d' in _setups_dict:
                 _s = _setups_dict['1d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -308,11 +315,11 @@ def define_signal_strength(_setups):
             if '1w' in _setups_dict:
                 _s = _setups_dict['1w']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 7*24
+                    _signal_strength += 7 * 24
             if '3d' in _setups_dict:
                 _s = _setups_dict['3d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 3*24
+                    _signal_strength += 3 * 24
             if '1d' in _setups_dict:
                 _s = _setups_dict['1d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -350,11 +357,11 @@ def define_signal_strength(_setups):
             if '1w' in _setups_dict:
                 _s = _setups_dict['1w']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 7*24
+                    _signal_strength += 7 * 24
             if '3d' in _setups_dict:
                 _s = _setups_dict['3d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 3*24
+                    _signal_strength += 3 * 24
             if '1d' in _setups_dict:
                 _s = _setups_dict['1d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -392,11 +399,11 @@ def define_signal_strength(_setups):
             if '1w' in _setups_dict:
                 _s = _setups_dict['1w']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 7*24
+                    _signal_strength += 7 * 24
             if '3d' in _setups_dict:
                 _s = _setups_dict['3d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
-                    _signal_strength += 3*24
+                    _signal_strength += 3 * 24
             if '1d' in _setups_dict:
                 _s = _setups_dict['1d']
                 if _setups[_ii].time - _dt < _s.time < _setups[_ii].time + _dt:
@@ -696,14 +703,14 @@ def filter_by_sell_setups(_setups, __setups_dict):
 
 
 def compute_vinter(_df_dec):
-    _typical = (_df_dec['close'] + _df_dec['high'] + _df_dec['low'])/3
+    _typical = (_df_dec['close'] + _df_dec['high'] + _df_dec['low']) / 3
     _inter = []
-    for _ii in range(len(_typical)-1):
-        _inter.append(log(_typical[_ii]) - log(_typical[_ii+1]))
+    for _ii in range(len(_typical) - 1):
+        _inter.append(log(_typical[_ii]) - log(_typical[_ii + 1]))
 
     _std_dev = []
     for _ii in range(len(_inter)):
-        _std_dev.append(np.std(_inter[_ii:_ii+30]))
+        _std_dev.append(np.std(_inter[_ii:_ii + 30]))
     return _std_dev
 
 
@@ -745,7 +752,7 @@ def _compute_vfi(_vcp, _vave):
     _length = 130
     _sum = []
     for _ii in range(len(_vcp)):
-        _sum.append(np.sum(_vcp[_ii:_ii+_length]) / _vave[_ii])
+        _sum.append(np.sum(_vcp[_ii:_ii + _length]) / _vave[_ii])
     return _sum
 
 
@@ -836,9 +843,9 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         _buys = list(filter(lambda x: x > _last_strong_sell_ind, _buys))
         if _last_strong_sell_ind in _df_inc['time']:
             _sell_signal = int(_df_inc['time'][_last_strong_sell_ind])
-        elif _last_strong_sell_ind > _df_inc['time'].count()-1:
-            _sell_signal = int(_df_inc['time'][_df_inc['time'].count()-1])
-            _sell_signal += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker)*60*60
+        elif _last_strong_sell_ind > _df_inc['time'].count() - 1:
+            _sell_signal = int(_df_inc['time'][_df_inc['time'].count() - 1])
+            _sell_signal += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
@@ -847,13 +854,15 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
                 _sell_signal = int(_df_inc['time'][_last_sell_ind])
             elif not _sell_signal:
                 _sell_signal = int(_df_inc['time'][_last_sell_ind])
-        elif _last_sell_ind > _df_inc['time'].count()-1:
-            _sell_signal = int(_df_inc['time'][_df_inc['time'].count()-1])
+        elif _last_sell_ind > _df_inc['time'].count() - 1:
+            _sell_signal = int(_df_inc['time'][_df_inc['time'].count() - 1])
             _sell_signal += (_last_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
     if len(_buys) == 0:
         # there is no entry setup, we skip
-        if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
-            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+        if str(_sell_signal) != "None" and _sell_signal + 21 * ticker2num(_ticker) * 60 * 60 >= _df_inc['time'].index[
+            -1]:
+            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker,
+                             _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
             return validate_sell_signal(_se)
         else:
@@ -868,8 +877,10 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys)
     _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys)
     if len(_buys) == 0:
-        if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
-            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+        if str(_sell_signal) != "None" and _sell_signal + 21 * ticker2num(_ticker) * 60 * 60 >= _df_inc['time'].index[
+            -1]:
+            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker,
+                             _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
             return validate_sell_signal(_se)
         else:
@@ -881,9 +892,11 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buy_ind_vfi = len(_df_dec) - 1 - _buys[-1]
     _vfi = compute_vfi(_df_dec)
 
-    if not (_vfi[_buy_ind_vfi] < 3.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi+1:_buy_ind_vfi + 11]))):
-        if str(_sell_signal) != "None" and _sell_signal + 21*ticker2num(_ticker)*60*60 >= _df_inc['time'].index[-1]:
-            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker, _time=_sell_signal)  # there is no entry setup, we skip
+    if not (_vfi[_buy_ind_vfi] < 3.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi + 1:_buy_ind_vfi + 11]))):
+        if str(_sell_signal) != "None" and _sell_signal + 21 * ticker2num(_ticker) * 60 * 60 >= _df_inc['time'].index[
+            -1]:
+            _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker,
+                             _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
             return validate_sell_signal(_se)
         else:
@@ -917,5 +930,3 @@ def _stuff():
 
 if __name__ == "__main__":
     _stuff()
-
-

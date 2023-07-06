@@ -9,7 +9,7 @@ from bson.codec_options import TypeRegistry
 from library import get_pickled, round_price, DecimalCodec, lib_initialize, get_time
 from library import ticker2num
 from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline, manage_entry_computing, \
-    filter_by_sell_setups, define_signal_strength, sell_signal_tickers
+    filter_by_sell_setups, define_signal_strength, sell_signal_tickers, start_logger
 from mongodb import mongo_client
 
 # path = "E:/bin/data/klines/start/"
@@ -134,6 +134,9 @@ market = sys.argv[1]
 
 _market = market
 _type = "usdt"
+
+
+start_logger(market)
 
 
 def append(_processors, _el):
