@@ -131,7 +131,7 @@ def validate(_pe):
 lib_initialize()
 
 market = sys.argv[1]
-ticker = sys.argv[2]
+# ticker = sys.argv[2]
 
 _market = market
 _type = "usdt"
