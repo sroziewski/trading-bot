@@ -13,8 +13,8 @@ from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
 from mongodb import mongo_client
 
 # path = "E:/bin/data/klines/start/"
-# path = "/home/0agent1/store/klines/start/"
 path = "/home/sroziewski/store/start/"
+# path = "/home/0agent1/store/klines/start/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
@@ -189,13 +189,15 @@ _start = timer()
 setups_dict = {}
 
 for i8h in range(0, 15*4*24*7*50):  # 10 weeks
+    # if i8h == 90:
+    #     asd = 1
     _cses = []
     _processors = []
     _cse = ComputingSetupEntry(_market, _type, ticker, i8h)
     _cses.append(_cse)
     append(_processors, manage_entry_computing(_cse))
     # process_computing(_cse)
-    i8h += 1
+    # i8h += 1
     [x.join() for x in _processors]
     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
     show_setups(_setups, i8h)
