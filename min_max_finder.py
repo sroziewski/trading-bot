@@ -657,7 +657,7 @@ def manage_entry_computing(_cse: ComputingSetupEntry):
 
 def process_computing(_cse: ComputingSetupEntry):
     _klines = extract_klines(_cse)
-    _klines = _klines[:-180]
+    _klines = _klines[:-59]
     ads = 1
     _klines.reverse()
     # print("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
@@ -899,7 +899,12 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buy_ind_vfi = len(_df_dec) - 1 - _buys[-1]
     _vfi = compute_vfi(_df_dec)
 
-    if not (_vfi[_buy_ind_vfi] < 3.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi + 1:_buy_ind_vfi + 11]))):
+    try:
+        _vfi_condition = not (_vfi[_buy_ind_vfi] < 3.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi + 1:_buy_ind_vfi + 11])))
+    except IndexError:
+        _vfi_condition = False
+        
+    if _vfi_condition:
         if str(_sell_signal) != "None" and _sell_signal + 21 * ticker2num(_ticker) * 60 * 60 >= _df_inc['time'].index[
             -1]:
             _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker,

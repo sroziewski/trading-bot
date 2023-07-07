@@ -187,101 +187,101 @@ _start = timer()
 
 setups_dict = {}
 
-# for i8h in range(0, 15*4*24*7*10):  # 10 weeks
-#     _cses = []
-#     _processors = []
-#     _cse = ComputingSetupEntry(_market, _type, '8h', i8h)
-#     _cses.append(_cse)
-#     append(_processors, manage_entry_computing(_cse))
-#     # process_computing(_cse)
-#     i8h += 1
-#     [x.join() for x in _processors]
-#     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
-#     show_setups(_setups, i8h)
-
-
-for i in range(i15m, 15*4*24*7*10):  # 10 weeks
+for i8h in range(0, 15*4*24*7*10):  # 10 weeks
     _cses = []
     _processors = []
-    if i % 672 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '1w', i1w)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i1w += 1
-
-    if i % 288 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '3d', i3d)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i3d += 1
-
-    if i % 96 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '1d', i1d)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i1d += 1
-        logger_global[0].info("Computation time reported every 1d candle: {} min".format(round((timer() - _start) / 60)))
-
-    if i % 48 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '12h', i12h)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i12h += 1
-
-    if i % 32 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '8h', i8h)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i8h += 1
-
-    if i % 24 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '6h', i6h)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i6h += 1
-
-    if i % 16 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '4h', i4h)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i4h += 1
-
-    if i % 8 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '2h', i2h)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i2h += 1
-
-    if i % 4 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '1h', i1h)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i1h += 1
-
-    if i % 2 == 0:
-        _cse = ComputingSetupEntry(_market, _type, '30m', i30m)
-        _cses.append(_cse)
-        append(_processors, manage_entry_computing(_cse))
-        # process_computing(_cse)
-        i30m += 1
-
-    _cse = ComputingSetupEntry(_market, _type, '15m', i)
+    _cse = ComputingSetupEntry(_market, _type, '8h', i8h)
     _cses.append(_cse)
     append(_processors, manage_entry_computing(_cse))
     # process_computing(_cse)
-
+    i8h += 1
     [x.join() for x in _processors]
     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
-    show_setups(_setups, i)
+    show_setups(_setups, i8h)
+
+
+# for i in range(i15m, 15*4*24*7*10):  # 10 weeks
+#     _cses = []
+#     _processors = []
+#     if i % 672 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '1w', i1w)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i1w += 1
+#
+#     if i % 288 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '3d', i3d)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i3d += 1
+#
+#     if i % 96 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '1d', i1d)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i1d += 1
+#         logger_global[0].info("Computation time reported every 1d candle: {} min".format(round((timer() - _start) / 60)))
+#
+#     if i % 48 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '12h', i12h)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i12h += 1
+#
+#     if i % 32 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '8h', i8h)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i8h += 1
+#
+#     if i % 24 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '6h', i6h)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i6h += 1
+#
+#     if i % 16 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '4h', i4h)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i4h += 1
+#
+#     if i % 8 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '2h', i2h)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i2h += 1
+#
+#     if i % 4 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '1h', i1h)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i1h += 1
+#
+#     if i % 2 == 0:
+#         _cse = ComputingSetupEntry(_market, _type, '30m', i30m)
+#         _cses.append(_cse)
+#         append(_processors, manage_entry_computing(_cse))
+#         # process_computing(_cse)
+#         i30m += 1
+#
+#     _cse = ComputingSetupEntry(_market, _type, '15m', i)
+#     _cses.append(_cse)
+#     append(_processors, manage_entry_computing(_cse))
+#     # process_computing(_cse)
+#
+#     [x.join() for x in _processors]
+#     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
+#     show_setups(_setups, i)
 
     # if _setups:
     #     _sell_setups = extract_sell_setups(setups_dict)
