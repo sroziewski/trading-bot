@@ -16,8 +16,7 @@ from urllib3 import Retry
 
 from config import config
 from depth_crawl import divide_dc, add_dc, DepthCrawl, BuyDepth, SellDepth
-from library import get_binance_klines, get_binance_interval_unit, get_kucoin_klines, \
-    get_kucoin_interval_unit, DecimalCodec, try_get_klines, get_last_db_record, \
+from library import get_binance_klines, get_binance_interval_unit, DecimalCodec, try_get_klines, get_last_db_record, \
     get_time_from_binance_tmstmp, logger_global, round_price, ticker2sec, ticker2num, get_time
 from mongodb import mongo_client
 
@@ -492,14 +491,7 @@ def _do_schedule(_schedule):
                 sleep(randrange(30))
                 klines = get_binance_klines(market, ticker, get_binance_interval_unit(ticker, _schedule.no_such_market))
                 klines = klines[:-1]  # we skip the last kline on purpose since it has not been closed
-        elif _schedule.exchange == "kucoin":
-            try:
-                klines = try_get_klines(_schedule.exchange, market, ticker, get_kucoin_interval_unit(ticker))
-            except Exception:
-                traceback.print_tb(err.__traceback__)
-                logger_global[0].exception("{} {} {}".format(_schedule.exchange, collection_name, err.__traceback__))
-                sleep(randrange(30))
-                klines = get_kucoin_klines(market, ticker, get_kucoin_interval_unit(ticker))
+
         current_klines = filter_current_klines(klines, collection_name, collection)
         logger_global[0].info("current_klines: {} size: {}".format(market, len(current_klines)))
         sleep(5)
@@ -537,10 +529,15 @@ def get_binance_schedule(_market_name, _market_type, _ticker_val, _journal, _no_
     _exchange = "binance"
     _market = (_market_name + _market_type).lower()
 
+    _sleep_time = ticker2sec(_ticker_val)
+
     if _market_type == "btc":
         _collection_name = _market_name + _ticker_val
+        _sleep_time *= 2
     else:
         _collection_name = _market_name + "_" + _market_type + "_" + _ticker_val
 
+
+
     return Schedule(_market_name, _market.upper(), _collection_name, _ticker_val,
-                    ticker2sec(_ticker_val), _exchange, _journal, _no_such_market)
+                    _sleep_time, _exchange, _journal, _no_such_market)

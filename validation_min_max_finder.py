@@ -12,8 +12,8 @@ from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
     filter_by_sell_setups, define_signal_strength, sell_signal_tickers, start_logger
 from mongodb import mongo_client
 
-# path = "E:/bin/data/klines/start/"
-path = "/home/sroziewski/store/start/"
+path = "E:/bin/data/klines/start/"
+# path = "/home/sroziewski/store/start/"
 # path = "/home/0agent1/store/klines/start/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
@@ -189,8 +189,8 @@ _start = timer()
 setups_dict = {}
 
 for i8h in range(0, 15*4*24*7*50):  # 10 weeks
-    # if i8h == 90:
-    #     asd = 1
+    if i8h == 90:
+        asd = 1
     _cses = []
     _processors = []
     _cse = ComputingSetupEntry(_market, _type, ticker, i8h)

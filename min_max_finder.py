@@ -157,8 +157,8 @@ def get_klines(_path, _market, _ticker):
 def extract_klines(_cse):
     # _klines_online = get_klines("{}{}".format(_market, _type).upper(), _market, _ticker)
     # _klines_online = get_klines("/home/0agent1/store/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
-    _klines_online = get_klines("/home/sroziewski/store/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
-    # _klines_online = get_klines("E:/bin/data/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    # _klines_online = get_klines("/home/sroziewski/store/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
+    _klines_online = get_klines("E:/bin/data/klines/start/", "{}{}".format(_cse.market, _cse.type), _cse.ticker)
     if _cse.index == 0:
         return list(map(lambda x: to_offline_kline(x), _klines_online[-800:]))
     _r = list(map(lambda x: to_offline_kline(x), _klines_online[-800 - _cse.index:][:-_cse.index]))
@@ -861,7 +861,14 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
             _sell_signal = int(_df_inc['time'][_df_inc['time'].count() - 1])
             _sell_signal += (_last_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
     if _sell_signal_strong and _sell_signal:
-        _sell_signal = max(_sell_signal_strong, _sell_signal)
+        if _sell_signal - 21 * ticker2num(_ticker) * 60 * 60 > _klines[-1]['kline']['start_time']:
+            _sell_signal = None
+        if _sell_signal_strong - 21 * ticker2num(_ticker) * 60 * 60 > _klines[-1]['kline']['start_time']:
+            _sell_signal_strong = None
+        if _sell_signal_strong and _sell_signal:
+            _sell_signal = max(_sell_signal_strong, _sell_signal)
+        else:
+            _sell_signal = _sell_signal if _sell_signal else _sell_signal_strong
     else:
         _sell_signal = _sell_signal if _sell_signal else _sell_signal_strong
     if len(_buys) == 0:
