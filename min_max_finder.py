@@ -816,6 +816,9 @@ def validate_sell_signal(_se: SetupEntry):
     return _se if _se.ticker in sell_signal_tickers else False
 
 
+# TODO if sell signals on many tfs, scale the range of a sell region for a longer size (for shorter tfs like 4h, 6h, 8h, 12h) eg. 21->34
+
+
 def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _market = "{}{}".format(_cse.market, _cse.type).upper()
     _ticker = _cse.ticker
