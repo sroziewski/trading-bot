@@ -131,6 +131,7 @@ def validate(_pe):
 lib_initialize()
 
 market = sys.argv[1]
+ticker = sys.argv[2]
 
 _market = market
 _type = "usdt"
@@ -187,10 +188,10 @@ _start = timer()
 
 setups_dict = {}
 
-for i8h in range(0, 15*4*24*7*10):  # 10 weeks
+for i8h in range(0, 15*4*24*7*50):  # 10 weeks
     _cses = []
     _processors = []
-    _cse = ComputingSetupEntry(_market, _type, '8h', i8h)
+    _cse = ComputingSetupEntry(_market, _type, ticker, i8h)
     _cses.append(_cse)
     append(_processors, manage_entry_computing(_cse))
     # process_computing(_cse)
