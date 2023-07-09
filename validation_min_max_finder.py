@@ -193,7 +193,7 @@ _start = timer()
 
 setups_dict = {}
 
-for i8h in range(299, 15*4*24*7*50):  # 10 weeks
+for i8h in range(0, 15*4*24*7*50):  # 10 weeks
     _cses = []
     _processors = []
     _cse = ComputingSetupEntry(_market, _type, ticker, i8h)
