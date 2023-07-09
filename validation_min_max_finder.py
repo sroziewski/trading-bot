@@ -155,7 +155,12 @@ def show_setups(_setups: List[SetupEntry], _i):
         _val = "{}-{}".format(_setup.time, _setup.ticker)
         if not _val in showed_setups:
             _from = _setup.time - 21 * ticker2num(_setup.ticker) * 60 * 60
-            logger_global[0].info("i: {} {} {} from ({} {}) to ({} {}) {} {}".format(_i, _setup.market, _setup.ticker, _from, get_time(_from), _setup.time, _setup.time_str, _setup.buys_count, _setup.buy_price))
+            if _setup.buy_price == -1:
+                logger_global[0].info("i: {} {} {} from ({} {}) to ({} {}) {} {}".format(_i, _setup.market, _setup.ticker, _from, get_time(_from), _setup.time, _setup.time_str, _setup.buys_count, _setup.buy_price))
+            else:
+                logger_global[0].info(
+                    "i: {} {} {} at ({} {}) {} {}".format(_i, _setup.market, _setup.ticker, _setup.time, _setup.time_str,
+                                                                       _setup.buys_count, _setup.buy_price))
             showed_setups[_val] = 1
 
 
@@ -188,7 +193,7 @@ _start = timer()
 
 setups_dict = {}
 
-for i8h in range(0, 15*4*24*7*50):  # 10 weeks
+for i8h in range(299, 15*4*24*7*50):  # 10 weeks
     _cses = []
     _processors = []
     _cse = ComputingSetupEntry(_market, _type, ticker, i8h)

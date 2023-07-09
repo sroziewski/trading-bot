@@ -5,6 +5,9 @@ from random import randrange
 from time import sleep
 from timeit import default_timer as timer
 
+from scipy.signal import savgol_filter
+from scipy.signal import find_peaks
+
 import numpy as np
 import pandas as pd
 from bson.codec_options import TypeRegistry, CodecOptions
@@ -79,21 +82,54 @@ def to_offline_kline(_kline: Kline):
     }
 
 
-def filter_buys_trend_exhaustion(_trend_exhaustion, _buys):
+def find_hl(_data_in, _max_tresh, _min_tresh, _ind, _ticker):  # serial data increasing in time
+
+    import matplotlib.pyplot as plt
+
+    _data = _data_in[0:35]
+    _data.reverse()
+
+    _data_f = savgol_filter(_data, 7, 3)
+    _max_peaks, _ = find_peaks(_data_f, width=4, height=20, distance=10)
+
+    _min = min(-_data_f)
+    _data_adj = np.add(-_data_f, abs(_min)).tolist()
+    _min_peaks, _ = find_peaks(_data_adj, width=4, height=20, distance=10)
+
+    if len(_max_peaks) == 1 and len(_min_peaks) == 2:
+        if _data_f[_max_peaks[0]] > _max_tresh and _data_f[_min_peaks[0]] < _min_tresh and _data_f[_min_peaks[0]] < _data_f[_min_peaks[1]]:
+            return True
+    if len(_max_peaks) == 2:
+
+        _min1 = min(_data_f[_max_peaks[0]:_max_peaks[1]])
+        _min2 = min(_data_f[_max_peaks[1]:])
+
+        return _min1 < _min_tresh and _min1 < _min2
+
+        # plt.plot(_data_f, "x")
+        # plt.plot(_max_peaks, _data_f[_max_peaks], "x")
+        # plt.plot(_min_peaks, _data_f[_min_peaks], "x")
+        # plt.show()
+        #
+        # logger.info("Two maximas: {} {}".format(_ind, _ticker))
+    return False
+
+
+def filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te):   # a HL
     _r = []
     for _buy in _buys:
         _ind = len(_trend_exhaustion) - _buy
-        if _trend_exhaustion[_ind] < 20.0 or any(
+        if _hl_condition_te or _trend_exhaustion[_ind] < 20.0 or any(
                 filter(lambda x: x < 5.0, _trend_exhaustion[_ind:_ind + 20])):  # 20 bars before
             _r.append(_buy)
     return _r
 
 
-def filter_buys_whale_money_flow(_whale_money_flow, _buys):
+def filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf):
     _r = []
     for _buy in _buys:
         _ind = len(_whale_money_flow) - _buy
-        if _whale_money_flow[_ind] < 40.0 or any(filter(lambda x: x < 20.0, _whale_money_flow[_ind:_ind + 20])):
+        if _hl_condition_wmf or _whale_money_flow[_ind] < 40.0 or any(filter(lambda x: x < 20.0, _whale_money_flow[_ind:_ind + 20])):
             _r.append(_buy)
     return _r
 
@@ -887,14 +923,19 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         else:
             return False
     _buys.sort()
+
     _adjustment = compute_adjustment(_df_dec['open'], _df_dec['close'], _df_dec['high'], _df_dec['low'],
                                      _df_dec['volume'])
     _money_strength = compute_money_strength(_df_dec['close'], _df_dec['volume'])
     _whale_money_flow = compute_whale_money_flow(_adjustment, _df_dec['volume'], _money_strength)
     _trend_exhaustion = compute_trend_exhaustion(_df_dec['open'], _df_dec['close'], _df_dec['high'], _df_dec['low'],
                                                  _df_dec['volume'])
-    _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys)
-    _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys)
+
+    _hl_condition_te = find_hl(_trend_exhaustion, 30, 15, _cse.index, _cse.ticker)
+    _hl_condition_wmf = find_hl(_trend_exhaustion, 40, 25, _cse.index, _cse.ticker)
+
+    _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te)
+    _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf)
     if len(_buys) == 0:
         if str(_sell_signal) != "None" and _sell_signal + 21 * ticker2num(_ticker) * 60 * 60 >= _df_inc['time'].index[
             -1]:
