@@ -660,7 +660,7 @@ def process_computing(_cse: ComputingSetupEntry):
     # _klines = _klines[:-59]
     ads = 1
     _klines.reverse()
-    # print("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
+    print("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
     _se: SetupEntry = extract_buy_entry_setup(_klines, _cse)
     _klines.clear()
     if _se:
