@@ -13,14 +13,14 @@ from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
 from mongodb import mongo_client
 
 # path = "E:/bin/data/klines/start/"
-# path = "/home/sroziewski/store/start/"
-path = "/home/0agent1/store/klines/start/"
+path = "/home/sroziewski/store/start/"
+# path = "/home/0agent1/store/klines/start/"
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
 type_registry = TypeRegistry([decimal_codec])
 codec_options = CodecOptions(type_registry=type_registry)
-threads_n = 4
+threads_n = 1
 
 
 # def extract_klines(_market, _type, _ticker):
