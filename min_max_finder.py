@@ -890,7 +890,6 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buys = [*_strong_buy_ind, *_buy_ind]
     _sell_signal_strong = None
     _sell_signal = None
-    logger.info("buys: {}".format(_buys))
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
         _buys = list(filter(lambda x: x > _last_strong_sell_ind, _buys))
@@ -934,7 +933,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         else:
             return False
     _buys.sort()
-
+    logger.info("buys: {}".format(_buys))
     _adjustment = compute_adjustment(_df_dec['open'], _df_dec['close'], _df_dec['high'], _df_dec['low'],
                                      _df_dec['volume'])
     _money_strength = compute_money_strength(_df_dec['close'], _df_dec['volume'])
