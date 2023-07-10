@@ -87,7 +87,7 @@ def find_hl(_data_in, _max_tresh, _min_tresh, _ind, _ticker):  # serial data inc
     _data = _data_in[0:35]
     _data.reverse()
 
-    logger.info("i: {} ticker: {} data: {}".format(_ind, _ticker, _data))
+    # logger.info("i: {} ticker: {} data: {}".format(_ind, _ticker, _data))
 
     _data_f = savgol_filter(_data, 7, 3)
     _max_peaks, _ = find_peaks(_data_f, width=4, height=20, distance=10)
