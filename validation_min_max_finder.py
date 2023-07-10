@@ -198,10 +198,10 @@ for i8h in range(0, 15*4*24*7*50):  # 10 weeks
     _processors = []
     _cse = ComputingSetupEntry(_market, _type, ticker, i8h)
     _cses.append(_cse)
-    append(_processors, manage_entry_computing(_cse))
-    # process_computing(_cse)
+    # append(_processors, manage_entry_computing(_cse))
+    process_computing(_cse)
     # i8h += 1
-    [x.join() for x in _processors]
+    # [x.join() for x in _processors]
     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
     show_setups(_setups, i8h)
 
