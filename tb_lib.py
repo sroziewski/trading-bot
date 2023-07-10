@@ -43,13 +43,12 @@ def compute_tr(_data):
     return _data['high']-_data['low']
 
 
-def get_crossup(_data, _lower_threshold_of_approximability2): # +1
+def get_crossup_old(_data, _lower_threshold_of_approximability2): # +1
     return np.logical_and(_data[1:]['low'] > _lower_threshold_of_approximability2[:-1], _data.iloc[:-1, :]['low'] <= _lower_threshold_of_approximability2[:-1])
 
-def get_crossup_win(_data, _lower_threshold_of_approximability2):  # +1
+def get_crossup(_data, _lower_threshold_of_approximability2):  # +1
     f = lambda x, y: x and y
-    _list = _data[1:]['low'] > _lower_threshold_of_approximability2[:-1], _data.iloc[:-1, :][
-        'low'] <= _lower_threshold_of_approximability2[:-1]
+    _list = _data[1:]['low'] > _lower_threshold_of_approximability2[:-1], _data.iloc[:-1, :]['low'] <= _lower_threshold_of_approximability2[:-1]
     return [f(*x) for x in list(zip(_list[0], _list[1]))]
 
 def get_crossdn(_data, _upper_threshold_of_approximability2):
