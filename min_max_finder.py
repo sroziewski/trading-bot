@@ -898,10 +898,10 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         elif _last_strong_sell_ind > _df_inc['time'].count() - 1:
             _sell_signal_strong = int(_df_inc['time'][_df_inc['time'].count() - 1])
             _sell_signal_strong += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
-    ___o = 0
-    for _sell in _strong_sell:
-        logger.info("id: {} i: {} {}".format(_cse.index, ___o, _sell))
-        ___o +=1
+    # ___o = 0
+    # for _sell in _strong_sell:
+    #     logger.info("id: {} i: {} {}".format(_cse.index, ___o, _sell))
+    #     ___o +=1
     logger.info("_lower_threshold_of_approximability2: {}".format(_lower_threshold_of_approximability2))
     # logger.info("_strong_buy_ind: {}".format(_strong_buy_ind))
     if len(_sell_ind) > 0:
