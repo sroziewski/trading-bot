@@ -1,0 +1,2 @@
+[alias]
+    cmp = "!f() { git commit -m \"$@\" && git push; }; f"
