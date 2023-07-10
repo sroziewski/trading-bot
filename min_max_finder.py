@@ -191,7 +191,7 @@ def get_klines(_path, _market, _ticker):
 
 
 def extract_klines(_cse):
-    mode = sys.argv[3]
+    mode = sys.argv[2]
     if mode == "local":
         path = "E:/bin/data/klines/start/"
     elif mode == "gpu1":
