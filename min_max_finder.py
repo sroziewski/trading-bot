@@ -934,7 +934,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
                                                  _df_dec['volume'])
 
     _hl_condition_te = find_hl(_trend_exhaustion, 30, 15, _cse.index, _cse.ticker)
-    _hl_condition_wmf = find_hl(_trend_exhaustion, 40, 25, _cse.index, _cse.ticker)
+    _hl_condition_wmf = find_hl(_whale_money_flow, 40, 25, _cse.index, _cse.ticker)
 
     _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te)
     _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf)
