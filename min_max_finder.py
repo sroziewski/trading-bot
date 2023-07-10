@@ -902,6 +902,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     for _sell in _strong_sell:
         logger.info("i: {} {}".format(___o, _sell))
         ___o +=1
+    exit(0)
     # logger.info("_strong_sell_ind: {}".format(_strong_sell_ind))
     # logger.info("_strong_buy_ind: {}".format(_strong_buy_ind))
     if len(_sell_ind) > 0:
