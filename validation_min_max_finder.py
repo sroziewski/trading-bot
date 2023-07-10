@@ -12,9 +12,17 @@ from min_max_finder import extract_buy_entry_setup, SetupEntry, to_offline_kline
     filter_by_sell_setups, define_signal_strength, sell_signal_tickers, start_logger
 from mongodb import mongo_client
 
+mode = sys.argv[3]
+
+if mode == "local":
+    path = "E:/bin/data/klines/start/"
+elif mode == "gpu1":
+    path = "/home/sroziewski/store/start/"
+else:
+    path = "/home/0agent1/store/klines/start/"
 # path = "E:/bin/data/klines/start/"
-path = "/home/sroziewski/store/start/"
-# path = "/home/0agent1/store/klines/start/"
+
+
 db_klines = mongo_client.klines
 db_setup = mongo_client.setup
 decimal_codec = DecimalCodec()
