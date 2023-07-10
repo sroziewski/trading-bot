@@ -882,6 +882,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buys = [*_strong_buy_ind, *_buy_ind]
     _sell_signal_strong = None
     _sell_signal = None
+    logger.info("HERE")
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
         _buys = list(filter(lambda x: x > _last_strong_sell_ind, _buys))
