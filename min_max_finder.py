@@ -900,7 +900,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
             _sell_signal_strong += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
     ___o = 0
     for _sell in _strong_sell:
-        logger.info("i: {} {}".format(___o, _sell))
+        logger.info("id: {} i: {} {}".format(_cse.index, ___o, _sell))
         ___o +=1
     exit(0)
     # logger.info("_strong_sell_ind: {}".format(_strong_sell_ind))
