@@ -898,7 +898,8 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         elif _last_strong_sell_ind > _df_inc['time'].count() - 1:
             _sell_signal_strong = int(_df_inc['time'][_df_inc['time'].count() - 1])
             _sell_signal_strong += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
-    logger.info("_inapproximability: {}".format(_inapproximability[-10:]))
+    logger.info("_strong_buy: {}".format(_strong_buy))
+    logger.info("_strong_sell: {}".format(_strong_sell))
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
