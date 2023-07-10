@@ -882,9 +882,9 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _lower_threshold_of_approximability2 = _amlag - 2 * _inapproximability * 1.618
     _strong_buy = get_crossup(_df_inc, _lower_threshold_of_approximability2)
     _strong_sell = get_crossdn(_df_inc, _upper_threshold_of_approximability2)
-    _major = lele(_df_inc['open'], _df_inc['close'], _df_inc['high'], _df_inc['low'], 2, 20)  # bull/bear
     _strong_sell_ind = get_strong_major_indices(_strong_sell, True)
     _strong_buy_ind = get_strong_major_indices(_strong_buy, True)
+    _major = lele(_df_inc['open'], _df_inc['close'], _df_inc['high'], _df_inc['low'], 2, 20)  # bull/bear
     _buy_ind = get_major_indices(_major, 1)
     _sell_ind = get_major_indices(_major, -1)
     _buys = [*_strong_buy_ind, *_buy_ind]
@@ -898,8 +898,8 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         elif _last_strong_sell_ind > _df_inc['time'].count() - 1:
             _sell_signal_strong = int(_df_inc['time'][_df_inc['time'].count() - 1])
             _sell_signal_strong += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
-    logger.info("_strong_buy: {}".format(_strong_buy))
-    logger.info("_strong_sell: {}".format(_strong_sell))
+    logger.info("_strong_sell_ind: {}".format(_strong_sell_ind))
+    logger.info("_strong_buy_ind: {}".format(_strong_buy_ind))
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
