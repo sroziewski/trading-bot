@@ -898,6 +898,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         elif _last_strong_sell_ind > _df_inc['time'].count() - 1:
             _sell_signal_strong = int(_df_inc['time'][_df_inc['time'].count() - 1])
             _sell_signal_strong += (_last_strong_sell_ind - _df_inc['time'].count()) * ticker2num(_ticker) * 60 * 60
+    logger.info("buys: {}".format(_buys))
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
         _buys = list(filter(lambda x: x > _last_sell_ind, _buys))
@@ -933,7 +934,6 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         else:
             return False
     _buys.sort()
-    logger.info("buys: {}".format(_buys))
     _adjustment = compute_adjustment(_df_dec['open'], _df_dec['close'], _df_dec['high'], _df_dec['low'],
                                      _df_dec['volume'])
     _money_strength = compute_money_strength(_df_dec['close'], _df_dec['volume'])
