@@ -884,7 +884,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _strong_sell = get_crossdn(_df_inc, _upper_threshold_of_approximability2)
 
     for _ii in range(len(_strong_buy)):
-        logger.info("id: {} i: {} {}".format(_cse.index, _ii, _strong_buy[1].iloc[_ii]))
+        logger.info("id: {} i: {} {}".format(_cse.index, _ii, _strong_buy.iloc[_ii]))
 
     # for _ii in range(len(_strong_buy[0])):
     #     logger.info("id: {} i: {} {} {} {}".format(_cse.index, ___o, _df_inc['low'][___o], _df_inc.iloc[:-1, :]['low'][___o], _sell))
