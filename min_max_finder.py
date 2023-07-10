@@ -888,7 +888,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
 
     for _ii in range(len(_strong_buy[0])):
         # logger.info("id: {} i: {} {} {} {}".format(_cse.index, ___o, _df_inc['low'][___o], _df_inc.iloc[:-1, :]['low'][___o], _sell))
-        logger.info("id: {} i: {} {} {} {}".format(_cse.index, _ii, _strong_buy[0].iloc[_ii], _strong_buy[0].iloc[_ii], np.logical_and(_strong_buy[0].iloc[_ii], _strong_buy[1].iloc[_ii])))
+        logger.info("id: {} i: {} {} {} {}".format(_cse.index, _ii, _strong_buy[0].iloc[_ii], _strong_buy[1].iloc[_ii], np.logical_and(_strong_buy[0].iloc[_ii], _strong_buy[1].iloc[_ii])))
 
     sleep(60)
     _strong_sell_ind = get_strong_major_indices(_strong_sell, True)
