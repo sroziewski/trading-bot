@@ -902,7 +902,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     # for _sell in _strong_sell:
     #     logger.info("id: {} i: {} {}".format(_cse.index, ___o, _sell))
     #     ___o +=1
-    logger.info("_lower_threshold_of_approximability2: {}".format(_lower_threshold_of_approximability2))
+    logger.info("_lower_threshold_of_approximability2: {}".format(_lower_threshold_of_approximability2[-10:]))
     # logger.info("_strong_buy_ind: {}".format(_strong_buy_ind))
     if len(_sell_ind) > 0:
         _last_sell_ind = _sell_ind[-1] + 21
