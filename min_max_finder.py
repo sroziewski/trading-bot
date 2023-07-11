@@ -700,7 +700,7 @@ def manage_entry_computing(_cse: ComputingSetupEntry):
 
 def process_computing(_cse: ComputingSetupEntry):
     _klines = extract_klines(_cse)
-    # _klines = _klines[:-59]
+    _klines = _klines[:-18]
     ads = 1
     _klines.reverse()
     # logger.info("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
@@ -898,6 +898,12 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _buys = [*_strong_buy_ind, *_buy_ind]
     _sell_signal_strong = None
     _sell_signal = None
+
+    _vfi = compute_vfi(_df_dec)
+
+    _strong_sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 <= len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > 0, _strong_sell_ind))
+    _sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 <= len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > 0, _sell_ind))
+
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
         _buys = list(filter(lambda x: x > _last_strong_sell_ind, _buys))
@@ -969,7 +975,6 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _se = SetupEntry(_market, _buy_price, len(_buys), _ticker, _t[-1])
 
     _buy_ind_vfi = len(_df_dec) - 1 - _buys[-1]
-    _vfi = compute_vfi(_df_dec)
 
     try:
         _vfi_condition = not (_vfi[_buy_ind_vfi] < 3.0 or any(filter(lambda x: x < 0, _vfi[_buy_ind_vfi + 1:_buy_ind_vfi + 11])))
