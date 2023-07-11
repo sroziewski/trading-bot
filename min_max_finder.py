@@ -901,8 +901,8 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
 
     _vfi = compute_vfi(_df_dec)
 
-    _strong_sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 <= len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > 0, _strong_sell_ind))
-    _sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 <= len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > 0, _sell_ind))
+    _strong_sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 < len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > 0, _strong_sell_ind))
+    _sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 < len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > 0, _sell_ind))
 
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
