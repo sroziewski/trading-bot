@@ -164,7 +164,7 @@ def show_setups(_setups: List[SetupEntry], _i):
         if not _val in showed_setups:
             _from = _setup.time - 21 * ticker2num(_setup.ticker) * 60 * 60
             if _setup.buy_price == -1:
-                logger_global[0].info("i: {} {} {} from ({} {}) to ({} {}) {} {}".format(_i, _setup.market, _setup.ticker, _from, get_time(_from), _setup.time, _setup.time_str, _setup.buys_count, _setup.buy_price))
+                logger_global[0].info("i: {} {} {} from ({} {}) to ({} {}) {} {} vfi: {}".format(_i, _setup.market, _setup.ticker, _from, get_time(_from), _setup.time, _setup.time_str, _setup.buys_count, _setup.buy_price, _setup.sell_vfi))
             else:
                 logger_global[0].info(
                     "i: {} {} {} at ({} {}) {} {}".format(_i, _setup.market, _setup.ticker, _setup.time, _setup.time_str,
