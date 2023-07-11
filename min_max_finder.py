@@ -974,11 +974,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
                              _time=_sell_signal)  # there is no entry setup, we skip
             _se.sell_signal[_ticker] = _sell_signal
             _sell_index = _df_inc['time'].loc[lambda x: x == (_sell_signal - 20 * ticker2num(_ticker) * 60 * 60)].index[0]
-
-            try:
-                _sell_index_vfi = _df_inc['time'].count() - _sell_index - 1
-            except IndexError:
-                asd =12
+            _sell_index_vfi = _df_inc['time'].count() - _sell_index - 1
             if _sell_index_vfi < len(_vfi):
                 _se.sell_vfi = _vfi[_sell_index_vfi]
             return validate_sell_signal(_se)
