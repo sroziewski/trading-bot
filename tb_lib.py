@@ -121,7 +121,10 @@ def compute_adjustment(_open, _close, _high, _low, _volume):   # time desc
 def compute_whale_money_flow(_adjustment, _volume, _money_strength):   # time desc
     _wmf = []
     for _ii in range(len(_money_strength)):
-        _wmf.append(np.sum(_adjustment[_ii:10+_ii]) / np.sum(_volume[_ii:10+_ii]) + _money_strength[_ii])
+        try:
+            _wmf.append(np.sum(_adjustment[_ii:10+_ii]) / np.sum(_volume[_ii:10+_ii]) + _money_strength[_ii])
+        except RuntimeWarning as e:
+            print("{} / {}".format(np.sum(_adjustment[_ii:10+_ii]), np.sum(_volume[_ii:10+_ii])))
     return _wmf
 
 
