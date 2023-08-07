@@ -5,10 +5,12 @@ from math import log
 from random import randrange
 from time import sleep
 from timeit import default_timer as timer
+import talib as ta
 
 import numpy as np
 import pandas as pd
 from bson.codec_options import TypeRegistry, CodecOptions
+from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
 
@@ -82,14 +84,38 @@ def to_offline_kline(_kline: Kline):
     }
 
 
-def find_hl(_data_in, _max_tresh, _min_tresh, _ind, _ticker):  # serial data increasing in time
+def find_hl(_data_in):  # serial data increasing in time
 
-    _data = _data_in[0:35]
-    _data.reverse()
+    _data_f = savgol_filter(_data_in, 7, 3)
+    _min = min(_data_f)
+    _data_adj = np.add(_data_f, abs(_min)).tolist()  # we convert data to be >= 0
+    _max_peaks, _ = find_peaks(_data_adj, width=4, height=0.005, distance=10)
+
+    _min = min(-_data_f)
+    _data_adj = np.add(-_data_f, abs(_min)).tolist()
+    _min_peaks, _ = find_peaks(_data_adj, width=4, height=0.005, distance=10)
+
+    if len(_max_peaks) == 1 and len(_min_peaks) == 2:
+        if _data_f[_min_peaks[0]] < _data_f[_min_peaks[1]] and _min_peaks[1]-_min_peaks[0] > 21:
+            return True
+    if len(_max_peaks) == 2:
+
+        _min1 = min(_data_f[_max_peaks[0]:_max_peaks[1]])
+        _min2 = min(_data_f[_max_peaks[1]:])
+
+        _min1_pos = np.where(_data_f == _min1)
+        _min2_pos = np.where(_data_f == _min2)
+
+        return _min1 < _min2 and _min2_pos - _min1_pos > 13
+
+    return False
+
+
+def find_hl_constraint(_data_in, _max_tresh, _min_tresh, _ind, _ticker):  # serial data increasing in time
 
     # logger.info("i: {} ticker: {} data: {}".format(_ind, _ticker, _data))
 
-    _data_f = savgol_filter(_data, 7, 3)
+    _data_f = savgol_filter(_data_in, 7, 3)
     _max_peaks, _ = find_peaks(_data_f, width=4, height=20, distance=10)
 
     _min = min(-_data_f)
@@ -194,7 +220,7 @@ def get_klines(_path, _market, _ticker):
 def extract_klines(_cse):
     mode = sys.argv[2]
     if mode == "local":
-        path = "E:/bin/data/klines/start/"
+        path = "D:/bin/data/klines/start/"
     elif mode == "gpu1":
         path = "/home/sroziewski/store/start/"
     else:
@@ -962,11 +988,24 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
             return False
     _buys.sort()
 
-    _hl_condition_te = find_hl(_trend_exhaustion, 30, 15, _cse.index, _cse.ticker)
-    _hl_condition_wmf = find_hl(_whale_money_flow, 40, 25, _cse.index, _cse.ticker)
+    _data_te = _trend_exhaustion[0:35]
+    _data_te.reverse()
+    _data_wmf = _whale_money_flow[0:35]
+    _data_wmf.reverse()
 
-    _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te)
-    _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf)
+    _hl_condition_te = find_hl_constraint(_data_te, 30, 15, _cse.index, _cse.ticker)
+    _hl_condition_wmf = find_hl_constraint(_data_wmf, 40, 25, _cse.index, _cse.ticker)
+
+    import matplotlib.pyplot as plt
+
+    _macd, _macdsignal, _macdhist = ta.MACD(_df_inc['close'], fastperiod=12, slowperiod=26, signalperiod=9)
+
+    _data_macd = _macd.tail(55)
+    _macd_hl = find_hl(_data_macd)
+
+    if not _macd_hl:
+        _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te)
+        _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf)
     if len(_buys) == 0:
         if str(_sell_signal) != "None" and _sell_signal + 21 * ticker2num(_ticker) * 60 * 60 >= _df_inc['time'].index[-1]:
             _se = SetupEntry(_market, _buy_price=-1, _ticker=_ticker,
