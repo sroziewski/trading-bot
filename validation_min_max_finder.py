@@ -15,7 +15,7 @@ from mongodb import mongo_client
 mode = sys.argv[2]
 
 if mode == "local":
-    path = "E:/bin/data/klines/start/"
+    path = "D:/bin/data/klines/start/"
 elif mode == "gpu1":
     path = "/home/sroziewski/store/start/"
 else:
@@ -184,33 +184,32 @@ def extract_sell_setups(_setups_dict):
 
 i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = i15m = 0
 
-# i15m = 10270
-# i30m = 5159
-# i1h = 2579
-# i2h = 1289
-# i4h = 644
-# i6h = 430
-# i8h = 322
-# i12h = 215
-# i12h = 215
-# i1d = 107
-# i3d = 35
-# i1w = 15
+i15m = 27072
+i30m = 13536
+i1h = 6768
+i2h = 3384
+i4h = 1692
+i6h = 1128
+i8h = 846
+i12h = 564
+i1d = 282
+i3d = 94
+i1w = 40
 
 _start = timer()
 
 setups_dict = {}
 
-# for i8h in range(0, 15*4*24*7*50):  # 10 weeks
-#     _cses = []
-#     _processors = []
-#     _cse = ComputingSetupEntry(_market, _type, ticker, i8h)
-#     _cses.append(_cse)
-#     append(_processors, manage_entry_computing(_cse))
-#     # process_computing(_cse)
-#     [x.join() for x in _processors]
-#     _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
-#     show_setups(_setups, i8h)
+for i8h in range(150, 15*4*24*7*50):  # 10 weeks
+    _cses = []
+    _processors = []
+    _cse = ComputingSetupEntry(_market, _type, '1d', i8h)
+    _cses.append(_cse)
+    append(_processors, manage_entry_computing(_cse))
+    # process_computing(_cse)
+    [x.join() for x in _processors]
+    _setups = list(map(lambda y: y.se, filter(lambda x: x.se, _cses)))
+    show_setups(_setups, i8h)
 
 
 for i in range(i15m, 15*4*24*7*80):  # 10 weeks
