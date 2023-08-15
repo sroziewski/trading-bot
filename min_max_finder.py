@@ -5,12 +5,11 @@ from math import log
 from random import randrange
 from time import sleep
 from timeit import default_timer as timer
-import talib as ta
 
 import numpy as np
 import pandas as pd
+import talib as ta
 from bson.codec_options import TypeRegistry, CodecOptions
-from matplotlib import pyplot as plt
 from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
 
@@ -97,7 +96,7 @@ def find_hl(_data_in):  # serial data increasing in time
 
     if len(_max_peaks) == 1 and len(_min_peaks) == 2:
         if _data_f[_min_peaks[0]] < _data_f[_min_peaks[1]] and _min_peaks[1]-_min_peaks[0] > 21:
-            return True
+            return _min_peaks[0], _min_peaks[1]
     if len(_max_peaks) == 2:
 
         _min1 = min(_data_f[_max_peaks[0]:_max_peaks[1]])
@@ -106,9 +105,37 @@ def find_hl(_data_in):  # serial data increasing in time
         _min1_pos = np.where(_data_f == _min1)
         _min2_pos = np.where(_data_f == _min2)
 
-        return _min1 < _min2 and _min2_pos - _min1_pos > 13
+        if _min1 < _min2 and _min2_pos - _min1_pos > 13:
+            return _min1_pos, _min2_pos
 
     return False
+
+
+# def find_hl(_data_in):  # serial data increasing in time
+#
+#     _data_f = savgol_filter(_data_in, 7, 3)
+#     _min = min(_data_f)
+#     _data_adj = np.add(_data_f, abs(_min)).tolist()  # we convert data to be >= 0
+#     _max_peaks, _ = find_peaks(_data_adj, width=4, height=0.005, distance=10)
+#
+#     _min = min(-_data_f)
+#     _data_adj = np.add(-_data_f, abs(_min)).tolist()
+#     _min_peaks, _ = find_peaks(_data_adj, width=4, height=0.005, distance=10)
+#
+#     if len(_max_peaks) == 1 and len(_min_peaks) == 2:
+#         if _data_f[_min_peaks[0]] < _data_f[_min_peaks[1]] and _min_peaks[1]-_min_peaks[0] > 21:
+#             return True
+#     if len(_max_peaks) == 2:
+#
+#         _min1 = min(_data_f[_max_peaks[0]:_max_peaks[1]])
+#         _min2 = min(_data_f[_max_peaks[1]:])
+#
+#         _min1_pos = np.where(_data_f == _min1)
+#         _min2_pos = np.where(_data_f == _min2)
+#
+#         return _min1 < _min2 and _min2_pos - _min1_pos > 13
+#
+#     return False
 
 
 def find_hl_constraint(_data_in, _max_tresh, _min_tresh, _ind, _ticker):  # serial data increasing in time
@@ -997,8 +1024,6 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
 
     _hl_condition_te = find_hl_constraint(_data_te, 30, 15, _cse.index, _cse.ticker)
     _hl_condition_wmf = find_hl_constraint(_data_wmf, 40, 25, _cse.index, _cse.ticker)
-
-    import matplotlib.pyplot as plt
 
     _macd, _macdsignal, _macdhist = ta.MACD(_df_inc['close'], fastperiod=12, slowperiod=26, signalperiod=9)
 
