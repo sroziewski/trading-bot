@@ -247,7 +247,7 @@ def get_klines(_path, _market, _ticker):
 def extract_klines(_cse):
     mode = sys.argv[2]
     if mode == "local":
-        path = "D:/bin/data/klines/start/"
+        path = "E:/bin/data/klines/start/"
     elif mode == "gpu1":
         path = "/home/sroziewski/store/start/"
     else:
@@ -1030,7 +1030,11 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _data_macd = _macd.tail(55)
     _macd_hl = find_hl(_data_macd)
 
-    if not _macd_hl:
+    _macd_div_hl = False
+    if _macd_hl:
+        _macd_div_hl = _df_inc['close'][_data_macd.index[0] + _macd_hl[0]] - _df_inc['close'][_data_macd.index[0] + _macd_hl[1]] > 0
+
+    if not _macd_div_hl:
         _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te)
         _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf)
     if len(_buys) == 0:

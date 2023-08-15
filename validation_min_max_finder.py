@@ -15,7 +15,8 @@ from mongodb import mongo_client
 mode = sys.argv[2]
 
 if mode == "local":
-    path = "D:/bin/data/klines/start/"
+    path = "E:/bin/data/klines/start/"
+    # path = "D:/bin/data/klines/start/"
 elif mode == "gpu1":
     path = "/home/sroziewski/store/start/"
 else:
