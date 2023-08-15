@@ -1025,10 +1025,13 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _hl_condition_te = find_hl_constraint(_data_te, 30, 15, _cse.index, _cse.ticker)
     _hl_condition_wmf = find_hl_constraint(_data_wmf, 40, 25, _cse.index, _cse.ticker)
 
-    _macd, _macdsignal, _macdhist = ta.MACD(_df_inc['close'], fastperiod=12, slowperiod=26, signalperiod=9)
-
-    _data_macd = _macd.tail(55)
-    _macd_hl = find_hl(_data_macd)
+    _macd_hl = False
+    try:
+        _macd, _macdsignal, _macdhist = ta.MACD(_df_inc['close'], fastperiod=12, slowperiod=26, signalperiod=9)
+        _data_macd = _macd.tail(55)
+        _macd_hl = find_hl(_data_macd)
+    except TypeError:
+        pass
 
     _macd_div_hl = False
     if _macd_hl:
