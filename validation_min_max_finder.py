@@ -140,7 +140,7 @@ def validate(_pe):
 lib_initialize()
 
 market = sys.argv[1]
-# ticker = sys.argv[3]
+ticker = sys.argv[3]
 
 _market = market
 _type = "usdt"
@@ -189,9 +189,9 @@ i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = i15m = 0
 # i30m = 13536
 # i1h = 6768
 # i2h = 3384
-# i4h = 1692
-# i6h = 1128
-# i8h = 846
+# i4h = 1216
+# i6h = 912
+# i8h = 608
 # i12h = 564
 # i1d = 282
 # i3d = 94

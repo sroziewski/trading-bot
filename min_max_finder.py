@@ -754,8 +754,6 @@ def manage_entry_computing(_cse: ComputingSetupEntry):
 
 def process_computing(_cse: ComputingSetupEntry):
     _klines = extract_klines(_cse)
-    _klines = _klines[:-18]
-    ads = 1
     _klines.reverse()
     # logger.info("{} {} {}".format(_cse.ticker, _klines[0], _cse.index))
     _se: SetupEntry = extract_buy_entry_setup(_klines, _cse)
