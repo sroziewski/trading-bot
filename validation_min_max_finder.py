@@ -192,7 +192,7 @@ i1w = i3d = i1d = i12h = i8h = i6h = i4h = i2h = i1h = i30m = i15m = 0
 # i4h = 1216
 # i6h = 912
 # i8h = 608
-# i12h = 564
+# i12h = 40
 # i1d = 282
 # i3d = 94
 # i1w = 40
@@ -201,10 +201,10 @@ _start = timer()
 
 setups_dict = {}
 
-# for i8h in range(150, 15*4*24*7*50):  # 10 weeks
+# for i8h in range(0, 15*4*24*7*50):  # 10 weeks
 #     _cses = []
 #     _processors = []
-#     _cse = ComputingSetupEntry(_market, _type, '1d', i8h)
+#     _cse = ComputingSetupEntry(_market, _type, ticker, i8h)
 #     _cses.append(_cse)
 #     append(_processors, manage_entry_computing(_cse))
 #     # process_computing(_cse)

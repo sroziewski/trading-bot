@@ -963,8 +963,8 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
 
     # find a LOWER HIGH for TE 33 bars
 
-    _strong_sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 < len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > 0 or any(filter(lambda x: x > 80, _trend_exhaustion[_df_inc['time'].count()-x-1:_df_inc['time'].count()-x-1+9])), _strong_sell_ind))
-    _sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 < len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > 0 or any(filter(lambda x: x > 80, _trend_exhaustion[_df_inc['time'].count()-x-1:_df_inc['time'].count()-x-1+9])), _sell_ind))
+    _strong_sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 < len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > -2 or any(filter(lambda x: x > 79, _trend_exhaustion[_df_inc['time'].count()-x-1:_df_inc['time'].count()-x-1+9])), _strong_sell_ind))
+    _sell_ind = list(filter(lambda x: _df_inc['time'].count()-x-1 < len(_vfi) and _vfi[_df_inc['time'].count()-x-1] > -2 or any(filter(lambda x: x > 79, _trend_exhaustion[_df_inc['time'].count()-x-1:_df_inc['time'].count()-x-1+9])), _sell_ind))
 
     if len(_strong_sell_ind) > 0:
         _last_strong_sell_ind = _strong_sell_ind[-1] + 1 + 21
