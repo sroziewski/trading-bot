@@ -11,7 +11,7 @@ from bson import CodecOptions
 from bson.codec_options import TypeRegistry
 from pymongo import DESCENDING
 
-from library import DecimalCodec, TradeMsg, get_time_from_binance_tmstmp, get_time, round_price, round_price_s
+from library import DecimalCodec, TradeMsg, get_time_from_binance_tmstmp, get_time, round_price_s
 from library import MakerVolumeUnit, TakerVolumeUnit, setup_logger, VolumeContainer, add_volume_containers, \
     lib_initialize, get_binance_obj
 from mongodb import mongo_client
@@ -83,8 +83,8 @@ def store_to_mongo(_counter, _volume_collection, _vc: VolumeContainer):
 
 
 def post_process_volume_container(_vc: VolumeContainer):
-    if is_not_initialized(_vc.market):
-        return
+    # if is_not_initialized(_vc.market):
+    #     return
     handle_volume_container(_vc)
     try:
         _vc.start_time = _vc.maker_volume.timestamp
