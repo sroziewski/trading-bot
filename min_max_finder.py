@@ -1025,7 +1025,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
 
     _macd_hl = False
     # try:
-    _macd, _macdsignal, _macdhist = ta.MACD(list(_df_inc['close']), fastperiod=12, slowperiod=26, signalperiod=9)
+    _macd, _macdsignal, _macdhist = ta.MACD(np.array(_df_inc['close']).astype('float'), fastperiod=12, slowperiod=26, signalperiod=9)
     _data_macd = _macd[-55:]
     print("macd tail: {}".format(_data_macd))
     _macd_hl = find_hl(_data_macd)
