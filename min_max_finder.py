@@ -1032,10 +1032,11 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
         pass
     print(_df_dec['time_str'][0])
     print("before _macd_div_hl {}".format(_buys))
+    print(_macd_hl)
     _macd_div_hl = False
     if _macd_hl:
         _macd_div_hl = _df_inc['close'][_data_macd.index[0] + _macd_hl[0]] - _df_inc['close'][_data_macd.index[0] + _macd_hl[1]] > 0
-
+    print(_macd_hl)
     if not _macd_div_hl:
         _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te)
         _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf)
