@@ -1024,25 +1024,20 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     _hl_condition_wmf = find_hl_constraint(_data_wmf, 40, 25, _cse.index, _cse.ticker)
 
     _macd_hl = False
-    # try:
-    _macd, _macdsignal, _macdhist = ta.MACD(np.array(_df_inc['close']).astype('float'), fastperiod=12, slowperiod=26, signalperiod=9)
-    _data_macd = _macd[-55:]
-    _data_macd_index = _df_inc['close'].tail(55).index[0]
-    print("macd tail: {}".format(_data_macd))
-    _macd_hl = find_hl(_data_macd)
-    # except TypeError as e:
-    #     print(e.__traceback__)
-    #     pass
-    print(_df_dec['time_str'][0])
-    print("before _macd_div_hl {}".format(_buys))
-    print(_macd_hl)
+    try:
+        _macd, _macdsignal, _macdhist = ta.MACD(np.array(_df_inc['close']).astype('float'), fastperiod=12, slowperiod=26, signalperiod=9)
+        _data_macd = _macd[-55:]
+        _data_macd_index = _df_inc['close'].tail(55).index[0]
+        _macd_hl = find_hl(_data_macd)
+    except TypeError as e:
+        print(e.__traceback__)
+        pass
     _macd_div_hl = False
     if _macd_hl:
         _macd_div_hl = _df_inc['close'][_data_macd_index + _macd_hl[0]] - _df_inc['close'][_data_macd_index + _macd_hl[1]] > 0
     if not _macd_div_hl:
         _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te)
         _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf)
-    print("after _macd_div_hl {}".format(_buys))
 
 
     if len(_buys) == 0:
