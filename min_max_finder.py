@@ -1027,6 +1027,7 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     try:
         _macd, _macdsignal, _macdhist = ta.MACD(_df_inc['close'], fastperiod=12, slowperiod=26, signalperiod=9)
         _data_macd = _macd.tail(55)
+        print(_data_macd)
         _macd_hl = find_hl(_data_macd)
     except TypeError:
         pass
