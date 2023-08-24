@@ -95,21 +95,68 @@ def find_hl(_data_in):  # serial data increasing in time
     _min_peaks, _ = find_peaks(_data_adj, width=4, height=0.005, distance=10)
 
     if len(_max_peaks) == 1 and len(_min_peaks) == 2:
-        if _data_f[_min_peaks[0]] < _data_f[_min_peaks[1]] and _min_peaks[1]-_min_peaks[0] > 21:
+        if _data_f[_min_peaks[0]] <= _data_f[_min_peaks[1]] and _min_peaks[1]-_min_peaks[0] > 21:
             return _min_peaks[0], _min_peaks[1]
     if len(_max_peaks) == 2:
 
         _min1 = min(_data_f[_max_peaks[0]:_max_peaks[1]])
         _min2 = min(_data_f[_max_peaks[1]:])
 
-        _min1_pos = np.where(_data_f == _min1)
-        _min2_pos = np.where(_data_f == _min2)
+        _min1_pos = np.where(_data_f == _min1)[0][0]
+        _min2_pos = np.where(_data_f == _min2)[0][0]
 
         if _min1 < _min2 and _min2_pos - _min1_pos > 13:
             return _min1_pos, _min2_pos
 
+    if len(_max_peaks) == 1 and len(_min_peaks) == 1:
+        _min1 = min(_data_f[0:_max_peaks[0]])
+        _min2 = min(_data_f[_max_peaks[0]:])
+
+        _min1_pos = np.where(_data_f == _min1)[0][0]
+        _min2_pos = np.where(_data_f == _min2)[0][0]
+
+        if _min1 < _min2 and _min2_pos - _min1_pos > 21:
+            return _min1_pos, _min2_pos
+
     return False
 
+
+def find_ll(_data_in):  # serial data increasing in time
+
+    _data_f = savgol_filter(_data_in, 7, 3)
+    _min = min(_data_f)
+    _data_adj = np.add(_data_f, abs(_min)).tolist()  # we convert data to be >= 0
+    _max_peaks, _ = find_peaks(_data_adj, width=4, height=0.005, distance=10)
+
+    _min = min(-_data_f)
+    _data_adj = np.add(-_data_f, abs(_min)).tolist()
+    _min_peaks, _ = find_peaks(_data_adj, width=4, height=0.005, distance=10)
+
+    if len(_max_peaks) == 1 and len(_min_peaks) == 2:
+        if _data_f[_min_peaks[0]] >= _data_f[_min_peaks[1]] and _min_peaks[1]-_min_peaks[0] > 21:
+            return _min_peaks[0], _min_peaks[1]
+    if len(_max_peaks) == 2:
+
+        _min1 = min(_data_f[_max_peaks[0]:_max_peaks[1]])
+        _min2 = min(_data_f[_max_peaks[1]:])
+
+        _min1_pos = np.where(_data_f == _min1)[0][0]
+        _min2_pos = np.where(_data_f == _min2)[0][0]
+
+        if _min1 > _min2 and _min2_pos - _min1_pos > 13:
+            return _min1_pos, _min2_pos
+
+    if len(_max_peaks) == 1 and len(_min_peaks) == 1:
+        _min1 = min(_data_f[0:_max_peaks[0]])
+        _min2 = min(_data_f[_max_peaks[0]:])
+
+        _min1_pos = np.where(_data_f == _min1)[0][0]
+        _min2_pos = np.where(_data_f == _min2)[0][0]
+
+        if _min1 > _min2 and _min2_pos - _min1_pos > 21:
+            return _min1_pos, _min2_pos
+
+    return False
 
 # def find_hl(_data_in):  # serial data increasing in time
 #
@@ -1038,6 +1085,20 @@ def extract_buy_entry_setup(_klines, _cse: ComputingSetupEntry):
     if not _macd_div_hl:
         _buys = filter_buys_trend_exhaustion(_trend_exhaustion, _buys, _hl_condition_te)
         _buys = filter_buys_whale_money_flow(_whale_money_flow, _buys, _hl_condition_wmf)
+
+    _macd_ll = False
+    try:
+        _macd, _macdsignal, _macdhist = ta.MACD(np.array(_df_inc['close']).astype('float'), fastperiod=12, slowperiod=26, signalperiod=9)
+        _data_macd = _macd[-55:]
+        _data_macd_index = _df_inc['close'].tail(55).index[0]
+        _macd_ll = find_ll(_data_macd)
+    except TypeError as e:
+        print(e.__traceback__)
+        pass
+    if _macd_ll:
+        _macd_ll_trend = _df_inc['close'][_data_macd_index + _macd_ll[0]] - _df_inc['close'][_data_macd_index + _macd_ll[1]] > 0
+        if _macd_ll_trend:
+            _buys = list(filter(lambda x: x < _data_macd_index + _macd_ll[1] - 3, _buys))
 
 
     if len(_buys) == 0:
