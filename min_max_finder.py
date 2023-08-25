@@ -10,6 +10,7 @@ import numpy as np
 import pandas as pd
 import talib as ta
 from bson.codec_options import TypeRegistry, CodecOptions
+from numpy.linalg import LinAlgError
 from scipy.signal import find_peaks
 from scipy.signal import savgol_filter
 
@@ -84,8 +85,10 @@ def to_offline_kline(_kline: Kline):
 
 
 def find_hl(_data_in):  # serial data increasing in time
-
-    _data_f = savgol_filter(_data_in, 7, 3)
+    try:
+        _data_f = savgol_filter(_data_in, 7, 3)
+    except LinAlgError:
+        return False
     _min = min(_data_f)
     _data_adj = np.add(_data_f, abs(_min)).tolist()  # we convert data to be >= 0
     _max_peaks, _ = find_peaks(_data_adj, width=4, height=0.005, distance=10)
