@@ -27,7 +27,6 @@ import talib
 from binance.client import Client as BinanceClient
 from bson import Decimal128
 from bson.codec_options import TypeCodec
-from kucoin.client import Client as KucoinClient
 from pymongo import DESCENDING
 from pymongo.errors import PyMongoError, InvalidDocument
 from urllib3.exceptions import ReadTimeoutError
@@ -144,27 +143,6 @@ def ticker_to_kucoin(_ticker):
     return _ticker.replace("m", "min").replace("h", "hour").replace("d", "day").replace("w", "week")
 
 
-def check_kucoin_offer_validity(_asset, return_value=False):
-    _exit = False
-    _market_price = None
-    if _asset.kucoin_side == KucoinClient.SIDE_BUY:
-        _market_bid = float(kucoin_client.get_order_book(_asset.market)['bids'][0][0])
-        if _asset.price - _market_bid >= 0.01 * sat:
-            _market_price = _market_bid
-            _exit = True
-    elif _asset.kucoin_side == KucoinClient.SIDE_SELL:
-        _market_ask = float(kucoin_client.get_order_book(_asset.market)['asks'][0][0])
-        if _asset.price - _market_ask <= 0.01 * sat:
-            _market_price = _market_ask
-            _exit = True
-    if _exit:
-        logger_global[0].info(
-            f"{_asset.market} {_asset.kucoin_side} check_kucoin_offer_validity failed: your price {get_format_price(_asset.price)} : market price : {get_format_price(_market_price)}")
-        if return_value:
-            return _market_price + _asset.kucoin_price_increment
-        else:
-            sys.exit(-1)
-
 
 def price_increment(_price, _increment):
     _dp = 1 / np.power(10, len(get_format_price(_price).split(".")[1]))
@@ -183,11 +161,6 @@ class Asset(object):
         self.exchange = exchange
         self.name = name
         self.stop_loss = _stop_loss
-        if exchange == "kucoin":
-            self.market = "{}-BTC".format(name)
-            self.ticker = ticker_to_kucoin(ticker)
-            self.kucoin_increment = float(get_kucoin_symbol(self.market, 'baseIncrement'))
-            self.kucoin_price_increment = float(get_kucoin_symbol(self.market, 'priceIncrement'))
         if exchange == "binance":
             self.market = "{}BTC".format(name)
             self.price_ticker_size = get_binance_price_tick_size(self.market)

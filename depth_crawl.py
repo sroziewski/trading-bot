@@ -4,7 +4,7 @@ from functools import reduce
 from time import sleep
 
 import schedule
-from binance.websockets import BinanceSocketManager
+from binance import ThreadedWebsocketManager
 
 from library import binance_obj, get_time, logger_global, get_binance_obj, lib_initialize, round_price
 from bson import CodecOptions
@@ -556,7 +556,7 @@ def _do_depth_scan(_dc: DepthCrawl):
     depths1m[_dc.market]['bd'] = []
     depths1m[_dc.market]['sd'] = []
     types[_dc.market] = _dc.type
-    _bm = BinanceSocketManager(get_binance_obj().client)
+    _bm = ThreadedWebsocketManager(get_binance_obj().client)
     _conn_key = _bm.start_depth_socket(_dc.market.upper(), process_depth_socket_message)
     _bm.start()
 
